@@ -21,6 +21,15 @@ public class CustomerRepository(IDbContextFactory<AppDbContext> factory)
             .Take(10)];
     }
 
+    public void DeleteLocalOnly()
+    {
+        using var db = factory.CreateDbContext();
+        var rows = db.Customers.Where(c => c.RemoteUuid == "").ToList();
+        if (rows.Count == 0) return;
+        db.Customers.RemoveRange(rows);
+        db.SaveChanges();
+    }
+
     public void UpsertRange(IEnumerable<Customer> customers)
     {
         using var db = factory.CreateDbContext();

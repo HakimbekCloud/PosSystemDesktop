@@ -41,12 +41,13 @@ public partial class App : Application
 
         // ── Services ──────────────────────────────────────────────────────────
         sc.AddSingleton<ConnectivityService>();
+        sc.AddSingleton<NetworkLogService>();
         sc.AddHttpClient();
 
         sc.AddSingleton<ApiClient>(sp =>
         {
-            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-            http.Timeout = TimeSpan.FromSeconds(15);
+            var logHandler = new NetworkLogHandler(sp.GetRequiredService<NetworkLogService>());
+            var http = new HttpClient(logHandler) { Timeout = TimeSpan.FromSeconds(15) };
             return new ApiClient(http, sp.GetRequiredService<SettingsRepository>());
         });
 
@@ -56,6 +57,7 @@ public partial class App : Application
         // ── ViewModels (transient: fresh per navigation) ───────────────────────
         sc.AddTransient<LoginViewModel>();
         sc.AddTransient<GameViewModel>();
+        sc.AddTransient<AddProductViewModel>();
         sc.AddTransient<PosViewModel>();
 
         // ── Views ─────────────────────────────────────────────────────────────
@@ -73,7 +75,12 @@ public partial class App : Application
         using var db = factory.CreateDbContext();
         db.Database.EnsureCreated();
         ApplySchemaMigrations(db);
-        SeedDemoData(db);
+
+        // Seed demo data only when there is no authenticated session.
+        // Once the user logs in and syncs, real backend data replaces the demo rows.
+        var auth = _services.GetRequiredService<AuthService>();
+        if (!auth.HasValidSession())
+            SeedDemoData(db);
     }
 
     // Adds new columns to existing SQLite databases without full migration.
@@ -94,6 +101,15 @@ public partial class App : Application
             try { db.Database.ExecuteSqlRaw(sql); }
             catch { /* column already exists — safe to ignore */ }
         }
+
+        // One-time cleanup: remove seed/demo rows left over from previous runs.
+        // After login the real backend data will be synced in their place.
+        try { db.Database.ExecuteSqlRaw(
+            "DELETE FROM Products  WHERE RemoteUuid = '' OR RemoteUuid IS NULL"); }
+        catch { }
+        try { db.Database.ExecuteSqlRaw(
+            "DELETE FROM Customers WHERE RemoteUuid = '' OR RemoteUuid IS NULL"); }
+        catch { }
     }
 
     private static void SeedDemoData(AppDbContext db)

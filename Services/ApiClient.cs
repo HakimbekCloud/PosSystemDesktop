@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -22,6 +23,7 @@ public class ApiClient
         _http = http;
         _settings = settings;
         ApplyBaseUrl();
+        ApplyTenantHeader();
         ApplyAuthToken();
     }
 
@@ -29,8 +31,17 @@ public class ApiClient
     {
         var url = _settings.Get("api_base_url");
         if (string.IsNullOrWhiteSpace(url)) return;
-        if (Uri.TryCreate(url.TrimEnd('/') + "/", UriKind.Absolute, out var uri))
-            _http.BaseAddress = uri;
+        if (!Uri.TryCreate(url.TrimEnd('/') + "/", UriKind.Absolute, out var uri)) return;
+        if (_http.BaseAddress == uri) return;
+        _http.BaseAddress = uri;
+    }
+
+    public void ApplyTenantHeader()
+    {
+        _http.DefaultRequestHeaders.Remove("X-Tenant-ID");
+        var tenant = _settings.Get("tenant_subdomain");
+        if (!string.IsNullOrEmpty(tenant))
+            _http.DefaultRequestHeaders.Add("X-Tenant-ID", tenant);
     }
 
     public void ApplyAuthToken()
@@ -46,9 +57,19 @@ public class ApiClient
     public async Task<LoginResponse> LoginAsync(string username, string password)
     {
         var response = await _http.PostAsJsonAsync("api/v1/auth/login", new { username, password });
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
         return await response.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions)
                ?? throw new InvalidOperationException("Server javobi noto'g'ri");
+    }
+
+    // ── Measurements ──────────────────────────────────────────────────────────
+
+    public async Task<List<MeasurementDto>> GetMeasurementsAsync()
+    {
+        var resp = await _http.GetAsync("api/measurements?page=0&size=200");
+        await EnsureSuccessAsync(resp);
+        var result = await resp.Content.ReadFromJsonAsync<PageResponse<MeasurementDto>>(JsonOptions);
+        return result?.Content ?? [];
     }
 
     // ── Products ──────────────────────────────────────────────────────────────
@@ -61,17 +82,26 @@ public class ApiClient
 
         do
         {
-            var result = await _http.GetFromJsonAsync<PageResponse<ProductDto>>(
-                $"api/products?is_pos=true&page={page}&size=200", JsonOptions);
-
+            var resp = await _http.GetAsync(
+                $"api/products?is_pos=true&page={page}&size=200");
+            await EnsureSuccessAsync(resp);
+            var result = await resp.Content.ReadFromJsonAsync<PageResponse<ProductDto>>(JsonOptions);
             if (result is null) break;
             all.AddRange(result.Content);
             totalPages = result.TotalPages;
             page++;
         }
-        while (page < totalPages && page < 10); // max 10 pages safety cap
+        while (page < totalPages && page < 10);
 
         return all;
+    }
+
+    public async Task<ProductDto> CreateProductAsync(CreateProductRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/products", request);
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<ProductDto>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
     }
 
     // ── Customers ─────────────────────────────────────────────────────────────
@@ -84,9 +114,9 @@ public class ApiClient
 
         do
         {
-            var result = await _http.GetFromJsonAsync<PageResponse<CustomerDto>>(
-                $"api/customers?page={page}&size=200", JsonOptions);
-
+            var resp = await _http.GetAsync($"api/customers?page={page}&size=200");
+            await EnsureSuccessAsync(resp);
+            var result = await resp.Content.ReadFromJsonAsync<PageResponse<CustomerDto>>(JsonOptions);
             if (result is null) break;
             all.AddRange(result.Content);
             totalPages = result.TotalPages;
@@ -101,22 +131,25 @@ public class ApiClient
 
     public async Task<List<BranchDto>> GetBranchesAsync()
     {
-        var result = await _http.GetFromJsonAsync<PageResponse<BranchDto>>(
-            "api/branches?page=0&size=50", JsonOptions);
+        var resp = await _http.GetAsync("api/branches?page=0&size=50");
+        await EnsureSuccessAsync(resp);
+        var result = await resp.Content.ReadFromJsonAsync<PageResponse<BranchDto>>(JsonOptions);
         return result?.Content ?? [];
     }
 
     public async Task<List<CashboxDto>> GetCashboxesAsync()
     {
-        var result = await _http.GetFromJsonAsync<PageResponse<CashboxDto>>(
-            "api/cashboxes?page=0&size=50", JsonOptions);
+        var resp = await _http.GetAsync("api/cashboxes?page=0&size=50");
+        await EnsureSuccessAsync(resp);
+        var result = await resp.Content.ReadFromJsonAsync<PageResponse<CashboxDto>>(JsonOptions);
         return result?.Content ?? [];
     }
 
     public async Task<List<PriceListDto>> GetPriceListsAsync()
     {
-        var result = await _http.GetFromJsonAsync<PageResponse<PriceListDto>>(
-            "api/price-lists?page=0&size=50", JsonOptions);
+        var resp = await _http.GetAsync("api/price-lists?page=0&size=50");
+        await EnsureSuccessAsync(resp);
+        var result = await resp.Content.ReadFromJsonAsync<PageResponse<PriceListDto>>(JsonOptions);
         return result?.Content ?? [];
     }
 
@@ -149,9 +182,9 @@ public class ApiClient
                 .Where(i => !string.IsNullOrEmpty(i.ProductRemoteUuid))
                 .Select(i => new CreateOrderItemRequest
                 {
-                    ProductUuid  = i.ProductRemoteUuid,
-                    Quantity     = i.Quantity,
-                    Price        = i.Price,
+                    ProductUuid   = i.ProductRemoteUuid,
+                    Quantity      = i.Quantity,
+                    Price         = i.Price,
                     DiscountPrice = i.Discount
                 }).ToList(),
             Transactions =
@@ -159,7 +192,7 @@ public class ApiClient
                 new CreateTransactionRequest
                 {
                     CashboxUuid = cashboxUuid,
-                    Amount      = sale.PaidAmount,
+                    Amount      = Math.Min(sale.PaidAmount, sale.TotalAmount),
                     CurrencyId  = currencyId,
                     IsDebt      = sale.PaidAmount < sale.TotalAmount,
                     IsCashback  = false
@@ -168,8 +201,56 @@ public class ApiClient
         };
 
         var response = await _http.PostAsJsonAsync("api/orders", order);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response);
         var result = await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions);
         return result?.Uuid ?? "";
+    }
+
+    // ── Error handling ────────────────────────────────────────────────────────
+
+    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return;
+
+        string body = "";
+        try { body = await response.Content.ReadAsStringAsync(); } catch { }
+
+        var message = ParseErrorMessage(body, response.StatusCode);
+        throw new HttpRequestException(message, null, response.StatusCode);
+    }
+
+    private static string ParseErrorMessage(string body, HttpStatusCode status)
+    {
+        // Try to extract a human-readable message from the JSON error body.
+        if (!string.IsNullOrWhiteSpace(body))
+        {
+            try
+            {
+                var doc  = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                foreach (var field in new[] { "message", "error", "detail", "title" })
+                {
+                    if (root.TryGetProperty(field, out var prop)
+                        && prop.ValueKind == JsonValueKind.String
+                        && prop.GetString() is { Length: > 0 } val)
+                        return val;
+                }
+            }
+            catch { }
+        }
+
+        return status switch
+        {
+            HttpStatusCode.Unauthorized        => "Sessiya muddati tugagan, qayta kiring",
+            HttpStatusCode.Forbidden           => "Bu amalni bajarish uchun ruxsat yo'q",
+            HttpStatusCode.NotFound            => "Ma'lumot topilmadi",
+            HttpStatusCode.BadRequest          => "Noto'g'ri so'rov ma'lumotlari",
+            HttpStatusCode.UnprocessableEntity => "Ma'lumotlar noto'g'ri formatda",
+            HttpStatusCode.InternalServerError => "Server ichki xatosi yuz berdi",
+            HttpStatusCode.ServiceUnavailable  => "Server hozircha mavjud emas",
+            HttpStatusCode.GatewayTimeout or
+            HttpStatusCode.RequestTimeout      => "Server javob bermadi (timeout)",
+            _ => $"So'rov xatosi ({(int)status})"
+        };
     }
 }

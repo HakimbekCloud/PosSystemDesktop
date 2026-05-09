@@ -39,6 +39,34 @@
             </Setter>
         </Style>
 
+        <!-- Product type toggle button (used in Add Product panel) -->
+        <Style x:Key="TypeToggleBtnStyle" TargetType="Button">
+            <Setter Property="Background"    Value="#F5F7FA"/>
+            <Setter Property="Foreground"    Value="#546E7A"/>
+            <Setter Property="BorderBrush"   Value="#D1D9E6"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Cursor"        Value="Hand"/>
+            <Setter Property="FontSize"      Value="13"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#E8EFF8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Payment type button: highlights when its CommandParameter matches PaymentType -->
         <Style x:Key="PayTypeBtn" TargetType="Button">
             <Setter Property="Background" Value="#F5F7FA"/>
@@ -215,6 +243,16 @@
                                FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"
                                FontFamily="Consolas"/>
 
+                    <!-- Order history -->
+                    <Button Click="OnHistoryClick"
+                            Style="{StaticResource HeaderIconButtonStyle}"
+                            ToolTip="Zakaz tarixi" Content="📋" Margin="0,0,8,0"/>
+
+                    <!-- Network monitor -->
+                    <Button Click="OnNetworkMonitorClick"
+                            Style="{StaticResource HeaderIconButtonStyle}"
+                            ToolTip="Network Monitor" Content="📡" Margin="0,0,8,0"/>
+
                     <!-- Game toggle -->
                     <Button Command="{Binding ToggleGameCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
@@ -253,6 +291,13 @@
                 <!-- Search bar -->
                 <Border Grid.Row="0" Background="White" Padding="12,10"
                         BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                                Command="{Binding ToggleAddProductCommand}"
+                                Width="38" Height="38"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                ToolTip="Mahsulot qo'shish"
+                                FontSize="22" FontWeight="Bold" Content="+"/>
                     <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8" Background="#FAFAFA">
                         <Grid>
                             <TextBlock Text="🔍" Margin="10,0,0,0" VerticalAlignment="Center"
@@ -283,6 +328,7 @@
                             </TextBlock>
                         </Grid>
                     </Border>
+                    </DockPanel>
                 </Border>
 
                 <!-- Category tabs -->
@@ -430,6 +476,212 @@
                         </ItemsControl>
                     </Grid>
                 </ScrollViewer>
+
+                <!-- ── Add Product overlay ── -->
+                <Border Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="20" Background="White"
+                        Visibility="{Binding IsAddProductOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Border Grid.Row="0" Background="#0D47A1" Padding="16,14">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right"
+                                        Command="{Binding ToggleAddProductCommand}"
+                                        Style="{StaticResource HeaderIconButtonStyle}"
+                                        Content="✕" Width="32" Height="32" FontSize="14"
+                                        ToolTip="Yopish"/>
+                                <TextBlock Text="Yangi mahsulot qo'shish"
+                                           Foreground="White" FontSize="15" FontWeight="SemiBold"
+                                           VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Form body -->
+                        <ScrollViewer Grid.Row="1" Padding="16,14,16,4"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+
+                                <!-- Product type selector -->
+                                <TextBlock Text="MAHSULOT TURI" FontSize="10" FontWeight="Bold"
+                                           Foreground="#9E9E9E" Margin="0,0,0,8"/>
+                                <Grid Margin="0,0,0,18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0"
+                                            Command="{Binding AddProductVm.SetTypeIndexCommand}"
+                                            CommandParameter="0"
+                                            Content="📦  Tovar" Padding="0,10">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource TypeToggleBtnStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AddProductVm.SelectedTypeIndex}" Value="0">
+                                                        <Setter Property="Background"   Value="#1565C0"/>
+                                                        <Setter Property="Foreground"   Value="White"/>
+                                                        <Setter Property="BorderBrush"  Value="#1565C0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Grid.Column="2"
+                                            Command="{Binding AddProductVm.SetTypeIndexCommand}"
+                                            CommandParameter="1"
+                                            Content="🛠  Xizmat" Padding="0,10">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource TypeToggleBtnStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AddProductVm.SelectedTypeIndex}" Value="1">
+                                                        <Setter Property="Background"   Value="#1565C0"/>
+                                                        <Setter Property="Foreground"   Value="White"/>
+                                                        <Setter Property="BorderBrush"  Value="#1565C0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Name (required) -->
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#607D8B"
+                                           Margin="0,0,0,6">
+                                    <Run Text="Nomi"/><Run Text=" *" Foreground="#E53935"/>
+                                </TextBlock>
+                                <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8"
+                                        Background="#FAFAFA" Margin="0,0,0,18">
+                                    <TextBox Text="{Binding AddProductVm.NameInput, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="12,10" FontSize="14" BorderThickness="0"
+                                             Background="Transparent"
+                                             Style="{StaticResource FlatTextBoxStyle}"/>
+                                </Border>
+
+                                <!-- Measurement (required) -->
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#607D8B"
+                                           Margin="0,0,0,6">
+                                    <Run Text="O'lchov birligi"/><Run Text=" *" Foreground="#E53935"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding AddProductVm.Measurements}"
+                                          SelectedItem="{Binding AddProductVm.SelectedMeasurement}"
+                                          DisplayMemberPath="Name"
+                                          Padding="12,8" FontSize="13"
+                                          Margin="0,0,0,18"/>
+
+                                <!-- Price & Cost -->
+                                <Grid Margin="0,0,0,18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Narx (so'm)" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#607D8B" Margin="0,0,0,6"/>
+                                        <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8" Background="#FAFAFA">
+                                            <TextBox Text="{Binding AddProductVm.PriceInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     Padding="12,10" FontSize="14" BorderThickness="0"
+                                                     Background="Transparent"
+                                                     Style="{StaticResource FlatTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Tannarx (so'm)" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#607D8B" Margin="0,0,0,6"/>
+                                        <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8" Background="#FAFAFA">
+                                            <TextBox Text="{Binding AddProductVm.CostInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     Padding="12,10" FontSize="14" BorderThickness="0"
+                                                     Background="Transparent"
+                                                     Style="{StaticResource FlatTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Stock & Barcode -->
+                                <Grid Margin="0,0,0,18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Boshlang'ich qoldiq" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#607D8B" Margin="0,0,0,6"/>
+                                        <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8" Background="#FAFAFA">
+                                            <TextBox Text="{Binding AddProductVm.StockInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     Padding="12,10" FontSize="14" BorderThickness="0"
+                                                     Background="Transparent"
+                                                     Style="{StaticResource FlatTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Barkod" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="#607D8B" Margin="0,0,0,6"/>
+                                        <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8" Background="#FAFAFA">
+                                            <TextBox Text="{Binding AddProductVm.BarcodeInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     Padding="12,10" FontSize="14" BorderThickness="0"
+                                                     Background="Transparent"
+                                                     Style="{StaticResource FlatTextBoxStyle}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- POS toggle -->
+                                <CheckBox IsChecked="{Binding AddProductVm.IsPos}"
+                                          Style="{StaticResource ToggleSwitchStyle}"
+                                          Margin="0,0,0,16">
+                                    <TextBlock Text="POS da ko'rinadigan" FontSize="13"
+                                               Foreground="#374151" FontFamily="Segoe UI"/>
+                                </CheckBox>
+
+                                <!-- Error -->
+                                <Border CornerRadius="8" Background="#FFEBEE" Padding="12,10"
+                                        Visibility="{Binding AddProductVm.ErrorText,
+                                                     Converter={StaticResource StringToVisibilityConverter}}">
+                                    <TextBlock Text="{Binding AddProductVm.ErrorText}"
+                                               Foreground="#C62828" FontSize="13" TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- Saving indicator -->
+                                <TextBlock Text="Saqlanmoqda..."
+                                           FontSize="13" Foreground="#1565C0" TextAlignment="Center"
+                                           Margin="0,10,0,0"
+                                           Visibility="{Binding AddProductVm.IsBusy,
+                                                        Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Footer buttons -->
+                        <Border Grid.Row="2" Background="White" Padding="16,12"
+                                BorderBrush="#E0E6F0" BorderThickness="0,1,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Command="{Binding ToggleAddProductCommand}"
+                                        Content="Bekor qilish" Padding="0,12"
+                                        Style="{StaticResource OutlineDangerButtonStyle}"
+                                        FontSize="14"/>
+                                <Button Grid.Column="2"
+                                        Command="{Binding AddProductVm.SaveCommand}"
+                                        Content="✓  Saqlash" Padding="0,12"
+                                        Style="{StaticResource SuccessButtonStyle}"
+                                        FontSize="14" FontWeight="SemiBold"/>
+                            </Grid>
+                        </Border>
+
+                    </Grid>
+                </Border>
+
             </Grid>
 
             <!-- ══════════ COLUMN 1: CART ══════════ -->

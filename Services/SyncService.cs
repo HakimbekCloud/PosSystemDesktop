@@ -1,3 +1,4 @@
+using System.Net.Http;
 using PosSystem.Core.Entities;
 using PosSystem.Data.Repositories;
 
@@ -16,9 +17,10 @@ public class SyncService
     private readonly System.Timers.Timer _timer;
     private bool _isSyncing;
 
-    public SyncStatus Status       { get; private set; } = SyncStatus.Idle;
-    public DateTime?  LastSyncAt   { get; private set; }
+    public SyncStatus Status           { get; private set; } = SyncStatus.Idle;
+    public DateTime?  LastSyncAt       { get; private set; }
     public int        PendingSalesCount { get; private set; }
+    public string     LastError        { get; private set; } = "";
 
     public event EventHandler? StatusChanged;
 
@@ -62,23 +64,44 @@ public class SyncService
         if (!_connectivity.IsOnline) { SetStatus(SyncStatus.Idle); return; }
 
         _isSyncing = true;
+        LastError  = "";
         SetStatus(SyncStatus.Syncing);
+
+        var errors = new List<string>();
 
         try
         {
-            await SyncReferenceDataAsync();
-            await SyncProductsAsync();
-            await SyncCustomersAsync();
-            await SyncPendingSalesAsync();
+            try { await SyncReferenceDataAsync(); }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            { errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { errors.Add($"Ma'lumotnoma: {ex.Message}"); }
+
+            try { await SyncProductsAsync(); }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            { errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { errors.Add($"Mahsulotlar: {ex.Message}"); }
+
+            try { await SyncCustomersAsync(); }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            { errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { errors.Add($"Mijozlar: {ex.Message}"); }
+
+            try { await SyncPendingSalesAsync(); }
+            catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
 
             LastSyncAt = DateTime.Now;
             _settings.Set("last_sync_at", LastSyncAt.Value.ToString("O"));
             PendingSalesCount = _sales.GetPendingCount();
-            SetStatus(SyncStatus.Success);
-        }
-        catch
-        {
-            SetStatus(SyncStatus.Error);
+
+            if (errors.Count > 0)
+            {
+                LastError = string.Join(" | ", errors);
+                SetStatus(SyncStatus.Error);
+            }
+            else
+            {
+                SetStatus(SyncStatus.Success);
+            }
         }
         finally
         {
@@ -86,7 +109,7 @@ public class SyncService
         }
     }
 
-    // ── Reference data (branch / cashbox) ────────────────────────────────────
+    // ── Reference data (branch / cashbox / price list) ───────────────────────
 
     private async Task SyncReferenceDataAsync()
     {
@@ -103,6 +126,15 @@ public class SyncService
             if (cashboxes.Count > 0)
                 _settings.Set("default_cashbox_uuid", cashboxes[0].Uuid);
         }
+
+        // Price list ID as early fallback; SyncProductsAsync may override with a more specific value.
+        if (string.IsNullOrEmpty(_settings.Get("default_price_list_id")))
+        {
+            var lists = await _api.GetPriceListsAsync();
+            var first = lists.FirstOrDefault(l => l.Active) ?? lists.FirstOrDefault();
+            if (first is not null)
+                _settings.Set("default_price_list_id", first.Id.ToString());
+        }
     }
 
     // ── Products ──────────────────────────────────────────────────────────────
@@ -112,8 +144,8 @@ public class SyncService
         var dtos = await _api.GetProductsAsync();
         if (dtos.Count == 0) return;
 
-        // Extract priceListId + currencyId from product prices if not yet configured
-        if (string.IsNullOrEmpty(_settings.Get("default_price_list_id")))
+        // Extract priceListId + currencyId from product prices if not yet configured.
+        if (string.IsNullOrEmpty(_settings.Get("default_currency_id")))
         {
             var firstPrice = dtos.SelectMany(p => p.Prices).FirstOrDefault();
             if (firstPrice is not null)
@@ -138,6 +170,9 @@ public class SyncService
             IsActive     = dto.IsPos && !dto.IsDelete,
             UpdatedAt    = DateTime.UtcNow
         }));
+
+        // Backend is the source of truth — remove seed/demo products that have no server UUID.
+        _products.DeleteLocalOnly();
     }
 
     // ── Customers ─────────────────────────────────────────────────────────────
@@ -151,11 +186,13 @@ public class SyncService
         {
             RemoteUuid = dto.Uuid,
             Name       = dto.Name,
-            Phone      = dto.Phone    ?? "",
-            Address    = dto.Address  ?? "",
+            Phone      = dto.Phone   ?? "",
+            Address    = dto.Address ?? "",
             Balance    = dto.TotalDebt,
             UpdatedAt  = DateTime.UtcNow
         }));
+
+        _customers.DeleteLocalOnly();
     }
 
     // ── Pending sales ─────────────────────────────────────────────────────────
@@ -169,13 +206,19 @@ public class SyncService
             !long.TryParse(_settings.Get("default_currency_id"),   out var currencyId)  ||
             string.IsNullOrEmpty(branchUuid) || string.IsNullOrEmpty(cashboxUuid))
         {
-            // Reference data not yet configured; will retry after next product sync
             PendingSalesCount = _sales.GetPendingCount();
             return;
         }
 
         foreach (var sale in _sales.GetPendingSync())
         {
+            // Skip sales that contain only local seed-data products (no server UUID).
+            if (!sale.Items.Any(i => !string.IsNullOrEmpty(i.ProductRemoteUuid)))
+            {
+                _sales.MarkSynced(sale.LocalId, "LOCAL_ONLY");
+                continue;
+            }
+
             try
             {
                 var serverUuid = await _api.SyncSaleAsync(
@@ -184,7 +227,7 @@ public class SyncService
             }
             catch
             {
-                // Keep in queue; will retry on next sync cycle
+                // Keep in queue; will retry on next sync cycle.
             }
         }
 

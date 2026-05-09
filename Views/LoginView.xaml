@@ -141,11 +141,10 @@
                         <TextBlock Text="Davom etish uchun hisobingizga kiring"
                                    FontSize="14" Foreground="#7A8DAB" Margin="0,0,0,40"/>
 
-                        <!-- ── Server address ── -->
-                        <TextBlock Text="Server manzili" FontSize="13" FontWeight="Medium"
+                        <!-- ── Tenant subdomain ── -->
+                        <TextBlock Text="Tashkilot kodi" FontSize="13" FontWeight="Medium"
                                    Foreground="#374151" Margin="0,0,0,8"/>
-                        <Border x:Name="ServerBorder"
-                                BorderThickness="1.5" CornerRadius="10"
+                        <Border BorderThickness="1.5" CornerRadius="10"
                                 Background="White" Margin="0,0,0,20"
                                 BorderBrush="#D1D9E6">
                             <Border.Style>
@@ -164,18 +163,18 @@
                                 </Grid.ColumnDefinitions>
                                 <Border Grid.Column="0" BorderBrush="#EEF2F8"
                                         BorderThickness="0,0,1,0" CornerRadius="10,0,0,10">
-                                    <TextBlock Text="🌐" FontSize="18"
+                                    <TextBlock Text="🏢" FontSize="18"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBox Grid.Column="1" x:Name="ServerBox"
-                                         Text="{Binding ServerAddress, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding TenantSubdomain, UpdateSourceTrigger=PropertyChanged}"
                                          FontSize="14" Padding="12,13"
                                          BorderThickness="0" Background="Transparent"
                                          Foreground="#1A2540"
                                          Style="{StaticResource FlatTextBoxStyle}"/>
                                 <TextBlock Grid.Column="1"
-                                           Text="http://192.168.1.1:8000"
+                                           Text="tenant-nomi"
                                            Foreground="#C0CCDE" FontSize="14"
                                            Margin="14,0,0,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False">
@@ -183,7 +182,7 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ServerAddress}" Value="">
+                                                <DataTrigger Binding="{Binding TenantSubdomain}" Value="">
                                                     <Setter Property="Visibility" Value="Visible"/>
                                                 </DataTrigger>
                                             </Style.Triggers>

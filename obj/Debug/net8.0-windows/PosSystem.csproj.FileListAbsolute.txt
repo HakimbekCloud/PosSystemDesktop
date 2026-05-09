@@ -138,3 +138,8 @@ C:\Users\User\source\repos\PosSystem\PosSystem\bin\Debug\net8.0-windows\runtimes
 C:\Users\User\source\repos\PosSystem\PosSystem\bin\Debug\net8.0-windows\runtimes\win-x86\native\e_sqlite3.dll
 C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\Game\GameView.g.cs
 C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\Game\GameView.baml
+C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\PosSystem.sourcelink.json
+C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\NetworkLogWindow.g.cs
+C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\NetworkLogWindow.baml
+C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\SaleHistoryWindow.baml
+C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\SaleHistoryWindow.g.cs

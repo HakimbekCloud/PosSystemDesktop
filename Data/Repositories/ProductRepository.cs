@@ -17,6 +17,15 @@ public class ProductRepository(IDbContextFactory<AppDbContext> factory)
         return db.Products.FirstOrDefault(p => p.Barcode == barcode && p.IsActive);
     }
 
+    public void DeleteLocalOnly()
+    {
+        using var db = factory.CreateDbContext();
+        var rows = db.Products.Where(p => p.RemoteUuid == "").ToList();
+        if (rows.Count == 0) return;
+        db.Products.RemoveRange(rows);
+        db.SaveChanges();
+    }
+
     public void UpsertRange(IEnumerable<Product> products)
     {
         using var db = factory.CreateDbContext();

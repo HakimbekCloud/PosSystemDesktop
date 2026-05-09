@@ -31,7 +31,6 @@ public partial class LoginView : UserControl
             }
         };
 
-        ServerBox.KeyDown  += OnEnterKey;
         UsernameBox.KeyDown += OnEnterKey;
         PasswordBox.KeyDown += OnEnterKey;
         PasswordText.KeyDown += OnEnterKey;

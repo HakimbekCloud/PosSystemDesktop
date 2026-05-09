@@ -2,7 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using PosSystem.Core.Entities;
+using PosSystem.Data.Repositories;
 using PosSystem.ViewModels.Pos;
+using PosSystem.Views;
 
 namespace PosSystem.Views.Pos;
 
@@ -16,6 +18,44 @@ public partial class PosView : UserControl
         _vm = vm;
         DataContext = vm;
         Loaded += async (_, _) => await vm.InitializeAsync();
+    }
+
+    private NetworkLogWindow?    _networkLogWin;
+    private SaleHistoryWindow?   _historyWin;
+
+    private void OnHistoryClick(object sender, RoutedEventArgs e)
+    {
+        if (_historyWin is null || !_historyWin.IsLoaded)
+        {
+            var sales = ((App)Application.Current).GetService<SaleRepository>();
+            _historyWin = new SaleHistoryWindow(sales)
+            {
+                Owner = Window.GetWindow(this)
+            };
+        }
+
+        if (!_historyWin.IsVisible)
+            _historyWin.Show();
+
+        _historyWin.Activate();
+    }
+
+    private void OnNetworkMonitorClick(object sender, RoutedEventArgs e)
+    {
+        // IsLoaded becomes false after a window is closed — create a fresh instance in that case.
+        if (_networkLogWin is null || !_networkLogWin.IsLoaded)
+        {
+            var log = ((App)Application.Current).GetService<PosSystem.Services.NetworkLogService>();
+            _networkLogWin = new NetworkLogWindow(log)
+            {
+                Owner = Window.GetWindow(this)
+            };
+        }
+
+        if (!_networkLogWin.IsVisible)
+            _networkLogWin.Show();
+
+        _networkLogWin.Activate();
     }
 
     private void OnCustomerItemClick(object sender, MouseButtonEventArgs e)

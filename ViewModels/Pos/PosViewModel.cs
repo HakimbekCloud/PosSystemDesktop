@@ -23,13 +23,30 @@ public partial class PosViewModel : ObservableObject
     private List<Product> _allProducts = [];
     private System.Timers.Timer? _clockTimer;
 
-    public GameViewModel Game { get; }
+    public GameViewModel       Game          { get; }
+    public AddProductViewModel AddProductVm  { get; }
 
     [ObservableProperty]
     private bool _isGameOpen;
 
+    [ObservableProperty]
+    private bool _isAddProductOpen;
+
     [RelayCommand]
     private void ToggleGame() => IsGameOpen = !IsGameOpen;
+
+    [RelayCommand]
+    private async Task ToggleAddProduct()
+    {
+        if (IsAddProductOpen)
+        {
+            IsAddProductOpen = false;
+            return;
+        }
+        AddProductVm.Reset();
+        IsAddProductOpen = true;
+        await AddProductVm.LoadAsync();
+    }
 
     public PosViewModel(
         ProductRepository products,
@@ -39,7 +56,8 @@ public partial class PosViewModel : ObservableObject
         AuthService auth,
         ConnectivityService connectivity,
         SettingsRepository settings,
-        GameViewModel game)
+        GameViewModel game,
+        AddProductViewModel addProduct)
     {
         _products = products;
         _customers = customers;
@@ -48,8 +66,10 @@ public partial class PosViewModel : ObservableObject
         _auth = auth;
         _connectivity = connectivity;
         _settings = settings;
-        Game = game;
+        Game         = game;
+        AddProductVm = addProduct;
 
+        addProduct.ProductSaved += OnProductSaved;
         CartItems.CollectionChanged += OnCartCollectionChanged;
         _sync.StatusChanged += OnSyncStatusChanged;
 
@@ -191,6 +211,7 @@ public partial class PosViewModel : ObservableObject
         Categories.Clear();
         Categories.Add(new CategoryViewModel { Id = 0, Name = "Barchasi" });
 
+        // Named categories (seed data / locally categorized products)
         foreach (var cat in _allProducts
             .Where(p => p.CategoryId.HasValue)
             .GroupBy(p => new { p.CategoryId, p.CategoryName })
@@ -199,6 +220,10 @@ public partial class PosViewModel : ObservableObject
         {
             Categories.Add(cat);
         }
+
+        // Products from the server have no local category — show them under a virtual group
+        if (_allProducts.Any(p => !p.CategoryId.HasValue && !string.IsNullOrEmpty(p.RemoteUuid)))
+            Categories.Add(new CategoryViewModel { Id = -1, Name = "Server mahsulotlari" });
 
         SelectedCategory = Categories.FirstOrDefault(c => c.Id == savedCategoryId)
                            ?? Categories.First();
@@ -228,6 +253,8 @@ public partial class PosViewModel : ObservableObject
 
         if (SelectedCategory?.Id > 0)
             result = result.Where(p => p.CategoryId == SelectedCategory.Id);
+        else if (SelectedCategory?.Id == -1)
+            result = result.Where(p => !p.CategoryId.HasValue && !string.IsNullOrEmpty(p.RemoteUuid));
 
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
@@ -332,9 +359,10 @@ public partial class PosViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCheckout))]
     private async Task CheckoutAsync()
     {
+        var localId = Guid.NewGuid().ToString();
         var sale = new Sale
         {
-            LocalId             = Guid.NewGuid().ToString(),
+            LocalId             = localId,
             CustomerId          = _selectedCustomerId,
             CustomerRemoteUuid  = _selectedCustomerRemoteUuid,
             CustomerName        = _selectedCustomerId.HasValue ? SelectedCustomerDisplay : "",
@@ -347,6 +375,7 @@ public partial class PosViewModel : ObservableObject
             CreatedAt           = DateTime.Now,
             Items               = CartItems.Select(i => new SaleItem
             {
+                SaleLocalId       = localId,
                 ProductId         = i.ProductId,
                 ProductRemoteUuid = i.ProductRemoteUuid,
                 ProductName       = i.ProductName,
@@ -459,21 +488,39 @@ public partial class PosViewModel : ObservableObject
             RefreshTotals();
     }
 
+    private void OnProductSaved(object? sender, EventArgs e)
+    {
+        IsAddProductOpen = false;
+        AddProductVm.Reset();
+        // Sync in background; OnSyncStatusChanged will reload products on success
+        _ = Task.Run(async () =>
+        {
+            try { await _sync.SyncAllAsync(); }
+            catch { }
+        });
+    }
+
     private void OnSyncStatusChanged(object? sender, EventArgs e)
     {
         var text = _sync.Status switch
         {
             SyncStatus.Syncing => "Sinxronlanmoqda...",
             SyncStatus.Success => $"Yangilandi: {_sync.LastSyncAt:HH:mm}",
-            SyncStatus.Error   => "Sinxronlash xatosi",
+            SyncStatus.Error   => string.IsNullOrEmpty(_sync.LastError)
+                                      ? "Sinxronlash xatosi"
+                                      : $"Xato: {_sync.LastError}",
             _                  => "Offline rejim"
         };
 
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
             SyncStatusText   = text;
-            IsOnline         = _sync.Status != SyncStatus.Error;
+            IsOnline         = _connectivity.IsOnline;
             PendingSyncCount = _sales.GetPendingCount();
+
+            // Reload products/customers into the UI after a background sync completes.
+            if (_sync.Status == SyncStatus.Success)
+                LoadLocalData();
         });
     }
 }

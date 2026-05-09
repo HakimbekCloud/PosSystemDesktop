@@ -169,6 +169,58 @@ public class PriceListDto
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = "";
+
+    [JsonPropertyName("active")]
+    public bool Active { get; set; } = true;
+}
+
+// ── Measurements ─────────────────────────────────────────────────────────────
+
+public class MeasurementDto
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("shortName")]
+    public string ShortName { get; set; } = "";
+
+    [JsonPropertyName("active")]
+    public bool Active { get; set; } = true;
+}
+
+// ── Product create ────────────────────────────────────────────────────────────
+
+public class CreateProductRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("measurementUuid")]
+    public string MeasurementUuid { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public int Type { get; set; }
+
+    [JsonPropertyName("price")]
+    public decimal? Price { get; set; }
+
+    [JsonPropertyName("cost")]
+    public decimal? Cost { get; set; }
+
+    [JsonPropertyName("stock")]
+    public decimal? Stock { get; set; }
+
+    [JsonPropertyName("barcode")]
+    public string? Barcode { get; set; }
+
+    [JsonPropertyName("isPos")]
+    public bool IsPos { get; set; } = true;
 }
 
 // ── Order (sale sync) ─────────────────────────────────────────────────────────

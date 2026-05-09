@@ -8,3 +8,5 @@ public sealed class LoginSuccessMessage : ValueChangedMessage<string>
 }
 
 public sealed class LogoutMessage { }
+
+public sealed class SessionExpiredMessage { }

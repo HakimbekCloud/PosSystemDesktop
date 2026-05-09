@@ -1,0 +1,397 @@
+<Window x:Class="PosSystem.Views.SaleHistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Zakaz tarixi" Width="1060" Height="670"
+        MinWidth="720" MinHeight="480"
+        Background="#F0F4F8" WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══ HEADER ═══ -->
+        <Border Grid.Row="0" Background="#0D47A1">
+            <DockPanel Margin="16,0" LastChildFill="False">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="📋" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Zakaz tarixi" Foreground="White" FontSize="17"
+                               FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TotalLabel" Foreground="#90CAF9" FontSize="12"
+                               VerticalAlignment="Center" Margin="14,0,0,0"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="🔄 Yangilash" Click="OnRefreshClick"
+                            Padding="12,6" Margin="0,0,10,0" FontSize="13"
+                            Foreground="White" BorderThickness="0" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#1565C0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="6"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#1976D2"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="✕ Yopish" Click="OnCloseClick"
+                            Padding="12,6" FontSize="13"
+                            Foreground="White" BorderThickness="0" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#C62828"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="6"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#B71C1C"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ═══ FILTER BAR ═══ -->
+        <Border Grid.Row="1" Background="White" Padding="16,10"
+                BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Ko'rsatish:" Foreground="#546E7A" FontSize="13"
+                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <RadioButton x:Name="FilterAll" Content="Hammasi" GroupName="SaleFilter"
+                             IsChecked="True" Checked="OnFilterChanged"
+                             Margin="0,0,16,0" VerticalAlignment="Center" FontSize="13"/>
+                <RadioButton x:Name="FilterPending" Content="⏳  Kutilayotganlar" GroupName="SaleFilter"
+                             Checked="OnFilterChanged"
+                             Margin="0,0,16,0" VerticalAlignment="Center" FontSize="13" Foreground="#F57F17"/>
+                <RadioButton x:Name="FilterSynced" Content="✓  Yuborilganlar" GroupName="SaleFilter"
+                             Checked="OnFilterChanged"
+                             VerticalAlignment="Center" FontSize="13" Foreground="#2E7D32"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══ CONTENT ═══ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="430" MinWidth="280"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*" MinWidth="280"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Left: sales list ── -->
+            <Border Grid.Column="0" Background="White"
+                    BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
+                <ListView x:Name="SalesList"
+                          BorderThickness="0" Background="Transparent"
+                          SelectionChanged="OnSaleSelected"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding" Value="0,6"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.View>
+                        <GridView>
+                            <!-- Status icon -->
+                            <GridViewColumn Header="" Width="38">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StatusIcon}" FontSize="14"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="{Binding StatusColor,
+                                                               Converter={StaticResource HexToBrushConverter}}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <!-- Date -->
+                            <GridViewColumn Header="Sana" Width="90">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DateText}" FontSize="12" Foreground="#546E7A"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <!-- Customer -->
+                            <GridViewColumn Header="Mijoz" Width="120">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding CustomerText}" FontSize="13"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="110"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <!-- Items count -->
+                            <GridViewColumn Header="Soni" Width="44">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ItemsCount}" FontSize="12"
+                                                   Foreground="#9E9E9E" HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <!-- Payment -->
+                            <GridViewColumn Header="To'lov" Width="78">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding PaymentText}" FontSize="12" Foreground="#546E7A"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <!-- Total -->
+                            <GridViewColumn Header="Jami" Width="86">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding TotalText}" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="#0D47A1" TextAlignment="Right"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                          Background="#E0E0E0" ResizeBehavior="PreviousAndNext"/>
+
+            <!-- ── Right: detail ── -->
+            <Grid Grid.Column="2" Background="White">
+
+                <!-- Empty state -->
+                <StackPanel x:Name="EmptyDetail"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="📋" FontSize="48" HorizontalAlignment="Center" Opacity="0.18"/>
+                    <TextBlock Text="Zakaz tanlang" FontSize="15" Foreground="#BDBDBD"
+                               HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                </StackPanel>
+
+                <!-- Detail scroll view (hidden until selected) -->
+                <ScrollViewer x:Name="DetailContent" Padding="20,16"
+                              VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                    <StackPanel>
+
+                        <!-- Status + date -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="StatusBadge" Grid.Column="0" CornerRadius="6" Padding="10,5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="DetailStatusIcon" FontSize="14"
+                                               Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DetailStatusText" FontSize="13"
+                                               FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock x:Name="DetailDate" Grid.Column="2"
+                                       FontSize="13" Foreground="#546E7A" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Info card -->
+                        <Border Background="#F8FAFC" CornerRadius="8" Padding="14,12" Margin="0,0,0,18">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Mijoz:"
+                                           FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="DetailCustomer"
+                                           Grid.Row="0" Grid.Column="1"
+                                           FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="To'lov usuli:"
+                                           FontSize="12" Foreground="#9E9E9E" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="DetailPayment"
+                                           Grid.Row="2" Grid.Column="1"
+                                           FontSize="13" VerticalAlignment="Center"/>
+
+                                <TextBlock x:Name="DetailNoteLabel"
+                                           Grid.Row="4" Grid.Column="0" Text="Izoh:"
+                                           FontSize="12" Foreground="#9E9E9E"
+                                           VerticalAlignment="Top" Visibility="Collapsed"/>
+                                <TextBlock x:Name="DetailNote"
+                                           Grid.Row="4" Grid.Column="1"
+                                           FontSize="13" Foreground="#546E7A"
+                                           TextWrapping="Wrap" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Items header -->
+                        <TextBlock Text="MAHSULOTLAR" FontSize="10" FontWeight="Bold"
+                                   Foreground="#9E9E9E" Margin="0,0,0,8"/>
+
+                        <!-- Items table -->
+                        <Border BorderBrush="#E0E6F0" BorderThickness="1" CornerRadius="8"
+                                Margin="0,0,0,18" ClipToBounds="True">
+                            <StackPanel>
+                                <!-- Table header -->
+                                <Grid Background="#F8FAFC">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="72"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="90"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Mahsulot"
+                                               Padding="12,8,4,8" FontSize="11" FontWeight="Bold" Foreground="#607D8B"/>
+                                    <TextBlock Grid.Column="1" Text="Miqdor"
+                                               Padding="4,8" FontSize="11" FontWeight="Bold"
+                                               Foreground="#607D8B" TextAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Narx"
+                                               Padding="4,8" FontSize="11" FontWeight="Bold"
+                                               Foreground="#607D8B" TextAlignment="Right"/>
+                                    <TextBlock Grid.Column="3" Text="Jami"
+                                               Padding="4,8,12,8" FontSize="11" FontWeight="Bold"
+                                               Foreground="#607D8B" TextAlignment="Right"/>
+                                </Grid>
+                                <Separator Background="#E0E6F0" Height="1" Margin="0"/>
+                                <!-- Rows -->
+                                <ItemsControl x:Name="DetailItems">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="72"/>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="12,8,4,8">
+                                                    <TextBlock Text="{Binding ProductName}"
+                                                               FontSize="13" FontWeight="Medium"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding ProductCode}"
+                                                               FontSize="11" Foreground="#BDBDBD"
+                                                               Visibility="{Binding ProductCode,
+                                                               Converter={StaticResource StringToVisibilityConverter}}"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1"
+                                                           Padding="4,8" TextAlignment="Center" FontSize="12">
+                                                    <Run Text="{Binding Quantity, Mode=OneWay, StringFormat='{}{0:N2}'}"/>
+                                                    <Run Text=" "/><Run Text="{Binding Unit, Mode=OneWay}"
+                                                         Foreground="#9E9E9E" FontSize="10"/>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="2"
+                                                           Padding="4,8" TextAlignment="Right"
+                                                           FontSize="12" Foreground="#546E7A">
+                                                    <Run Text="{Binding Price, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="3"
+                                                           Padding="4,8,12,8" TextAlignment="Right"
+                                                           FontSize="13" FontWeight="SemiBold" Foreground="#0D47A1">
+                                                    <Run Text="{Binding Total, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
+                                                </TextBlock>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Totals -->
+                        <Border Background="#F8FAFC" CornerRadius="8" Padding="14,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="1"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Subtotal"
+                                           Foreground="#78909C" FontSize="13"/>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock x:Name="DetailSubtotalAmt" FontSize="13" FontWeight="SemiBold"/>
+                                    <TextBlock Text=" so'm" Foreground="#9E9E9E" FontSize="13"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Chegirma"
+                                           Foreground="#78909C" FontSize="13"/>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock x:Name="DetailDiscountAmt" FontSize="13" FontWeight="SemiBold"/>
+                                    <TextBlock Text=" so'm" Foreground="#9E9E9E" FontSize="13"/>
+                                </StackPanel>
+
+                                <Separator Grid.Row="3" Grid.ColumnSpan="2"
+                                           Background="#E0E0E0" Margin="0,4"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="JAMI"
+                                           FontSize="15" FontWeight="Bold" Foreground="#1A237E"/>
+                                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock x:Name="DetailTotalAmt" FontSize="18"
+                                               FontWeight="Bold" Foreground="#0D47A1"/>
+                                    <TextBlock Text=" so'm" FontSize="12" Foreground="#1565C0"
+                                               VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="To'langan"
+                                           Foreground="#78909C" FontSize="13"/>
+                                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock x:Name="DetailPaidAmt" FontSize="13"
+                                               FontWeight="SemiBold" Foreground="#2E7D32"/>
+                                    <TextBlock Text=" so'm" Foreground="#9E9E9E" FontSize="13"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="Qaytim"
+                                           Foreground="#78909C" FontSize="13"/>
+                                <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock x:Name="DetailChangeAmt" FontSize="13" FontWeight="SemiBold"/>
+                                    <TextBlock Text=" so'm" Foreground="#9E9E9E" FontSize="13"/>
+                                </StackPanel>
+
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

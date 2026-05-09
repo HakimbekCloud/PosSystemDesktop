@@ -12,13 +12,12 @@ public partial class LoginViewModel : BaseViewModel
     public LoginViewModel(AuthService auth)
     {
         _auth = auth;
-        var saved = auth.GetLastServerAddress();
-        ServerAddress = string.IsNullOrEmpty(saved) ? "http://localhost:8080" : saved;
+        TenantSubdomain = auth.GetLastTenantSubdomain();
     }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
-    private string _serverAddress = "";
+    private string _tenantSubdomain = "";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
@@ -28,9 +27,9 @@ public partial class LoginViewModel : BaseViewModel
     [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
     private string _password = "";
 
-    partial void OnServerAddressChanged(string value) => ErrorMessage = "";
-    partial void OnUsernameChanged(string value)      => ErrorMessage = "";
-    partial void OnPasswordChanged(string value)      => ErrorMessage = "";
+    partial void OnTenantSubdomainChanged(string value) => ErrorMessage = "";
+    partial void OnUsernameChanged(string value)        => ErrorMessage = "";
+    partial void OnPasswordChanged(string value)        => ErrorMessage = "";
 
     [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
@@ -39,7 +38,7 @@ public partial class LoginViewModel : BaseViewModel
         ErrorMessage = "";
         try
         {
-            var (success, message) = await _auth.LoginAsync(ServerAddress, Username, Password);
+            var (success, message) = await _auth.LoginAsync(TenantSubdomain, Username, Password);
             if (success)
                 WeakReferenceMessenger.Default.Send(
                     new LoginSuccessMessage(_auth.GetCurrentUserName() ?? Username));
@@ -57,8 +56,8 @@ public partial class LoginViewModel : BaseViewModel
     }
 
     private bool CanLogin() =>
-        !string.IsNullOrWhiteSpace(ServerAddress) &&
-        !string.IsNullOrWhiteSpace(Username) &&
-        !string.IsNullOrWhiteSpace(Password) &&
+        !string.IsNullOrWhiteSpace(TenantSubdomain) &&
+        !string.IsNullOrWhiteSpace(Username)        &&
+        !string.IsNullOrWhiteSpace(Password)        &&
         !IsBusy;
 }

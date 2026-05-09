@@ -23,6 +23,14 @@ public partial class MainWindow : Window
 
         WeakReferenceMessenger.Default.Register<LogoutMessage>(this,
             (_, _) => Dispatcher.Invoke(NavigateToLogin));
+
+        WeakReferenceMessenger.Default.Register<SessionExpiredMessage>(this, (_, _) =>
+            Dispatcher.Invoke(() =>
+            {
+                if (MainContent.Content is LoginView) return; // already on login page
+                _auth.Logout();
+                NavigateToLogin();
+            }));
     }
 
     protected override void OnSourceInitialized(EventArgs e)

@@ -5,6 +5,10 @@ namespace PosSystem.Services;
 
 public class AuthService(ApiClient api, SettingsRepository settings)
 {
+    // Hardcoded for localhost development.
+    // Production: build URL from subdomain + domain (e.g. https://{subdomain}.example.com).
+    private const string BaseUrl = "http://localhost:8080";
+
     public bool HasValidSession() =>
         !string.IsNullOrEmpty(settings.Get("auth_token"));
 
@@ -14,17 +18,19 @@ public class AuthService(ApiClient api, SettingsRepository settings)
     public long GetCurrentUserId() =>
         long.TryParse(settings.Get("user_id"), out var id) ? id : 0;
 
-    public string GetLastServerAddress() =>
-        settings.Get("api_base_url") ?? "";
+    public string GetLastTenantSubdomain() =>
+        settings.Get("tenant_subdomain") ?? "";
 
     public async Task<(bool Success, string Message)> LoginAsync(
-        string serverAddress, string username, string password)
+        string tenantSubdomain, string username, string password)
     {
-        if (string.IsNullOrWhiteSpace(serverAddress))
-            return (false, "Server manzilini kiriting");
+        if (string.IsNullOrWhiteSpace(tenantSubdomain))
+            return (false, "Tashkilot kodini kiriting");
 
-        settings.Set("api_base_url", serverAddress.TrimEnd('/'));
+        settings.Set("api_base_url",     BaseUrl);
+        settings.Set("tenant_subdomain", tenantSubdomain.Trim());
         api.ApplyBaseUrl();
+        api.ApplyTenantHeader();
 
         try
         {
@@ -58,5 +64,6 @@ public class AuthService(ApiClient api, SettingsRepository settings)
         settings.Remove("user_name");
         settings.Remove("user_id");
         api.ApplyAuthToken();
+        api.ApplyTenantHeader();
     }
 }
