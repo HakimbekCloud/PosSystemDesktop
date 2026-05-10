@@ -88,6 +88,9 @@ public class ProductDto
     [JsonPropertyName("isDelete")]
     public bool IsDelete { get; set; }
 
+    [JsonPropertyName("updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
+
     [JsonPropertyName("barcodes")]
     public List<ProductBarcodeDto> Barcodes { get; set; } = [];
 
@@ -134,6 +137,9 @@ public class CustomerDto
 
     [JsonPropertyName("totalDebt")]
     public decimal TotalDebt { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
 }
 
 // ── Reference data ────────────────────────────────────────────────────────────

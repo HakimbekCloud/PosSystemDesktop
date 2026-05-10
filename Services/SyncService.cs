@@ -84,6 +84,10 @@ public class SyncService
             { errors.Add("Sessiya muddati tugagan"); }
             catch (Exception ex) { errors.Add($"Ma'lumotnoma: {ex.Message}"); }
 
+            // Sales first so the backend stock is already decremented when we fetch products
+            try { await SyncPendingSalesAsync(); }
+            catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
+
             try { await SyncProductsAsync(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             { errors.Add("Sessiya muddati tugagan"); }
@@ -93,9 +97,6 @@ public class SyncService
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             { errors.Add("Sessiya muddati tugagan"); }
             catch (Exception ex) { errors.Add($"Mijozlar: {ex.Message}"); }
-
-            try { await SyncPendingSalesAsync(); }
-            catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
 
             LastSyncAt = DateTime.Now;
             _settings.Set("last_sync_at", LastSyncAt.Value.ToString("O"));
@@ -220,7 +221,7 @@ public class SyncService
                 Unit         = dto.MeasurementShortName ?? dto.MeasurementName ?? "dona",
                 Stock        = dto.Stock,
                 IsActive     = dto.IsPos && !dto.IsDelete,
-                UpdatedAt    = DateTime.UtcNow
+                UpdatedAt    = dto.UpdatedAt?.ToUniversalTime() ?? DateTime.UtcNow
             };
         }));
 
@@ -242,7 +243,7 @@ public class SyncService
             Phone      = dto.Phone   ?? "",
             Address    = dto.Address ?? "",
             Balance    = dto.TotalDebt,
-            UpdatedAt  = DateTime.UtcNow
+            UpdatedAt  = dto.UpdatedAt?.ToUniversalTime() ?? DateTime.UtcNow
         }));
 
         _customers.DeleteLocalOnly();

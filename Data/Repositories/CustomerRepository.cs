@@ -49,6 +49,7 @@ public class CustomerRepository(IDbContextFactory<AppDbContext> factory)
             }
             else
             {
+                // Always update: backend is the source of truth
                 customer.Id = existing.Id;
                 db.Entry(existing).CurrentValues.SetValues(customer);
             }

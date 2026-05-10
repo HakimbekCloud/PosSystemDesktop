@@ -33,11 +33,9 @@ public class ProductRepository(IDbContextFactory<AppDbContext> factory)
         {
             Product? existing = null;
 
-            // Prefer UUID-based lookup for server-synced products
             if (!string.IsNullOrEmpty(product.RemoteUuid))
                 existing = db.Products.FirstOrDefault(p => p.RemoteUuid == product.RemoteUuid);
 
-            // Fall back to integer PK (seed data / legacy)
             if (existing is null && product.Id > 0)
                 existing = db.Products.Find(product.Id);
 
@@ -47,10 +45,21 @@ public class ProductRepository(IDbContextFactory<AppDbContext> factory)
             }
             else
             {
-                product.Id = existing.Id; // keep local PK stable
+                // Always update: backend is the source of truth for all fields
+                product.Id = existing.Id;
                 db.Entry(existing).CurrentValues.SetValues(product);
             }
         }
+        db.SaveChanges();
+    }
+
+    public void DecrementStock(string remoteUuid, decimal quantity)
+    {
+        if (string.IsNullOrEmpty(remoteUuid) || quantity <= 0) return;
+        using var db = factory.CreateDbContext();
+        var product = db.Products.FirstOrDefault(p => p.RemoteUuid == remoteUuid);
+        if (product is null) return;
+        product.Stock = Math.Max(0, product.Stock - quantity);
         db.SaveChanges();
     }
 }

@@ -407,7 +407,15 @@ public partial class PosViewModel : ObservableObject
         };
 
         _sales.Add(sale);
+
+        // Decrement stock immediately so the product grid reflects the sale at once
+        foreach (var item in sale.Items)
+            _products.DecrementStock(item.ProductRemoteUuid ?? "", item.Quantity);
+
         ClearCart();
+
+        _allProducts = _products.GetAll();
+        ApplyFilters();
 
         _ = Task.Run(async () =>
         {
