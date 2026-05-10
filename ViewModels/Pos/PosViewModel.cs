@@ -178,6 +178,24 @@ public partial class PosViewModel : ObservableObject
     [ObservableProperty]
     private int _pendingSyncCount;
 
+    [ObservableProperty]
+    private bool _isSyncErrorPanelOpen;
+
+    public ObservableCollection<string> SyncErrors { get; } = [];
+
+    [RelayCommand]
+    private void ToggleSyncErrorPanel() => IsSyncErrorPanelOpen = !IsSyncErrorPanelOpen;
+
+    [RelayCommand]
+    private void ClearAllSyncErrors()
+    {
+        SyncErrors.Clear();
+        IsSyncErrorPanelOpen = false;
+    }
+
+    [RelayCommand]
+    private void ClearSyncError(string error) => SyncErrors.Remove(error);
+
     // ── Initialization ─────────────────────────────────────────────────────────
 
     public async Task InitializeAsync()
@@ -506,9 +524,7 @@ public partial class PosViewModel : ObservableObject
         {
             SyncStatus.Syncing => "Sinxronlanmoqda...",
             SyncStatus.Success => $"Yangilandi: {_sync.LastSyncAt:HH:mm}",
-            SyncStatus.Error   => string.IsNullOrEmpty(_sync.LastError)
-                                      ? "Sinxronlash xatosi"
-                                      : $"Xato: {_sync.LastError}",
+            SyncStatus.Error   => "Sinxronlash xatosi",
             _                  => "Offline rejim"
         };
 
@@ -518,9 +534,17 @@ public partial class PosViewModel : ObservableObject
             IsOnline         = _connectivity.IsOnline;
             PendingSyncCount = _sales.GetPendingCount();
 
-            // Reload products/customers into the UI after a background sync completes.
-            if (_sync.Status == SyncStatus.Success)
+            if (_sync.Status == SyncStatus.Error)
+            {
+                SyncErrors.Clear();
+                foreach (var err in _sync.LastErrors)
+                    SyncErrors.Add(err);
+            }
+            else if (_sync.Status == SyncStatus.Success)
+            {
+                SyncErrors.Clear();
                 LoadLocalData();
+            }
         });
     }
 }

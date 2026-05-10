@@ -38,6 +38,8 @@ public partial class App : Application
         sc.AddSingleton<ProductRepository>();
         sc.AddSingleton<CustomerRepository>();
         sc.AddSingleton<SaleRepository>();
+        sc.AddSingleton<PriceListRepository>();
+        sc.AddSingleton<ProductTypeRepository>();
 
         // ── Services ──────────────────────────────────────────────────────────
         sc.AddSingleton<ConnectivityService>();
@@ -57,7 +59,10 @@ public partial class App : Application
         // ── ViewModels (transient: fresh per navigation) ───────────────────────
         sc.AddTransient<LoginViewModel>();
         sc.AddTransient<GameViewModel>();
-        sc.AddTransient<AddProductViewModel>();
+        sc.AddTransient<AddProductViewModel>(sp => new AddProductViewModel(
+            sp.GetRequiredService<ApiClient>(),
+            sp.GetRequiredService<PriceListRepository>(),
+            sp.GetRequiredService<ProductTypeRepository>()));
         sc.AddTransient<PosViewModel>();
 
         // ── Views ─────────────────────────────────────────────────────────────
@@ -87,6 +92,20 @@ public partial class App : Application
     // Each statement is wrapped in try/catch — SQLite throws on duplicate column.
     private static void ApplySchemaMigrations(AppDbContext db)
     {
+        // New tables (CREATE TABLE IF NOT EXISTS is idempotent)
+        try { db.Database.ExecuteSqlRaw(
+            "CREATE TABLE IF NOT EXISTS PriceLists (" +
+            "Id INTEGER PRIMARY KEY, Name TEXT NOT NULL DEFAULT '', " +
+            "Currency TEXT NOT NULL DEFAULT '', CurrencyId INTEGER NOT NULL DEFAULT 1, " +
+            "Active INTEGER NOT NULL DEFAULT 1)"); }
+        catch { }
+
+        try { db.Database.ExecuteSqlRaw(
+            "CREATE TABLE IF NOT EXISTS ProductTypes (" +
+            "Id INTEGER PRIMARY KEY, Name TEXT NOT NULL DEFAULT '', " +
+            "Active INTEGER NOT NULL DEFAULT 1)"); }
+        catch { }
+
         var columns = new[]
         {
             "ALTER TABLE Products  ADD COLUMN RemoteUuid         TEXT NOT NULL DEFAULT ''",

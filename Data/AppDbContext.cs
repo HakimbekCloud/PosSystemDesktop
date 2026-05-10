@@ -12,6 +12,8 @@ public class AppDbContext : DbContext
     public DbSet<Sale>       Sales      => Set<Sale>();
     public DbSet<SaleItem>   SaleItems  => Set<SaleItem>();
     public DbSet<AppSetting> Settings   => Set<AppSetting>();
+    public DbSet<PriceList>   PriceLists   => Set<PriceList>();
+    public DbSet<ProductType> ProductTypes => Set<ProductType>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {

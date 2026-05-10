@@ -138,6 +138,18 @@ public class CustomerDto
 
 // ── Reference data ────────────────────────────────────────────────────────────
 
+public class ProductTypeDto
+{
+    [JsonPropertyName("id")]
+    public long Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("active")]
+    public bool Active { get; set; } = true;
+}
+
 public class BranchDto
 {
     [JsonPropertyName("uuid")]
@@ -196,6 +208,18 @@ public class MeasurementDto
 
 // ── Product create ────────────────────────────────────────────────────────────
 
+public class CreateProductPriceRequest
+{
+    [JsonPropertyName("priceListId")]
+    public long PriceListId { get; set; }
+
+    [JsonPropertyName("cashPrice")]
+    public decimal CashPrice { get; set; }
+
+    [JsonPropertyName("cashCurrency")]
+    public long CashCurrency { get; set; }
+}
+
 public class CreateProductRequest
 {
     [JsonPropertyName("name")]
@@ -205,7 +229,7 @@ public class CreateProductRequest
     public string MeasurementUuid { get; set; } = "";
 
     [JsonPropertyName("type")]
-    public int Type { get; set; }
+    public long Type { get; set; }
 
     [JsonPropertyName("price")]
     public decimal? Price { get; set; }
@@ -221,6 +245,9 @@ public class CreateProductRequest
 
     [JsonPropertyName("isPos")]
     public bool IsPos { get; set; } = true;
+
+    [JsonPropertyName("prices")]
+    public List<CreateProductPriceRequest>? Prices { get; set; }
 }
 
 // ── Order (sale sync) ─────────────────────────────────────────────────────────

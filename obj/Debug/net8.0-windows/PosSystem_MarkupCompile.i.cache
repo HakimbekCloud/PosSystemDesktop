@@ -12,9 +12,9 @@ TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR
 C:\Users\User\source\repos\PosSystem\PosSystem\App.xaml
 6-2011519971
 
-39-2133765478
+44-1648496784
 223-1366462452
 MainWindow.xaml;Views\Game\GameView.xaml;Views\LoginView.xaml;Views\NetworkLogWindow.xaml;Views\Pos\PosView.xaml;Views\SaleHistoryWindow.xaml;
 
-False
+True
 

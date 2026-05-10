@@ -153,6 +153,14 @@ public class ApiClient
         return result?.Content ?? [];
     }
 
+    public async Task<List<ProductTypeDto>> GetProductTypesAsync()
+    {
+        var resp = await _http.GetAsync("api/product-types?page=0&size=50");
+        await EnsureSuccessAsync(resp);
+        var result = await resp.Content.ReadFromJsonAsync<PageResponse<ProductTypeDto>>(JsonOptions);
+        return result?.Content ?? [];
+    }
+
     // ── Sale sync ─────────────────────────────────────────────────────────────
 
     public async Task<string> SyncSaleAsync(
@@ -166,11 +174,73 @@ public class ApiClient
             _                    => "CASH"
         };
 
+        // Only include items that have a server UUID, valid price and quantity.
+        // API validation: quantity >= 0.001, price >= 0.01
+        var validItems = sale.Items
+            .Where(i => !string.IsNullOrEmpty(i.ProductRemoteUuid)
+                        && i.Price    >= 0.01m
+                        && i.Quantity >= 0.001m)
+            .Select(i => new CreateOrderItemRequest
+            {
+                ProductUuid   = i.ProductRemoteUuid,
+                Quantity      = i.Quantity,
+                Price         = i.Price,
+                DiscountPrice = Math.Max(0, i.Discount)
+            }).ToList();
+
+        if (validItems.Count == 0)
+            throw new InvalidOperationException("Serverga yuborish uchun yaroqli mahsulotlar yo'q");
+
+        // API invariant: sum(transactions.amount) must EXACTLY equal
+        //                sum(item.price * item.quantity - item.discountPrice)
+        var apiTotal = validItems.Sum(i => i.Price * i.Quantity - i.DiscountPrice);
+        if (apiTotal <= 0)
+            throw new InvalidOperationException("Zakaz summasi noldan katta bo'lishi kerak");
+
+        // Build transactions that sum precisely to apiTotal.
+        //
+        // sale.PaidAmount   = what the customer physically paid (may include change overpayment)
+        // sale.TotalAmount  = discounted cart total  (= subtotal - cart discount)
+        // Fully paid        = PaidAmount >= TotalAmount
+        //
+        // If fully paid, send the whole apiTotal as a single non-debt transaction.
+        // If partially paid (with a linked customer), split into a paid + debt pair.
+        // If no customer exists, we cannot register debt → treat as fully paid on the server.
+
+        var hasCustomer  = !string.IsNullOrEmpty(sale.CustomerRemoteUuid);
+        var isFullyPaid  = sale.PaidAmount >= sale.TotalAmount;
+
+        decimal paidPortion = isFullyPaid || !hasCustomer
+            ? apiTotal
+            : Math.Clamp(sale.PaidAmount, 0, apiTotal);
+        decimal debtPortion = apiTotal - paidPortion;
+
+        var transactions = new List<CreateTransactionRequest>();
+
+        if (paidPortion > 0)
+            transactions.Add(new CreateTransactionRequest
+            {
+                CashboxUuid = cashboxUuid,
+                Amount      = paidPortion,
+                CurrencyId  = currencyId,
+                IsDebt      = false,
+                IsCashback  = false
+            });
+
+        if (debtPortion > 0)
+            transactions.Add(new CreateTransactionRequest
+            {
+                CashboxUuid = cashboxUuid,
+                Amount      = debtPortion,
+                CurrencyId  = currencyId,
+                IsDebt      = true,
+                IsCashback  = false
+            });
+
         var order = new CreateOrderRequest
         {
             BranchUuid   = branchUuid,
-            CustomerUuid = string.IsNullOrEmpty(sale.CustomerRemoteUuid)
-                               ? null : sale.CustomerRemoteUuid,
+            CustomerUuid = hasCustomer ? sale.CustomerRemoteUuid : null,
             CurrencyId   = currencyId,
             PaymentType  = paymentType,
             IsPos        = true,
@@ -178,26 +248,8 @@ public class ApiClient
             DeliveryType = "SELF",
             PriceListId  = priceListId,
             Comment      = string.IsNullOrEmpty(sale.Note) ? null : sale.Note,
-            Items = sale.Items
-                .Where(i => !string.IsNullOrEmpty(i.ProductRemoteUuid))
-                .Select(i => new CreateOrderItemRequest
-                {
-                    ProductUuid   = i.ProductRemoteUuid,
-                    Quantity      = i.Quantity,
-                    Price         = i.Price,
-                    DiscountPrice = i.Discount
-                }).ToList(),
-            Transactions =
-            [
-                new CreateTransactionRequest
-                {
-                    CashboxUuid = cashboxUuid,
-                    Amount      = Math.Min(sale.PaidAmount, sale.TotalAmount),
-                    CurrencyId  = currencyId,
-                    IsDebt      = sale.PaidAmount < sale.TotalAmount,
-                    IsCashback  = false
-                }
-            ]
+            Items        = validItems,
+            Transactions = transactions
         };
 
         var response = await _http.PostAsJsonAsync("api/orders", order);

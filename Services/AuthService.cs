@@ -1,9 +1,14 @@
 using System.Net.Http;
+using Microsoft.EntityFrameworkCore;
+using PosSystem.Data;
 using PosSystem.Data.Repositories;
 
 namespace PosSystem.Services;
 
-public class AuthService(ApiClient api, SettingsRepository settings)
+public class AuthService(
+    ApiClient api,
+    SettingsRepository settings,
+    IDbContextFactory<AppDbContext> dbFactory)
 {
     // Hardcoded for localhost development.
     // Production: build URL from subdomain + domain (e.g. https://{subdomain}.example.com).
@@ -59,11 +64,34 @@ public class AuthService(ApiClient api, SettingsRepository settings)
 
     public void Logout()
     {
-        settings.Remove("auth_token");
-        settings.Remove("refresh_token");
-        settings.Remove("user_name");
-        settings.Remove("user_id");
+        ClearUserData();
+
+        // Re-apply auth headers so the HttpClient no longer carries the old token.
         api.ApplyAuthToken();
         api.ApplyTenantHeader();
+    }
+
+    private void ClearUserData()
+    {
+        // Wipe all business data so a new user starts clean.
+        using var db = dbFactory.CreateDbContext();
+        db.Database.ExecuteSqlRaw("DELETE FROM SaleItems");
+        db.Database.ExecuteSqlRaw("DELETE FROM Sales");
+        db.Database.ExecuteSqlRaw("DELETE FROM Products");
+        db.Database.ExecuteSqlRaw("DELETE FROM Customers");
+        db.Database.ExecuteSqlRaw("DELETE FROM PriceLists");
+        db.Database.ExecuteSqlRaw("DELETE FROM ProductTypes");
+
+        // Clear user- and tenant-specific settings.
+        // api_base_url, tablet_mode, ui_scale are intentionally kept.
+        foreach (var key in new[]
+        {
+            "auth_token", "refresh_token",
+            "user_name",  "user_id",  "tenant_name", "tenant_subdomain",
+            "default_branch_uuid",  "default_cashbox_uuid",
+            "default_currency_id",  "default_price_list_id",
+            "last_sync_at"
+        })
+            settings.Remove(key);
     }
 }
