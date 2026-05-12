@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .pos-app-shell {
+    @apply grid min-h-screen bg-app-light text-neutral-900 antialiased;
+    grid-template-rows: 68px minmax(0, 1fr);
+  }
+
+  .pos-topbar {
+    @apply sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-brand-700 px-5 text-white shadow-sm;
+  }
+
+  .pos-topbar-section {
+    @apply flex min-w-0 items-center gap-3;
+  }
+
+  .pos-status-pill {
+    @apply inline-flex h-9 items-center gap-2 rounded-full border border-white/15 bg-white/15 px-4 text-sm font-medium text-white;
+  }
+
+  .pos-main-shell {
+    @apply grid min-h-0;
+    grid-template-columns: 184px minmax(0, 1fr);
+  }
+
+  .pos-sidebar {
+    @apply flex min-h-0 flex-col border-r border-neutral-200 bg-surface-muted p-4;
+  }
+
+  .pos-sidebar-nav {
+    @apply flex flex-1 flex-col gap-1;
+  }
+
+  .pos-nav-item {
+    @apply flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-neutral-600 transition-fast ease-standard hover:bg-brand-50 hover:text-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+
+  .pos-nav-item-active {
+    @apply bg-brand-50 text-brand-600;
+  }
+
+  .pos-sidebar-status {
+    @apply rounded-xl border border-brand-100 bg-brand-25 p-4 text-sm;
+  }
+
+  .pos-workspace {
+    @apply grid min-h-0 bg-app-light;
+  }
+
+  .pos-workspace-cashier {
+    grid-template-columns: minmax(480px, 1fr) 370px 290px;
+  }
+
+  .pos-workspace-inventory {
+    grid-template-columns: 300px minmax(0, 1fr) 360px;
+  }
+
+  .pos-workspace-analytics {
+    @apply gap-4 p-5;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .pos-panel {
+    @apply min-h-0 border-r border-neutral-200 bg-surface;
+  }
+
+  .pos-panel-muted {
+    @apply min-h-0 border-r border-neutral-200 bg-surface-muted;
+  }
+
+  .pos-panel-header {
+    @apply flex min-h-[68px] items-center gap-3 border-b border-neutral-200 bg-surface px-5 py-3;
+  }
+
+  .pos-panel-body {
+    @apply min-h-0 overflow-auto p-5;
+  }
+
+  .pos-sticky-actions {
+    @apply sticky bottom-0 z-30 border-t border-neutral-200 bg-white/95 p-4 shadow-lg backdrop-blur;
+  }
+
+  .pos-fast-access-bar {
+    @apply flex items-center gap-2 overflow-x-auto border-b border-neutral-200 bg-white px-5 py-3;
+  }
+
+  .pos-search-bar {
+    @apply h-12 w-full rounded-lg border border-neutral-200 bg-surface-muted px-4 text-sm text-neutral-900 placeholder:text-neutral-400 transition-fast ease-standard focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+
+  .pos-action-primary {
+    @apply inline-flex h-14 items-center justify-center rounded-xl bg-brand-500 px-6 text-base font-bold text-white shadow-brand transition-fast ease-standard hover:bg-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100 active:bg-brand-700;
+  }
+
+  .pos-action-success {
+    @apply inline-flex h-14 items-center justify-center rounded-xl bg-success-600 px-6 text-base font-bold text-white shadow-md transition-fast ease-standard hover:bg-success-700 focus:outline-none focus:ring-4 focus:ring-success-100;
+  }
+
+  .pos-card {
+    @apply rounded-xl border border-neutral-200 bg-white shadow-sm transition-fast ease-standard hover:border-brand-300 hover:shadow-md;
+  }
+
+  .pos-card-selected {
+    @apply border-brand-500 bg-brand-25 ring-2 ring-brand-100;
+  }
+
+  .pos-table-shell {
+    @apply min-h-0 overflow-hidden border border-neutral-200 bg-white;
+  }
+
+  .pos-table-header {
+    @apply grid min-h-10 items-center border-b border-neutral-200 bg-neutral-50 px-4 text-xs font-semibold uppercase tracking-wide text-neutral-500;
+  }
+
+  .pos-table-row {
+    @apply grid min-h-12 items-center border-b border-neutral-100 px-4 text-sm text-neutral-800 hover:bg-neutral-50;
+  }
+}
+
+@media (max-width: 1279px) {
+  .pos-main-shell {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .pos-sidebar {
+    @apply items-center px-3;
+  }
+
+  .pos-sidebar-label,
+  .pos-sidebar-status-text {
+    @apply hidden;
+  }
+
+  .pos-workspace-cashier {
+    grid-template-columns: minmax(420px, 1fr) 360px;
+    grid-template-areas:
+      "products cart"
+      "products payment";
+  }
+
+  .pos-products-panel {
+    grid-area: products;
+  }
+
+  .pos-cart-panel {
+    grid-area: cart;
+  }
+
+  .pos-payment-panel {
+    grid-area: payment;
+  }
+}
+
+@media (max-width: 900px) {
+  .pos-app-shell {
+    grid-template-rows: 64px minmax(0, 1fr);
+  }
+
+  .pos-main-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-sidebar {
+    @apply fixed bottom-0 left-0 right-0 z-50 h-16 flex-row border-r-0 border-t bg-white p-2;
+  }
+
+  .pos-sidebar-nav {
+    @apply flex-row justify-around;
+  }
+
+  .pos-workspace-cashier,
+  .pos-workspace-inventory {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-payment-panel {
+    @apply border-t;
+  }
+}

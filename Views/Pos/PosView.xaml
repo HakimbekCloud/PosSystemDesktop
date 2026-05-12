@@ -8,8 +8,8 @@
     <UserControl.Resources>
         <!-- Quantity +/- button -->
         <Style x:Key="QtyBtnStyle" TargetType="Button">
-            <Setter Property="Background" Value="#EEF2F7"/>
-            <Setter Property="Foreground" Value="#546E7A"/>
+            <Setter Property="Background" Value="#F1F5F9"/>
+            <Setter Property="Foreground" Value="#475569"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Width" Value="24"/>
             <Setter Property="FontSize" Value="16"/>
@@ -19,20 +19,26 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4"
+                        <Border x:Name="QtyRoot"
+                                RenderTransformOrigin="0.5,0.5"
+                                Background="{TemplateBinding Background}" CornerRadius="6"
                                 Padding="0,1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#CFD8DC"/>
-                                <Setter Property="Foreground" Value="#263238"/>
+                                <Setter Property="Background" Value="#E2E8F0"/>
+                                <Setter Property="Foreground" Value="#0F172A"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#B0BEC5"/>
+                                <Setter TargetName="QtyRoot" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.94" ScaleY="0.94"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="#CFD8DC"/>
+                                <Setter Property="Foreground" Value="#CBD5E1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -52,7 +58,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="TypeToggleRoot"
+                                RenderTransformOrigin="0.5,0.5"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="8" Padding="{TemplateBinding Padding}">
@@ -62,35 +70,106 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#E8EFF8"/>
                             </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="TypeToggleRoot" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#40516B"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="12,11"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="NavRoot"
+                                RenderTransformOrigin="0.5,0.5"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="12" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F2F7FF"/>
+                                <Setter Property="Foreground" Value="#155EEF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="NavRoot" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SelectedNavButtonStyle" TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+            <Setter Property="Background" Value="#EAF2FF"/>
+            <Setter Property="Foreground" Value="#155EEF"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="NavIconTextStyle" TargetType="TextBlock">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="InlineIconTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
         <!-- Payment type button: highlights when its CommandParameter matches PaymentType -->
         <Style x:Key="PayTypeBtn" TargetType="Button">
-            <Setter Property="Background" Value="#F5F7FA"/>
-            <Setter Property="Foreground" Value="#546E7A"/>
-            <Setter Property="BorderBrush" Value="#D1D9E6"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#344054"/>
+            <Setter Property="BorderBrush" Value="#D8E1EE"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
+                        <Border x:Name="PayTypeRoot"
+                                RenderTransformOrigin="0.5,0.5"
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                CornerRadius="13" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#E8EFF8"/>
+                                <Setter Property="Background" Value="#EEF2FF"/>
+                                <Setter Property="BorderBrush" Value="#93C5FD"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#D4E2F4"/>
+                                <Setter TargetName="PayTypeRoot" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -104,9 +183,10 @@
                             <Binding RelativeSource="{RelativeSource Self}" Path="CommandParameter"/>
                         </MultiBinding>
                     </DataTrigger.Binding>
-                    <Setter Property="Background"   Value="#1565C0"/>
-                    <Setter Property="Foreground"   Value="White"/>
-                    <Setter Property="BorderBrush"  Value="#0D47A1"/>
+                    <Setter Property="Background"   Value="#EAF2FF"/>
+                    <Setter Property="Foreground"   Value="#155EEF"/>
+                    <Setter Property="BorderBrush"  Value="#155EEF"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -117,26 +197,37 @@
             <ScaleTransform ScaleX="{Binding Scale}" ScaleY="{Binding Scale}"/>
         </Grid.LayoutTransform>
         <Grid.RowDefinitions>
-            <RowDefinition Height="56"/>
+            <RowDefinition Height="68"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- ═══════════════════ HEADER ═══════════════════ -->
         <Border Grid.Row="0" Background="#0D47A1">
-            <DockPanel Margin="16,0" LastChildFill="False">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.18" Color="#0B1F3A"/>
+            </Border.Effect>
+            <DockPanel Margin="20,0" LastChildFill="False">
 
                 <!-- Left: Brand -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🛒" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="ShefPos" Foreground="White" FontSize="18"
-                               FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Border Width="40" Height="40" Background="#1565C0" CornerRadius="12"
+                            VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="🛒" FontSize="18" FontFamily="Segoe UI Emoji"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="ShefPos" Foreground="White" FontSize="17"
+                                   FontWeight="Bold"/>
+                        <TextBlock Text="Enterprise POS" Foreground="#B3E5FC" FontSize="10"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Right: Status, settings, user, time, sync, logout -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
 
                     <!-- Sync status -->
-                    <Border CornerRadius="12" Padding="10,4" Margin="0,0,12,0" Background="#1565C0">
+                    <Border CornerRadius="18" Padding="13,7" Margin="0,0,10,0" Background="#1565C0"
+                            BorderBrush="#1565C0" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,6,0">
                                 <Ellipse.Style>
@@ -156,10 +247,10 @@
                     </Border>
 
                     <!-- Pending sales badge -->
-                    <Border CornerRadius="12" Padding="10,4" Margin="0,0,12,0"
+                    <Border CornerRadius="15" Padding="10,5" Margin="0,0,10,0"
                             Background="#FF8F00"
                             Visibility="{Binding PendingSyncCount, Converter={StaticResource IntToVisibilityConverter}}">
-                        <TextBlock Foreground="White" FontSize="12">
+                        <TextBlock Foreground="White" FontSize="12" FontWeight="SemiBold">
                             <Run Text="⏳ "/>
                             <Run Text="{Binding PendingSyncCount}"/>
                             <Run Text=" sotuv"/>
@@ -169,7 +260,7 @@
                     <!-- Sync error indicator -->
                     <Button x:Name="SyncErrorBtn"
                             Command="{Binding ToggleSyncErrorPanelCommand}"
-                            Margin="0,0,12,0" Cursor="Hand"
+                            Margin="0,0,10,0" Cursor="Hand"
                             FocusVisualStyle="{x:Null}"
                             Visibility="{Binding SyncErrors.Count,
                                          Converter={StaticResource IntToVisibilityConverter}}">
@@ -202,7 +293,7 @@
                                 BorderBrush="#FFCDD2" BorderThickness="1"
                                 Padding="16,14" MinWidth="340" MaxWidth="500">
                             <Border.Effect>
-                                <DropShadowEffect ShadowDepth="6" BlurRadius="18"
+                                <DropShadowEffect ShadowDepth="8" BlurRadius="18"
                                                   Opacity="0.18" Color="#000"/>
                             </Border.Effect>
                             <StackPanel>
@@ -221,7 +312,7 @@
                                 <ItemsControl ItemsSource="{Binding SyncErrors}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#FFF8F8" CornerRadius="7"
+                                            <Border Background="#FFF8F8" CornerRadius="8"
                                                     BorderBrush="#FFCDD2" BorderThickness="1"
                                                     Padding="10,8" Margin="0,0,0,6">
                                                 <DockPanel>
@@ -249,13 +340,13 @@
                     <!-- Manual sync -->
                     <Button Command="{Binding TriggerSyncCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Sinxronlash" Content="🔄" Margin="0,0,8,0"/>
+                            ToolTip="Sinxronlash" Content="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Settings button + popup -->
                     <Button x:Name="SettingsBtn"
                             Command="{Binding ToggleSettingsCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Sozlamalar" Content="⚙" Margin="0,0,8,0"/>
+                            ToolTip="Sozlamalar" Content="⚙" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
                     <Popup IsOpen="{Binding IsSettingsOpen, Mode=TwoWay}"
                            PlacementTarget="{Binding ElementName=SettingsBtn}"
                            Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
@@ -313,35 +404,43 @@
                     </Popup>
 
                     <!-- Username -->
-                    <TextBlock Foreground="#B3E5FC" FontSize="13" VerticalAlignment="Center"
-                               Margin="0,0,16,0">
-                        <Run Text="👤 "/>
-                        <Run Text="{Binding UserName}"/>
-                    </TextBlock>
+                    <Border CornerRadius="16" Background="#1565C0" Padding="11,6" Margin="0,0,10,0"
+                            BorderBrush="#1565C0" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="👤" FontSize="12" Margin="0,0,6,0"
+                                       FontFamily="Segoe UI Emoji" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding UserName}" Foreground="#B3E5FC"
+                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Clock -->
-                    <TextBlock Text="{Binding CurrentTime}" Foreground="White"
-                               FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"
-                               FontFamily="Consolas"/>
+                    <Border CornerRadius="16" Background="#1565C0" Padding="12,6" Margin="0,0,12,0"
+                            BorderBrush="#1565C0" BorderThickness="1">
+                        <TextBlock Text="{Binding CurrentTime}" Foreground="#FFFFFF"
+                                   FontSize="12" VerticalAlignment="Center"
+                                   FontFamily="Segoe UI"/>
+                    </Border>
 
                     <!-- Order history -->
                     <Button Click="OnHistoryClick"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Zakaz tarixi" Content="📋" Margin="0,0,8,0"/>
+                            ToolTip="Zakaz tarixi" Content="📋" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Network monitor -->
                     <Button Click="OnNetworkMonitorClick"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Network Monitor" Content="📡" Margin="0,0,8,0"/>
+                            ToolTip="Network Monitor" Content="📡" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Game toggle -->
                     <Button Command="{Binding ToggleGameCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="ShefPuzzle" Content="🎮" Margin="0,0,8,0"/>
+                            ToolTip="ShefPuzzle" Content="🎮" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Logout -->
                     <Button Command="{Binding LogoutCommand}"
                             Style="{StaticResource DangerButtonStyle}"
+                            Background="#C62828"
                             Content="Chiqish" Padding="14,6" FontSize="13"/>
                 </StackPanel>
             </DockPanel>
@@ -356,13 +455,88 @@
         <Grid Grid.Row="1"
               Visibility="{Binding IsGameOpen, Converter={StaticResource InverseBoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="184"/>  <!-- Navigation -->
                 <ColumnDefinition Width="*"/>    <!-- Products -->
                 <ColumnDefinition Width="370"/>  <!-- Cart -->
-                <ColumnDefinition Width="270"/>  <!-- Payment -->
+                <ColumnDefinition Width="290"/>  <!-- Payment -->
             </Grid.ColumnDefinitions>
 
             <!-- ══════════ COLUMN 0: PRODUCTS ══════════ -->
-            <Grid Grid.Column="0" Background="#F0F4F8">
+            <Border Grid.Column="0" Background="#FBFCFE"
+                    BorderBrush="#E5ECF6" BorderThickness="0,0,1,0">
+                <Grid Margin="14,18,14,14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0">
+                        <Button Style="{StaticResource SelectedNavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7BF;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Sotuv" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7B8;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Mahsulotlar" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE821;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Ombor" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE9D2;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Hisobotlar" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE716;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Mijozlar" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7C0;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Yetkazib beruvchilar" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE77B;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Xodimlar" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE713;" Style="{StaticResource NavIconTextStyle}"/>
+                                <TextBlock Text="Sozlamalar" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <Border Grid.Row="2" Background="#F1F7FF" CornerRadius="14"
+                            BorderBrush="#DCEBFF" BorderThickness="1" Padding="14,12">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Ellipse Width="9" Height="9" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Onlayn" FontWeight="SemiBold" FontSize="12" Foreground="#1F2937"/>
+                            </StackPanel>
+                            <TextBlock Text="Tizim holati" FontSize="11" Foreground="#667085" Margin="0,0,0,8"/>
+                            <TextBlock Text="v1.0.0" FontSize="11" Foreground="#667085"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1" Background="#F5F8FC">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -370,54 +544,49 @@
                 </Grid.RowDefinitions>
 
                 <!-- Search bar -->
-                <Border Grid.Row="0" Background="White" Padding="12,10"
-                        BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                <Border Grid.Row="0" Background="White" Padding="20,14"
+                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
                     <DockPanel LastChildFill="True">
-                        <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                        <Button DockPanel.Dock="Right" Margin="10,0,0,0"
                                 Command="{Binding ToggleAddProductCommand}"
-                                Width="38" Height="38"
+                                Width="46" Height="46"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 ToolTip="Mahsulot qo'shish"
-                                FontSize="22" FontWeight="Bold" Content="+"/>
-                    <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="8" Background="#FAFAFA">
-                        <Grid>
-                            <TextBlock Text="🔍" Margin="10,0,0,0" VerticalAlignment="Center"
-                                       Foreground="#9E9E9E" FontSize="14"/>
-                            <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                     Padding="32,9,10,9" FontSize="14" BorderThickness="0"
-                                     Background="Transparent" Style="{StaticResource FlatTextBoxStyle}">
-                                <TextBox.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="8"/>
-                                    </Style>
-                                </TextBox.Resources>
-                            </TextBox>
-                            <TextBlock Text="Mahsulot qidirish (nomi, kodi, barkod)..."
-                                       Foreground="#BDBDBD" FontSize="14"
-                                       Margin="36,0,0,0" VerticalAlignment="Center"
-                                       IsHitTestVisible="False">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SearchQuery}" Value="">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-                    </Border>
+                                FontSize="20" FontWeight="Bold" Content="+"/>
+                        <Border BorderBrush="#D8E1EE" BorderThickness="1" CornerRadius="14" Background="#FBFCFE">
+                            <Grid>
+                                <TextBlock Text="&#xE721;" Margin="12,0,0,0"
+                                           Style="{StaticResource InlineIconTextStyle}"
+                                           Foreground="#94A3B8" FontSize="14"/>
+                                <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="40,13,14,13" FontSize="14" BorderThickness="0"
+                                         Background="Transparent" Style="{StaticResource FlatTextBoxStyle}"/>
+                                <TextBlock Text="Mahsulot qidirish (nomi, kodi, barkod)..."
+                                           Foreground="#94A3B8" FontSize="14"
+                                           Margin="40,0,0,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
                     </DockPanel>
                 </Border>
 
                 <!-- Category tabs -->
                 <Border Grid.Row="1" Background="White"
-                        BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                        BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
                                   VerticalScrollBarVisibility="Disabled">
-                        <ItemsControl ItemsSource="{Binding Categories}" Margin="8,6">
+                        <ItemsControl ItemsSource="{Binding Categories}" Margin="18,10">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal"/>
@@ -429,13 +598,13 @@
                                             Command="{Binding DataContext.SelectCategoryCommand,
                                                       RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}"
-                                            Padding="16,7" Margin="3,0" Cursor="Hand" FontSize="13">
+                                            Padding="18,9" Margin="4,0" Cursor="Hand" FontSize="13">
                                         <Button.Style>
                                             <Style TargetType="Button">
                                                 <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="Foreground" Value="#546E7A"/>
-                                                <Setter Property="BorderThickness" Value="0,0,0,3"/>
-                                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="#475467"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="BorderBrush" Value="#E5ECF6"/>
                                                 <Setter Property="FontWeight" Value="Normal"/>
                                                 <Setter Property="Template">
                                                     <Setter.Value>
@@ -443,7 +612,7 @@
                                                             <Border Background="{TemplateBinding Background}"
                                                                     BorderBrush="{TemplateBinding BorderBrush}"
                                                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                                                    Padding="{TemplateBinding Padding}">
+                                                                    CornerRadius="18" Padding="{TemplateBinding Padding}">
                                                                 <ContentPresenter HorizontalAlignment="Center"
                                                                                   VerticalAlignment="Center"/>
                                                             </Border>
@@ -459,12 +628,14 @@
                                                                 <Binding Path="."/>
                                                             </MultiBinding>
                                                         </DataTrigger.Binding>
-                                                        <Setter Property="BorderBrush" Value="#1565C0"/>
-                                                        <Setter Property="Foreground" Value="#1565C0"/>
+                                                        <Setter Property="BorderBrush" Value="#155EEF"/>
+                                                        <Setter Property="Background" Value="#155EEF"/>
+                                                        <Setter Property="Foreground" Value="White"/>
                                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                                     </DataTrigger>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                                        <Setter Property="Background" Value="#F2F7FF"/>
+                                                        <Setter Property="BorderBrush" Value="#BFDBFE"/>
                                                     </Trigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -477,10 +648,10 @@
                 </Border>
 
                 <!-- Product grid -->
-                <ScrollViewer Grid.Row="2" Padding="12">
+                <ScrollViewer Grid.Row="2" Padding="20,18">
                     <Grid>
                         <TextBlock Text="Mahsulotlar topilmadi"
-                                   FontSize="15" Foreground="#90A4AE"
+                                   FontSize="15" Foreground="#94A3B8"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Margin="0,60,0,0">
                             <TextBlock.Style>
@@ -498,29 +669,31 @@
                         <ItemsControl ItemsSource="{Binding FilteredProducts}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <WrapPanel/>
+                                    <WrapPanel ItemWidth="174" ItemHeight="182"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Width="160" Height="158" Margin="5"
+                                    <Button Width="166" Height="174" Margin="4"
                                             Command="{Binding DataContext.AddToCartCommand,
                                                       RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}"
                                             Style="{StaticResource ProductCardStyle}">
-                                        <Grid Width="160" Height="158">
+                                        <Grid Width="166" Height="174">
                                             <Grid.RowDefinitions>
-                                                <RowDefinition Height="80"/>
+                                                <RowDefinition Height="84"/>
                                                 <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <!-- Image / placeholder -->
-                                            <Border Grid.Row="0" CornerRadius="10,10,0,0" ClipToBounds="True">
+                                            <Border Grid.Row="0" CornerRadius="16,16,0,0" ClipToBounds="True">
                                                 <Grid>
-                                                    <Border Background="#EEF5FF"
+                                                    <Border Background="#F1F5F9"
                                                             Visibility="{Binding ImageUrl,
                                                                          Converter={StaticResource EmptyStringToVisibilityConverter}}">
-                                                        <TextBlock Text="📦" FontSize="30"
+                                                        <TextBlock Text="&#xE7B8;" FontSize="26"
+                                                                   FontFamily="Segoe MDL2 Assets"
+                                                                   Foreground="#64748B"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
@@ -533,17 +706,17 @@
                                             </Border>
 
                                             <!-- Product info -->
-                                            <StackPanel Grid.Row="1" Margin="10,6,10,4">
+                                            <StackPanel Grid.Row="1" Margin="12,9,12,8">
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
-                                                           FontSize="12" TextWrapping="Wrap"
-                                                           MaxHeight="30" TextTrimming="CharacterEllipsis"
-                                                           Margin="0,0,0,2"/>
-                                                <TextBlock FontSize="13" FontWeight="Bold"
-                                                           Foreground="#1565C0">
+                                                           FontSize="12.5" TextWrapping="Wrap"
+                                                           MaxHeight="32" TextTrimming="CharacterEllipsis"
+                                                           Margin="0,0,0,4" Foreground="#0F172A"/>
+                                                <TextBlock FontSize="14" FontWeight="Bold"
+                                                           Foreground="#0B5BD3">
                                                     <Run Text="{Binding Price, StringFormat='{}{0:N0}'}"/>
-                                                    <Run Text=" so'm" Foreground="#1976D2" FontSize="10"/>
+                                                    <Run Text=" so'm" Foreground="#3B82F6" FontSize="10"/>
                                                 </TextBlock>
-                                                <TextBlock FontSize="10" Foreground="#78909C">
+                                                <TextBlock FontSize="11" Foreground="#667085" Margin="0,4,0,0">
                                                     <Run Text="Stok: "/>
                                                     <Run Text="{Binding Stock, StringFormat='{}{0:N1}'}"/>
                                                     <Run Text=" "/>
@@ -780,8 +953,8 @@
             </Grid>
 
             <!-- ══════════ COLUMN 1: CART ══════════ -->
-            <Border Grid.Column="1" Background="White"
-                    BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
+            <Border Grid.Column="2" Background="White"
+                    BorderBrush="#E2E8F0" BorderThickness="1,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>  <!-- Customer -->
@@ -791,8 +964,8 @@
                     </Grid.RowDefinitions>
 
                     <!-- Customer selector -->
-                    <Border Grid.Row="0" Padding="12,10"
-                            BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                    <Border Grid.Row="0" Padding="18,16"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -801,10 +974,10 @@
 
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="MIJOZ" FontSize="10" FontWeight="Bold"
-                                           Foreground="#9E9E9E" Margin="0,0,0,4"/>
+                                           Foreground="#667085" Margin="0,0,0,6"/>
                                 <TextBlock Text="{Binding SelectedCustomerDisplay}"
-                                           FontSize="13" FontWeight="Medium" Foreground="#37474F"
-                                           Margin="0,0,0,6">
+                                           FontSize="14" FontWeight="SemiBold" Foreground="#0F172A"
+                                           Margin="0,0,0,8">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Style.Triggers>
@@ -819,15 +992,15 @@
                                 </TextBlock>
 
                                 <Grid>
-                                    <Border BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="6"
-                                            Background="#FAFAFA">
+                                    <Border BorderBrush="#D8E1EE" BorderThickness="1" CornerRadius="12"
+                                            Background="#FBFCFE">
                                         <TextBox x:Name="CustomerSearchBox"
                                                  Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                 Padding="8,6" FontSize="13" BorderThickness="0"
+                                                 Padding="12,10" FontSize="13" BorderThickness="0"
                                                  Background="Transparent"
                                                  Style="{StaticResource FlatTextBoxStyle}"/>
                                     </Border>
-                                    <TextBlock Text="Qidirish..." Foreground="#BDBDBD"
+                                    <TextBlock Text="Qidirish..." Foreground="#94A3B8"
                                                FontSize="13" Margin="10,0,0,0"
                                                VerticalAlignment="Center" IsHitTestVisible="False">
                                         <TextBlock.Style>
@@ -845,11 +1018,11 @@
                                     <Popup IsOpen="{Binding IsCustomerPopupOpen}"
                                            PlacementTarget="{Binding ElementName=CustomerSearchBox}"
                                            Placement="Bottom" AllowsTransparency="True" StaysOpen="False">
-                                        <Border Background="White" BorderBrush="#CFD8DC" BorderThickness="1"
-                                                CornerRadius="0,0,8,8" MinWidth="260">
+                                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                                                CornerRadius="0,0,10,10" MinWidth="260">
                                             <Border.Effect>
-                                                <DropShadowEffect ShadowDepth="4" BlurRadius="10"
-                                                                  Opacity="0.15" Color="#000"/>
+                                                <DropShadowEffect ShadowDepth="6" BlurRadius="16"
+                                                                  Opacity="0.16" Color="#0F172A"/>
                                             </Border.Effect>
                                             <ListBox ItemsSource="{Binding CustomerSuggestions}"
                                                      BorderThickness="0" MaxHeight="220"
@@ -857,7 +1030,7 @@
                                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                                 <ListBox.ItemContainerStyle>
                                                     <Style TargetType="ListBoxItem">
-                                                        <Setter Property="Padding" Value="12,8"/>
+                                                        <Setter Property="Padding" Value="12,10"/>
                                                         <Setter Property="Cursor" Value="Hand"/>
                                                         <EventSetter Event="MouseLeftButtonUp"
                                                                      Handler="OnCustomerItemClick"/>
@@ -867,9 +1040,9 @@
                                                     <DataTemplate>
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding Name}"
-                                                                       FontWeight="SemiBold" FontSize="13"/>
+                                                                       FontWeight="SemiBold" FontSize="13" Foreground="#0F172A"/>
                                                             <TextBlock Text="{Binding Phone}"
-                                                                       FontSize="11" Foreground="#78909C"/>
+                                                                       FontSize="11" Foreground="#64748B"/>
                                                         </StackPanel>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
@@ -882,7 +1055,7 @@
                             <Button Grid.Column="1" Content="✕" VerticalAlignment="Bottom"
                                     Command="{Binding ClearCustomerCommand}"
                                     Style="{StaticResource IconButtonStyle}"
-                                    Margin="8,0,0,0" ToolTip="Mijozni o'chirish"/>
+                                    Width="38" Height="38" Margin="10,0,0,0" ToolTip="Mijozni o'chirish"/>
                         </Grid>
                     </Border>
 
@@ -891,9 +1064,16 @@
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding CartItems.Count,
                                                  Converter={StaticResource IntToVisibilityInverseConverter}}">
-                            <TextBlock Text="🛒" FontSize="42" HorizontalAlignment="Center" Opacity="0.3"/>
-                            <TextBlock Text="Savat bo'sh" FontSize="14" Foreground="#BDBDBD"
-                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            <Border Width="78" Height="78" CornerRadius="39" Background="#F4F7FB"
+                                    BorderBrush="#E5ECF6" BorderThickness="1">
+                                <TextBlock Text="&#xE7BF;" FontSize="34" FontFamily="Segoe MDL2 Assets"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Savat bo'sh" FontSize="15" FontWeight="SemiBold" Foreground="#667085"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            <TextBlock Text="Mahsulot qo'shish uchun skanerlang yoki qidiring"
+                                       FontSize="11" Foreground="#98A2B3"
+                                       HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
 
                         <ListView ItemsSource="{Binding CartItems}"
@@ -901,16 +1081,33 @@
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   VirtualizingPanel.ScrollUnit="Pixel"
                                   PreviewKeyDown="OnCartKeyDown">
+                            <ListView.Resources>
+                                <Style TargetType="GridViewColumnHeader">
+                                    <Setter Property="Background" Value="#F8FAFC"/>
+                                    <Setter Property="Foreground" Value="#667085"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="Padding" Value="10,9"/>
+                                </Style>
+                            </ListView.Resources>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Padding" Value="8,7"/>
+                                    <Setter Property="BorderBrush" Value="#EEF2F7"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="Mahsulot" Width="130">
+                                    <GridViewColumn Header="Mahsulot" Width="150">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding ProductName}"
-                                                               FontWeight="Medium" FontSize="13"
-                                                               TextTrimming="CharacterEllipsis" MaxWidth="120"/>
-                                                    <TextBlock FontSize="11" Foreground="#9E9E9E">
+                                                               FontWeight="SemiBold" FontSize="13"
+                                                               TextTrimming="CharacterEllipsis" MaxWidth="140" Foreground="#0F172A"/>
+                                                    <TextBlock FontSize="11" Foreground="#94A3B8">
                                                         <Run Text="{Binding UnitPrice, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
                                                         <Run Text=" so'm"/>
                                                     </TextBlock>
@@ -919,10 +1116,10 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
 
-                                    <GridViewColumn Header="Soni" Width="114">
+                                    <GridViewColumn Header="Soni" Width="120">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Grid Width="106">
+                                                <Grid Width="112">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="24"/>
                                                         <ColumnDefinition Width="*"/>
@@ -937,7 +1134,7 @@
                                                              StringFormat='{}{0:N2}'}"
                                                              TextAlignment="Center"
                                                              FontSize="13" FontWeight="SemiBold"
-                                                             Padding="2,3" BorderThickness="0"
+                                                             Padding="2,4" BorderThickness="0"
                                                              Background="Transparent"
                                                              helpers:NumericTextBox.IsNumeric="True"
                                                              Style="{StaticResource FlatTextBoxStyle}"/>
@@ -949,11 +1146,11 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
 
-                                    <GridViewColumn Header="Jami" Width="88">
+                                    <GridViewColumn Header="Jami" Width="96">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock FontWeight="Bold" FontSize="13"
-                                                           Foreground="#1565C0" TextAlignment="Right">
+                                                           Foreground="#1D4ED8" TextAlignment="Right">
                                                     <Run Text="{Binding LineTotal, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
                                                 </TextBlock>
                                             </DataTemplate>
@@ -977,94 +1174,94 @@
                     </Grid>
 
                     <!-- Totals -->
-                    <Border Grid.Row="2" Background="#F8FAFC"
-                            BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="14,12">
+                    <Border Grid.Row="2" Background="#FBFCFE"
+                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,1" Padding="18,16">
                         <StackPanel>
                             <Grid Margin="0,0,0,6">
-                                <TextBlock Text="Subtotal" Foreground="#78909C" FontSize="13"/>
+                                <TextBlock Text="Subtotal" Foreground="#667085" FontSize="13"/>
                                 <TextBlock HorizontalAlignment="Right" FontSize="13">
                                     <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
-                                    <Run Text=" so'm" Foreground="#9E9E9E"/>
+                                    <Run Text=" so'm" Foreground="#94A3B8"/>
                                 </TextBlock>
                             </Grid>
 
                             <Grid Margin="0,0,0,6">
-                                <TextBlock Text="Chegirma" Foreground="#78909C" FontSize="13"
+                                <TextBlock Text="Chegirma" Foreground="#667085" FontSize="13"
                                            VerticalAlignment="Center"/>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBox Text="{Binding CartDiscount,
                                              UpdateSourceTrigger=PropertyChanged,
                                              StringFormat='{}{0:N0}'}"
                                              Width="90" TextAlignment="Right"
-                                             FontSize="13" Padding="6,3"
+                                             FontSize="13" Padding="6,4"
                                              helpers:NumericTextBox.IsNumeric="True"
                                              Style="{StaticResource FlatTextBoxStyle}"/>
-                                    <TextBlock Text=" so'm" Foreground="#9E9E9E"
+                                    <TextBlock Text=" so'm" Foreground="#94A3B8"
                                                FontSize="13" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
 
-                            <Separator Background="#E0E0E0" Margin="0,4"/>
+                            <Separator Background="#E2E8F0" Margin="0,6"/>
 
                             <Grid>
-                                <TextBlock Text="JAMI" FontSize="16" FontWeight="Bold" Foreground="#1A237E"/>
+                                <TextBlock Text="JAMI" FontSize="17" FontWeight="Bold" Foreground="#0A3A8C"/>
                                 <TextBlock HorizontalAlignment="Right"
-                                           FontSize="20" FontWeight="Bold" Foreground="#0D47A1">
+                                           FontSize="23" FontWeight="Bold" Foreground="#0B5BD3">
                                     <Run Text="{Binding Total, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
-                                    <Run Text=" so'm" FontSize="13" Foreground="#1565C0"/>
+                                    <Run Text=" so'm" FontSize="13" Foreground="#3B82F6"/>
                                 </TextBlock>
                             </Grid>
                         </StackPanel>
                     </Border>
 
                     <!-- Clear cart -->
-                    <Border Grid.Row="3" Padding="12,8">
-                        <Button Content="🗑  Savatni tozalash"
+                    <Border Grid.Row="3" Padding="18,12">
+                        <Button Content="Savatni tozalash"
                                 Command="{Binding ClearCartCommand}"
                                 Style="{StaticResource OutlineDangerButtonStyle}"
-                                Height="34" FontSize="13"/>
+                                Height="42" FontSize="13"/>
                     </Border>
                 </Grid>
             </Border>
 
             <!-- ══════════ COLUMN 2: PAYMENT ══════════ -->
-            <Border Grid.Column="2" Background="#FAFBFD"
-                    BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
+            <Border Grid.Column="3" Background="#F9FBFE"
+                    BorderBrush="#E2E8F0" BorderThickness="1,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="14,14,14,14">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18,18,18,20">
 
                         <!-- Payment type label -->
                         <TextBlock Text="TO'LOV USULI" FontSize="10" FontWeight="Bold"
-                                   Foreground="#9E9E9E" Margin="0,0,0,8"/>
+                                   Foreground="#667085" Margin="0,0,0,10"/>
 
                         <!-- Naqt / Karta buttons -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="0,0,0,14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Height="46"
+                            <Button Grid.Column="0" Height="48"
                                     Command="{Binding SelectPaymentTypeCommand}" CommandParameter="cash"
                                     Style="{StaticResource PayTypeBtn}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="💵" FontSize="18" Margin="0,0,6,0"
-                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#x1F4B5;" FontSize="18" Margin="0,0,6,0"
+                                               FontFamily="Segoe UI Emoji" VerticalAlignment="Center"/>
                                     <TextBlock Text="Naqt" FontSize="14" FontWeight="SemiBold"
                                                VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <Button Grid.Column="2" Height="46"
+                            <Button Grid.Column="2" Height="48"
                                     Command="{Binding SelectPaymentTypeCommand}" CommandParameter="card"
                                     Style="{StaticResource PayTypeBtn}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="💳" FontSize="18" Margin="0,0,6,0"
-                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#x1F4B3;" FontSize="18" Margin="0,0,6,0"
+                                               FontFamily="Segoe UI Emoji" VerticalAlignment="Center"/>
                                     <TextBlock Text="Karta" FontSize="14" FontWeight="SemiBold"
                                                VerticalAlignment="Center"/>
                                 </StackPanel>
@@ -1073,30 +1270,30 @@
 
                         <!-- Paid amount -->
                         <TextBlock Text="To'lov summasi" FontSize="11" FontWeight="Bold"
-                                   Foreground="#9E9E9E" Margin="0,0,0,6"/>
+                                   Foreground="#667085" Margin="0,0,0,7"/>
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" BorderBrush="#CFD8DC" BorderThickness="1"
-                                    CornerRadius="8" Background="White">
+                            <Border Grid.Column="0" BorderBrush="#D8E1EE" BorderThickness="1"
+                                    CornerRadius="13" Background="White">
                                 <TextBox Text="{Binding PaidAmount,
                                          UpdateSourceTrigger=PropertyChanged,
                                          StringFormat='{}{0:N0}'}"
                                          TextAlignment="Right"
-                                         FontSize="20" FontWeight="Bold" Padding="10,8"
+                                         FontSize="22" FontWeight="Bold" Padding="12,10"
                                          BorderThickness="0" Background="Transparent"
                                          helpers:NumericTextBox.IsNumeric="True"
                                          Style="{StaticResource FlatTextBoxStyle}"/>
                             </Border>
-                            <TextBlock Grid.Column="1" Text=" so'm" Foreground="#78909C"
+                            <TextBlock Grid.Column="1" Text=" so'm" Foreground="#667085"
                                        FontSize="13" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Change -->
-                        <Grid Margin="0,0,0,12">
-                            <TextBlock Text="Qaytim" FontSize="13" Foreground="#546E7A"
+                        <Grid Margin="0,0,0,14">
+                            <TextBlock Text="Qaytim" FontSize="13" Foreground="#667085"
                                        VerticalAlignment="Center"/>
                             <TextBlock HorizontalAlignment="Right" FontSize="15"
                                        FontWeight="SemiBold" VerticalAlignment="Center">
@@ -1104,12 +1301,12 @@
                                 <Run Text=" so'm"/>
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#2E7D32"/>
+                                        <Setter Property="Foreground" Value="#16A34A"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Change,
                                                          Converter={StaticResource IsNegativeConverter}}"
                                                          Value="True">
-                                                <Setter Property="Foreground" Value="#C62828"/>
+                                                <Setter Property="Foreground" Value="#DC2626"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -1124,13 +1321,13 @@
                             <StackPanel>
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="44"/>
+                                        <RowDefinition Height="46"/>
                                         <RowDefinition Height="4"/>
-                                        <RowDefinition Height="44"/>
+                                        <RowDefinition Height="46"/>
                                         <RowDefinition Height="4"/>
-                                        <RowDefinition Height="44"/>
+                                        <RowDefinition Height="46"/>
                                         <RowDefinition Height="4"/>
-                                        <RowDefinition Height="44"/>
+                                        <RowDefinition Height="46"/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -1176,7 +1373,7 @@
                                     <Button Grid.Row="6" Grid.Column="2" Content="0"
                                             Command="{Binding KeypadInputCommand}" CommandParameter="0"
                                             Style="{StaticResource KeypadButtonStyle}"/>
-                                    <Button Grid.Row="6" Grid.Column="4" Content="⌫"
+                                    <Button Grid.Row="6" Grid.Column="4" Content="&#xE750;" FontFamily="Segoe MDL2 Assets"
                                             Command="{Binding KeypadInputCommand}" CommandParameter="⌫"
                                             Style="{StaticResource KeypadButtonStyle}"/>
                                 </Grid>
@@ -1191,15 +1388,15 @@
                         <!-- SOTISH button -->
                         <Button Command="{Binding CheckoutCommand}"
                                 Style="{StaticResource SuccessButtonStyle}"
-                                Height="54" FontSize="18" FontWeight="Bold">
+                                Height="60" FontSize="18" FontWeight="Bold">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="✔  " FontSize="16"/>
                                 <TextBlock Text="SOTISH"/>
                             </StackPanel>
                         </Button>
 
-                    </StackPanel>
-                </ScrollViewer>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Border>
         </Grid>

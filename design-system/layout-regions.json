@@ -1,0 +1,50 @@
+{
+  "appShell": {
+    "rows": ["topbar:68px", "body:minmax(0,1fr)"],
+    "desktopColumns": ["sidebar:184px", "workspace:minmax(0,1fr)"],
+    "tabletColumns": ["sidebar:72px", "workspace:minmax(0,1fr)"],
+    "mobileRows": ["topbar:64px", "workspace:minmax(0,1fr)", "bottomNav:64px"]
+  },
+  "topbar": {
+    "left": ["brand", "storeTerminal"],
+    "center": ["syncStatus", "networkStatus"],
+    "right": ["quickTools", "userAccount", "clockDate", "logout"],
+    "sticky": true
+  },
+  "sidebar": {
+    "items": [
+      "Sotuv",
+      "Mahsulotlar",
+      "Ombor",
+      "Hisobotlar",
+      "Mijozlar",
+      "Yetkazib beruvchilar",
+      "Xodimlar",
+      "Sozlamalar"
+    ],
+    "footer": ["onlineStatus", "appVersion"]
+  },
+  "cashierWorkspace": {
+    "desktopColumns": ["productPanel:minmax(480px,1fr)", "cartPanel:370px", "paymentPanel:290px"],
+    "tabletAreas": [["productPanel", "cartPanel"], ["productPanel", "paymentPanel"]],
+    "mobileAreas": [["productPanel"], ["cartPanel"], ["paymentPanel"]],
+    "sticky": ["productSearch", "cartTotals", "paymentCheckout"],
+    "fastAccess": ["scannerInput", "categoryTabs", "quickProductGrid", "quantityStepper", "checkout"]
+  },
+  "inventoryWorkspace": {
+    "desktopColumns": ["filterPanel:300px", "tablePanel:minmax(0,1fr)", "detailPanel:360px"],
+    "tabletColumns": ["filterPanel:260px", "tablePanel:minmax(0,1fr)"],
+    "sticky": ["inventorySearch", "bulkActions", "detailActions"],
+    "fastAccess": ["barcodeSearch", "stockFilters", "lowStockQueue", "syncStatus"]
+  },
+  "analyticsWorkspace": {
+    "grid": "12-column",
+    "priorityRows": [
+      "todayKpis",
+      "salesTrendAndCategoryBreakdown",
+      "exceptionsAndRecentActivity"
+    ],
+    "sticky": ["dateRange", "exportActions"],
+    "fastAccess": ["today", "thisShift", "cashierFilter", "lowStockAlerts", "pendingSync"]
+  }
+}

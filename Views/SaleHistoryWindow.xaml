@@ -86,8 +86,8 @@
                              IsChecked="True" Checked="OnFilterChanged"
                              Margin="0,0,16,0" VerticalAlignment="Center" FontSize="13"/>
                 <RadioButton x:Name="FilterPending" Content="⏳  Kutilayotganlar" GroupName="SaleFilter"
-                             Checked="OnFilterChanged"
-                             Margin="0,0,16,0" VerticalAlignment="Center" FontSize="13" Foreground="#F57F17"/>
+                              Checked="OnFilterChanged"
+                              Margin="0,0,16,0" VerticalAlignment="Center" FontSize="13" Foreground="#F57F17"/>
                 <RadioButton x:Name="FilterSynced" Content="✓  Yuborilganlar" GroupName="SaleFilter"
                              Checked="OnFilterChanged"
                              VerticalAlignment="Center" FontSize="13" Foreground="#2E7D32"/>
