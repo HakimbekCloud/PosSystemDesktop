@@ -1,4 +1,4 @@
-<UserControl x:Class="PosSystem.Views.Pos.PosView"
+﻿<UserControl x:Class="PosSystem.Views.Pos.PosView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:PosSystem.ViewModels.Pos"
@@ -201,7 +201,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- ═══════════════════ HEADER ═══════════════════ -->
+        <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ HEADER в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
         <Border Grid.Row="0" Background="#0D47A1">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.18" Color="#0B1F3A"/>
@@ -212,7 +212,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="40" Height="40" Background="#1565C0" CornerRadius="12"
                             VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="🛒" FontSize="18" FontFamily="Segoe UI Emoji"
+                        <TextBlock Text="&#x1F6D2;" FontSize="18" FontFamily="Segoe UI Emoji"
                                    VerticalAlignment="Center" HorizontalAlignment="Center"/>
                     </Border>
                     <StackPanel>
@@ -251,7 +251,7 @@
                             Background="#FF8F00"
                             Visibility="{Binding PendingSyncCount, Converter={StaticResource IntToVisibilityConverter}}">
                         <TextBlock Foreground="White" FontSize="12" FontWeight="SemiBold">
-                            <Run Text="⏳ "/>
+                            <Run Text="&#x23F3; "/>
                             <Run Text="{Binding PendingSyncCount}"/>
                             <Run Text=" sotuv"/>
                         </TextBlock>
@@ -303,7 +303,7 @@
                                             Style="{StaticResource OutlineDangerButtonStyle}"
                                             Content="Hammasini tozalash"
                                             Padding="10,4" FontSize="12"/>
-                                    <TextBlock Text="⚠  Sinxronlash xatolari"
+                                    <TextBlock Text="&#x26A0;  Sinxronlash xatolari"
                                                FontSize="13" FontWeight="Bold"
                                                Foreground="#C62828"
                                                VerticalAlignment="Center"/>
@@ -321,7 +321,7 @@
                                                                       RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                             CommandParameter="{Binding}"
                                                             Style="{StaticResource IconButtonStyle}"
-                                                            Content="✕" FontSize="11"
+                                                            Content="&#x2715;" FontSize="11"
                                                             Margin="10,0,0,0"
                                                             VerticalAlignment="Top"/>
                                                     <TextBlock Text="{Binding}"
@@ -340,13 +340,13 @@
                     <!-- Manual sync -->
                     <Button Command="{Binding TriggerSyncCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Sinxronlash" Content="🔄" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
+                            ToolTip="Sinxronlash" Content="&#x1F504;" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Settings button + popup -->
                     <Button x:Name="SettingsBtn"
                             Command="{Binding ToggleSettingsCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Sozlamalar" Content="⚙" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
+                            ToolTip="Sozlamalar" Content="&#x2699;" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
                     <Popup IsOpen="{Binding IsSettingsOpen, Mode=TwoWay}"
                            PlacementTarget="{Binding ElementName=SettingsBtn}"
                            Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
@@ -381,7 +381,7 @@
                                         <TextBlock Text="Masshtab" FontSize="13" Foreground="#374151"
                                                    FontFamily="Segoe UI" VerticalAlignment="Center"
                                                    Width="120"/>
-                                        <Button Content="−"
+                                        <Button Content="&#x2212;"
                                                 Command="{Binding DecreaseScaleCommand}"
                                                 Width="30" Height="30" FontSize="18" FontWeight="Bold"
                                                 Style="{StaticResource IconButtonStyle}"/>
@@ -407,7 +407,7 @@
                     <Border CornerRadius="16" Background="#1565C0" Padding="11,6" Margin="0,0,10,0"
                             BorderBrush="#1565C0" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="👤" FontSize="12" Margin="0,0,6,0"
+                            <TextBlock Text="&#x1F464;" FontSize="12" Margin="0,0,6,0"
                                        FontFamily="Segoe UI Emoji" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding UserName}" Foreground="#B3E5FC"
                                        FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -425,17 +425,17 @@
                     <!-- Order history -->
                     <Button Click="OnHistoryClick"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Zakaz tarixi" Content="📋" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
+                            ToolTip="Zakaz tarixi" Content="&#x1F4CB;" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Network monitor -->
                     <Button Click="OnNetworkMonitorClick"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="Network Monitor" Content="📡" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
+                            ToolTip="Network Monitor" Content="&#x1F4E1;" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Game toggle -->
                     <Button Command="{Binding ToggleGameCommand}"
                             Style="{StaticResource HeaderIconButtonStyle}"
-                            ToolTip="ShefPuzzle" Content="🎮" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
+                            ToolTip="ShefPuzzle" Content="&#x1F3AE;" FontFamily="Segoe UI Emoji" Margin="0,0,8,0"/>
 
                     <!-- Logout -->
                     <Button Command="{Binding LogoutCommand}"
@@ -446,12 +446,12 @@
             </DockPanel>
         </Border>
 
-        <!-- ═══════════════════ GAME VIEW ═══════════════════ -->
+        <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ GAME VIEW в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
         <game:GameView Grid.Row="1"
                        DataContext="{Binding Game}"
                        Visibility="{Binding IsGameOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-        <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+        <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ MAIN CONTENT в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
         <Grid Grid.Row="1"
               Visibility="{Binding IsGameOpen, Converter={StaticResource InverseBoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -461,7 +461,7 @@
                 <ColumnDefinition Width="290"/>  <!-- Payment -->
             </Grid.ColumnDefinitions>
 
-            <!-- ══════════ COLUMN 0: PRODUCTS ══════════ -->
+            <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ COLUMN 0: PRODUCTS в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
             <Border Grid.Column="0" Background="#FBFCFE"
                     BorderBrush="#E5ECF6" BorderThickness="0,0,1,0">
                 <Grid Margin="14,18,14,14">
@@ -472,7 +472,8 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
-                        <Button Style="{StaticResource SelectedNavButtonStyle}" Margin="0,0,0,7">
+                        <Button Style="{StaticResource SelectedNavButtonStyle}" Margin="0,0,0,7"
+                                Command="{Binding ShowSalesPageCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7BF;" Style="{StaticResource NavIconTextStyle}"/>
                                 <TextBlock Text="Sotuv" VerticalAlignment="Center"/>
@@ -514,7 +515,8 @@
                                 <TextBlock Text="Xodimlar" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource NavButtonStyle}">
+                        <Button Style="{StaticResource NavButtonStyle}"
+                                Command="{Binding ShowSettingsPageCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE713;" Style="{StaticResource NavIconTextStyle}"/>
                                 <TextBlock Text="Sozlamalar" VerticalAlignment="Center"/>
@@ -731,7 +733,7 @@
                     </Grid>
                 </ScrollViewer>
 
-                <!-- ── Add Product overlay ── -->
+                <!-- в”Ђв”Ђ Add Product overlay в”Ђв”Ђ -->
                 <Border Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="20" Background="White"
                         Visibility="{Binding IsAddProductOpen, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid>
@@ -747,7 +749,7 @@
                                 <Button DockPanel.Dock="Right"
                                         Command="{Binding ToggleAddProductCommand}"
                                         Style="{StaticResource HeaderIconButtonStyle}"
-                                        Content="✕" Width="32" Height="32" FontSize="14"
+                                        Content="&#x2715;" Width="32" Height="32" FontSize="14"
                                         ToolTip="Yopish"/>
                                 <TextBlock Text="Yangi mahsulot qo'shish"
                                            Foreground="White" FontSize="15" FontWeight="SemiBold"
@@ -882,7 +884,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
-                                    <Run Text="⚠ Narx ro'yxatlari topilmadi. Avval sinxronlashni bajaring."/>
+                                    <Run Text="&#x26A0; Narx ro'yxatlari topilmadi. Avval sinxronlashni bajaring."/>
                                 </TextBlock>
 
                                 <!-- Mahsulot turi (Product type) - moved to bottom -->
@@ -904,7 +906,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
-                                    <Run Text="⚠ Mahsulot turlari topilmadi. Avval sinxronlashni bajaring."/>
+                                    <Run Text="&#x26A0; Mahsulot turlari topilmadi. Avval sinxronlashni bajaring."/>
                                 </TextBlock>
 
                                 <!-- Error -->
@@ -941,7 +943,7 @@
                                         FontSize="14"/>
                                 <Button Grid.Column="2"
                                         Command="{Binding AddProductVm.SaveCommand}"
-                                        Content="✓  Saqlash" Padding="0,12"
+                                        Content="&#x2713;  Saqlash" Padding="0,12"
                                         Style="{StaticResource SuccessButtonStyle}"
                                         FontSize="14" FontWeight="SemiBold"/>
                             </Grid>
@@ -952,19 +954,20 @@
 
             </Grid>
 
-            <!-- ══════════ COLUMN 1: CART ══════════ -->
-            <Border Grid.Column="2" Background="White"
+            <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ COLUMN 1: CART в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
+            <Border Grid.Column="2" Grid.ColumnSpan="2" Background="White"
                     BorderBrush="#E2E8F0" BorderThickness="1,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>  <!-- Customer -->
                         <RowDefinition Height="*"/>     <!-- Items -->
-                        <RowDefinition Height="Auto"/>  <!-- Totals -->
-                        <RowDefinition Height="Auto"/>  <!-- Clear button -->
+                        <RowDefinition Height="Auto"/>  <!-- Totals + Payment -->
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Customer selector -->
-                    <Border Grid.Row="0" Padding="18,16"
+                    <Border Grid.Row="0" Padding="12,10,10,8"
                             BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -1015,6 +1018,17 @@
                                         </TextBlock.Style>
                                     </TextBlock>
 
+                                    <Button HorizontalAlignment="Right"
+                                            Command="{Binding ClearCustomerCommand}"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Width="34" Height="28" Margin="0,4,5,4"
+                                            ToolTip="Mijozni o'chirish"
+                                            Visibility="Collapsed">
+                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="13" VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+                                    </Button>
+
                                     <Popup IsOpen="{Binding IsCustomerPopupOpen}"
                                            PlacementTarget="{Binding ElementName=CustomerSearchBox}"
                                            Placement="Bottom" AllowsTransparency="True" StaysOpen="False">
@@ -1052,10 +1066,11 @@
                                 </Grid>
                             </StackPanel>
 
-                            <Button Grid.Column="1" Content="✕" VerticalAlignment="Bottom"
+                            <Button Grid.Column="1" Content="&#x2715;" VerticalAlignment="Bottom"
                                     Command="{Binding ClearCustomerCommand}"
                                     Style="{StaticResource IconButtonStyle}"
-                                    Width="38" Height="38" Margin="10,0,0,0" ToolTip="Mijozni o'chirish"/>
+                                    Width="38" Height="38" Margin="10,0,0,0"
+                                    FontSize="11" ToolTip="Mijozni o'chirish"/>
                         </Grid>
                     </Border>
 
@@ -1125,7 +1140,7 @@
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="24"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <Button Grid.Column="0" Content="−"
+                                                    <Button Grid.Column="0" Content="&#x2212;"
                                                             Command="{Binding DecreaseQuantityCommand}"
                                                             Style="{StaticResource QtyBtnStyle}"/>
                                                     <TextBox Grid.Column="1"
@@ -1160,7 +1175,7 @@
                                     <GridViewColumn Width="30">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Button Content="✕" FontSize="11"
+                                                <Button Content="&#x2715;" FontSize="11"
                                                         Command="{Binding DataContext.RemoveFromCartCommand,
                                                                   RelativeSource={RelativeSource AncestorType=ListView}}"
                                                         CommandParameter="{Binding}"
@@ -1175,9 +1190,10 @@
 
                     <!-- Totals -->
                     <Border Grid.Row="2" Background="#FBFCFE"
-                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,1" Padding="18,16">
+                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,1" Padding="18,16"
+                            Visibility="Visible">
                         <StackPanel>
-                            <Grid Margin="0,0,0,6">
+                            <Grid Margin="0,0,0,6" Visibility="Collapsed">
                                 <TextBlock Text="Subtotal" Foreground="#667085" FontSize="13"/>
                                 <TextBlock HorizontalAlignment="Right" FontSize="13">
                                     <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
@@ -1185,23 +1201,7 @@
                                 </TextBlock>
                             </Grid>
 
-                            <Grid Margin="0,0,0,6">
-                                <TextBlock Text="Chegirma" Foreground="#667085" FontSize="13"
-                                           VerticalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBox Text="{Binding CartDiscount,
-                                             UpdateSourceTrigger=PropertyChanged,
-                                             StringFormat='{}{0:N0}'}"
-                                             Width="90" TextAlignment="Right"
-                                             FontSize="13" Padding="6,4"
-                                             helpers:NumericTextBox.IsNumeric="True"
-                                             Style="{StaticResource FlatTextBoxStyle}"/>
-                                    <TextBlock Text=" so'm" Foreground="#94A3B8"
-                                               FontSize="13" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <Separator Background="#E2E8F0" Margin="0,6"/>
+                            <Separator Background="#E2E8F0" Margin="0,0,0,8"/>
 
                             <Grid>
                                 <TextBlock Text="JAMI" FontSize="17" FontWeight="Bold" Foreground="#0A3A8C"/>
@@ -1215,18 +1215,193 @@
                     </Border>
 
                     <!-- Clear cart -->
-                    <Border Grid.Row="3" Padding="18,12">
+                    <Border Grid.Row="3" Padding="18,12" Visibility="Visible">
                         <Button Content="Savatni tozalash"
                                 Command="{Binding ClearCartCommand}"
                                 Style="{StaticResource OutlineDangerButtonStyle}"
                                 Height="42" FontSize="13"/>
                     </Border>
+
+                    <Border Grid.Row="4" Background="#F9FBFE"
+                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                            Padding="12,10" Visibility="Visible">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="128"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="132"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="7">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Height="46"
+                                            Command="{Binding SelectPaymentTypeCommand}" CommandParameter="cash"
+                                            Style="{StaticResource PayTypeBtn}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#x1F4B5;" FontFamily="Segoe UI Emoji"
+                                                       FontSize="22" Margin="0,0,10,0"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="Naqt" FontSize="15" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="2" Height="46"
+                                            Command="{Binding SelectPaymentTypeCommand}" CommandParameter="card"
+                                            Style="{StaticResource PayTypeBtn}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#x1F4B3;" FontFamily="Segoe UI Emoji"
+                                                       FontSize="22" Margin="0,0,10,0"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="Karta" FontSize="15" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" BorderBrush="#D8E1EE" BorderThickness="1"
+                                            CornerRadius="10" Background="White">
+                                        <TextBox Text="{Binding PaidAmount,
+                                                 UpdateSourceTrigger=PropertyChanged,
+                                                 StringFormat='{}{0:N0}'}"
+                                                 TextAlignment="Right"
+                                                 FontSize="18" FontWeight="Bold" Padding="10,6"
+                                                 BorderThickness="0" Background="Transparent"
+                                                 helpers:NumericTextBox.IsNumeric="True"
+                                                 Style="{StaticResource FlatTextBoxStyle}"/>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text=" so'm" Foreground="#667085"
+                                               FontSize="12" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <StackPanel Grid.Row="2" Grid.Column="4" VerticalAlignment="Center">
+                                    <TextBlock Text="Qaytim" FontSize="10" FontWeight="Bold"
+                                               Foreground="#667085"/>
+                                    <TextBlock FontSize="14" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis">
+                                        <Run Text="{Binding Change, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
+                                        <Run Text=" so'm"/>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#16A34A"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Change,
+                                                                 Converter={StaticResource IsNegativeConverter}}"
+                                                                 Value="True">
+                                                        <Setter Property="Foreground" Value="#DC2626"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <Button Grid.Row="2" Grid.Column="6"
+                                        Command="{Binding CheckoutCommand}"
+                                        Style="{StaticResource SuccessButtonStyle}"
+                                        Height="40" FontSize="16" FontWeight="Bold">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                                                   Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="SOTISH" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Border Visibility="{Binding IsTabletMode,
+                                         Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Margin="0,8,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="34"/>
+                                        <RowDefinition Height="3"/>
+                                        <RowDefinition Height="34"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Row="0" Grid.Column="0" Content="7"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="7"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="0" Grid.Column="2" Content="8"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="8"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="0" Grid.Column="4" Content="9"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="9"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="0" Grid.Column="6" Content="00"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="00"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="0" Grid.Column="8" Content="0"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="0"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="0" Grid.Column="10" Content="&#xE750;" FontFamily="Segoe MDL2 Assets"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="&#x232B;"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+
+                                    <Button Grid.Row="2" Grid.Column="0" Content="4"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="4"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="2" Grid.Column="2" Content="5"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="5"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="2" Grid.Column="4" Content="6"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="6"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="2" Grid.Column="6" Content="1"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="1"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="2" Grid.Column="8" Content="2"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="2"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="2" Grid.Column="10" Content="3"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="3"
+                                            Style="{StaticResource KeypadButtonStyle}"/>
+                                    <Button Grid.Row="2" Grid.Column="12" Content="C"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="C"
+                                            Style="{StaticResource OutlineDangerButtonStyle}"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 
-            <!-- ══════════ COLUMN 2: PAYMENT ══════════ -->
+            <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ COLUMN 2: PAYMENT в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
             <Border Grid.Column="3" Background="#F9FBFE"
-                    BorderBrush="#E2E8F0" BorderThickness="1,0,0,0">
+                    BorderBrush="#E2E8F0" BorderThickness="1,0,0,0"
+                    Visibility="Collapsed">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -1374,11 +1549,11 @@
                                             Command="{Binding KeypadInputCommand}" CommandParameter="0"
                                             Style="{StaticResource KeypadButtonStyle}"/>
                                     <Button Grid.Row="6" Grid.Column="4" Content="&#xE750;" FontFamily="Segoe MDL2 Assets"
-                                            Command="{Binding KeypadInputCommand}" CommandParameter="⌫"
+                                            Command="{Binding KeypadInputCommand}" CommandParameter="&#x232B;"
                                             Style="{StaticResource KeypadButtonStyle}"/>
                                 </Grid>
 
-                                <Button Content="C  —  Tozalash" Margin="0,4,0,0" Height="38"
+                                <Button Content="C  -  Tozalash" Margin="0,4,0,0" Height="38"
                                         Command="{Binding KeypadInputCommand}" CommandParameter="C"
                                         Style="{StaticResource OutlineDangerButtonStyle}"
                                         FontSize="13" FontWeight="SemiBold"/>
@@ -1390,13 +1565,172 @@
                                 Style="{StaticResource SuccessButtonStyle}"
                                 Height="60" FontSize="18" FontWeight="Bold">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="✔  " FontSize="16"/>
+                                <TextBlock Text="&#x2714;  " FontSize="16"/>
                                 <TextBlock Text="SOTISH"/>
                             </StackPanel>
                         </Button>
 
                         </StackPanel>
                     </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Grid.ColumnSpan="3"
+                    Background="#FFFFFF"
+                    BorderBrush="#CBD5E1" BorderThickness="1,0,0,0"
+                    Panel.ZIndex="40"
+                    Visibility="{Binding IsSettingsPageOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid Margin="20">
+                    <Border Background="#FFFFFF" CornerRadius="0"
+                            BorderBrush="#CBD5E1" BorderThickness="1"
+                            Padding="0">
+                        <Grid>
+                            <Grid.Visibility>
+                                <Binding Path="IsPrinterSettingsPageOpen" Converter="{StaticResource InverseBoolToVisibilityConverter}"/>
+                            </Grid.Visibility>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="1"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="0,0,0,1" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="Sozlamalar" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <TextBlock Text="Tizim sozlamalari" FontSize="12" Foreground="#475569" Margin="0,3,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Button Grid.Row="2"
+                                    Command="{Binding ShowPrinterSettingsPageCommand}"
+                                    Style="{StaticResource NavButtonStyle}"
+                                    HorizontalAlignment="Left"
+                                    Width="310" Margin="16" Padding="12,10">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE749;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="18" Width="30" VerticalAlignment="Center"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Printerlar" FontSize="14" FontWeight="SemiBold"/>
+                                        <TextBlock Text="Chek va sennik printerlarini tanlash" FontSize="12" Foreground="#475569"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <Border Background="#FFFFFF" CornerRadius="0"
+                            BorderBrush="#CBD5E1" BorderThickness="1"
+                            Padding="0"
+                            Visibility="{Binding IsPrinterSettingsPageOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="1"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="1"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <DockPanel Grid.Row="0" LastChildFill="True"
+                                       Background="#F8FAFC"
+                                       Margin="0">
+                                <DockPanel.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DockPanel.Resources>
+                                <Button DockPanel.Dock="Left"
+                                        Command="{Binding ShowSettingsPageCommand}"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Width="36" Height="32" Margin="12,10,10,10">
+                                    <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="15"/>
+                                </Button>
+                                <StackPanel Margin="0,10,0,10">
+                                    <TextBlock Text="Printerlar" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <TextBlock Text="Zakaz cheki va sennik printerlarini tanlang" FontSize="12" Foreground="#475569" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Button DockPanel.Dock="Right"
+                                        Command="{Binding RefreshPrintersCommand}"
+                                        Margin="0,10,12,10"
+                                        Padding="10,6"
+                                        MinWidth="0"
+                                        Background="#1565C0"
+                                        Foreground="White"
+                                        BorderBrush="#0D47A1"
+                                        BorderThickness="1"
+                                        Cursor="Hand"
+                                        FocusVisualStyle="{x:Null}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="RefreshRoot"
+                                                    RenderTransformOrigin="0.5,0.5"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#0D47A1"/>
+                                                    <Setter Property="BorderBrush" Value="#083B87"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#083B87"/>
+                                                    <Setter TargetName="RefreshRoot" Property="RenderTransform">
+                                                        <Setter.Value>
+                                                            <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets"
+                                                   Foreground="White"
+                                                   FontSize="13" Margin="0,0,7,0"/>
+                                        <TextBlock Text="Yangilash" Foreground="White"
+                                                   FontSize="13" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+
+                            <Grid Grid.Row="2" MaxWidth="640" HorizontalAlignment="Left" Margin="18,18,18,18">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="12"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170"/>
+                                    <ColumnDefinition Width="320"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Chek printeri"
+                                           VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="#334155"/>
+                                <ComboBox Grid.Row="0" Grid.Column="1"
+                                          ItemsSource="{Binding AvailablePrinters}"
+                                          SelectedItem="{Binding SelectedReceiptPrinter, Mode=TwoWay}"
+                                          Height="30" FontSize="13" Padding="6,2"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Sennik printeri"
+                                           VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="#334155"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1"
+                                          ItemsSource="{Binding AvailablePrinters}"
+                                          SelectedItem="{Binding SelectedLabelPrinter, Mode=TwoWay}"
+                                          Height="30" FontSize="13" Padding="6,2"/>
+                            </Grid>
+
+                            <Border Grid.Row="4" Background="#F8FAFC" CornerRadius="0"
+                                    BorderBrush="#CBD5E1" BorderThickness="1"
+                                    Padding="12" MaxWidth="640" HorizontalAlignment="Left"
+                                    Margin="18,0,18,18">
+                                <TextBlock Text="Chek printeri tanlangan bo'lsa, sotuv yakunlanganda zakaz avtomatik printerga yuboriladi."
+                                           TextWrapping="Wrap" FontSize="12" Foreground="#334155"/>
+                            </Border>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

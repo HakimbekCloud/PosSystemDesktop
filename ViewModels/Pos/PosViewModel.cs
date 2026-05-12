@@ -8,6 +8,9 @@ using PosSystem.Core.Entities;
 using PosSystem.Data.Repositories;
 using PosSystem.Services;
 using PosSystem.ViewModels.Game;
+using System.Printing;
+using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace PosSystem.ViewModels.Pos;
 
@@ -22,6 +25,8 @@ public partial class PosViewModel : ObservableObject
     private readonly SettingsRepository _settings;
     private List<Product> _allProducts = [];
     private System.Timers.Timer? _clockTimer;
+    private const string ReceiptPrinterSettingKey = "receipt_printer";
+    private const string LabelPrinterSettingKey = "label_printer";
 
     public GameViewModel       Game          { get; }
     public AddProductViewModel AddProductVm  { get; }
@@ -159,6 +164,7 @@ public partial class PosViewModel : ObservableObject
     private string _selectedCustomerRemoteUuid = "";
 
     public ObservableCollection<Customer> CustomerSuggestions { get; } = [];
+    public ObservableCollection<string> AvailablePrinters { get; } = [];
 
     // ── Settings ───────────────────────────────────────────────────────────────
 
@@ -167,6 +173,18 @@ public partial class PosViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSettingsOpen;
+
+    [ObservableProperty]
+    private bool _isSettingsPageOpen;
+
+    [ObservableProperty]
+    private bool _isPrinterSettingsPageOpen;
+
+    [ObservableProperty]
+    private string? _selectedReceiptPrinter;
+
+    [ObservableProperty]
+    private string? _selectedLabelPrinter;
 
     private double _scale = 1.0;
     public double Scale
@@ -183,6 +201,18 @@ public partial class PosViewModel : ObservableObject
 
     partial void OnIsTabletModeChanged(bool value) =>
         _settings.Set("tablet_mode", value ? "1" : "0");
+
+    partial void OnSelectedReceiptPrinterChanged(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            _settings.Set(ReceiptPrinterSettingKey, value);
+    }
+
+    partial void OnSelectedLabelPrinterChanged(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            _settings.Set(LabelPrinterSettingKey, value);
+    }
 
     private bool CanIncreaseScale() => _scale < 1.4 - 0.001;
     private bool CanDecreaseScale() => _scale > 0.7 + 0.001;
@@ -237,6 +267,7 @@ public partial class PosViewModel : ObservableObject
         PendingSyncCount = _sales.GetPendingCount();
 
         LoadLocalData();
+        LoadPrinters();
         StartClock();
 
         _sync.StartBackgroundSync();
@@ -356,6 +387,31 @@ public partial class PosViewModel : ObservableObject
     [RelayCommand]
     private void ToggleSettings() => IsSettingsOpen = !IsSettingsOpen;
 
+    [RelayCommand]
+    private void ShowSalesPage()
+    {
+        IsSettingsPageOpen = false;
+        IsPrinterSettingsPageOpen = false;
+    }
+
+    [RelayCommand]
+    private void ShowSettingsPage()
+    {
+        IsSettingsPageOpen = true;
+        IsPrinterSettingsPageOpen = false;
+    }
+
+    [RelayCommand]
+    private void ShowPrinterSettingsPage()
+    {
+        IsSettingsPageOpen = true;
+        IsPrinterSettingsPageOpen = true;
+        LoadPrinters();
+    }
+
+    [RelayCommand]
+    private void RefreshPrinters() => LoadPrinters();
+
     // ── Cart commands ──────────────────────────────────────────────────────────
 
     [RelayCommand]
@@ -440,6 +496,8 @@ public partial class PosViewModel : ObservableObject
 
         _sales.Add(sale);
 
+        PrintReceiptIfConfigured(sale);
+
         // Decrement stock immediately so the product grid reflects the sale at once
         foreach (var item in sale.Items)
             _products.DecrementStock(item.ProductRemoteUuid ?? "", item.Quantity);
@@ -470,6 +528,114 @@ public partial class PosViewModel : ObservableObject
         OnPropertyChanged(nameof(Total));
         OnPropertyChanged(nameof(Change));
         CheckoutCommand.NotifyCanExecuteChanged();
+    }
+
+    private void LoadPrinters()
+    {
+        AvailablePrinters.Clear();
+        try
+        {
+            using var server = new LocalPrintServer();
+            foreach (var queue in server.GetPrintQueues().OrderBy(q => q.Name))
+                AvailablePrinters.Add(queue.Name);
+        }
+        catch
+        {
+            // Printer list can fail on locked-down Windows installs; keep UI usable.
+        }
+
+        SelectedReceiptPrinter = _settings.Get(ReceiptPrinterSettingKey);
+        SelectedLabelPrinter = _settings.Get(LabelPrinterSettingKey);
+
+        if (string.IsNullOrWhiteSpace(SelectedReceiptPrinter) && AvailablePrinters.Count > 0)
+            SelectedReceiptPrinter = AvailablePrinters[0];
+        if (string.IsNullOrWhiteSpace(SelectedLabelPrinter) && AvailablePrinters.Count > 0)
+            SelectedLabelPrinter = AvailablePrinters[0];
+    }
+
+    private void PrintReceiptIfConfigured(Sale sale)
+    {
+        if (string.IsNullOrWhiteSpace(SelectedReceiptPrinter)) return;
+
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                using var server = new LocalPrintServer();
+                var queue = server.GetPrintQueue(SelectedReceiptPrinter);
+                var dialog = new System.Windows.Controls.PrintDialog { PrintQueue = queue };
+                var document = BuildReceiptDocument(sale);
+                dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Zakaz {sale.LocalId}");
+            }
+            catch
+            {
+                // Sale must not fail because printer is unavailable.
+            }
+        });
+    }
+
+    private static FlowDocument BuildReceiptDocument(Sale sale)
+    {
+        var doc = new FlowDocument
+        {
+            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 12,
+            PagePadding = new System.Windows.Thickness(18),
+            ColumnWidth = 280
+        };
+
+        doc.Blocks.Add(new Paragraph(new Run("ShefPos"))
+        {
+            FontSize = 18,
+            FontWeight = System.Windows.FontWeights.Bold,
+            TextAlignment = System.Windows.TextAlignment.Center,
+            Margin = new System.Windows.Thickness(0, 0, 0, 8)
+        });
+        doc.Blocks.Add(new Paragraph(new Run($"Sana: {sale.CreatedAt:dd.MM.yyyy HH:mm}")));
+        if (!string.IsNullOrWhiteSpace(sale.CustomerName))
+            doc.Blocks.Add(new Paragraph(new Run($"Mijoz: {sale.CustomerName}")));
+
+        var table = new Table();
+        table.Columns.Add(new TableColumn { Width = new System.Windows.GridLength(150) });
+        table.Columns.Add(new TableColumn { Width = new System.Windows.GridLength(50) });
+        table.Columns.Add(new TableColumn { Width = new System.Windows.GridLength(80) });
+        var group = new TableRowGroup();
+        table.RowGroups.Add(group);
+
+        group.Rows.Add(new TableRow
+        {
+            Cells =
+            {
+                new TableCell(new Paragraph(new Run("Mahsulot")) { FontWeight = System.Windows.FontWeights.Bold }),
+                new TableCell(new Paragraph(new Run("Soni")) { FontWeight = System.Windows.FontWeights.Bold }),
+                new TableCell(new Paragraph(new Run("Jami")) { FontWeight = System.Windows.FontWeights.Bold })
+            }
+        });
+
+        foreach (var item in sale.Items)
+        {
+            group.Rows.Add(new TableRow
+            {
+                Cells =
+                {
+                    new TableCell(new Paragraph(new Run(item.ProductName))),
+                    new TableCell(new Paragraph(new Run(item.Quantity.ToString("N2")))),
+                    new TableCell(new Paragraph(new Run(item.Total.ToString("N0"))))
+                }
+            });
+        }
+
+        doc.Blocks.Add(table);
+        doc.Blocks.Add(new Paragraph(new Run($"Jami: {sale.TotalAmount:N0} so'm"))
+        {
+            FontWeight = System.Windows.FontWeights.Bold,
+            FontSize = 15,
+            TextAlignment = System.Windows.TextAlignment.Right,
+            Margin = new System.Windows.Thickness(0, 10, 0, 0)
+        });
+        doc.Blocks.Add(new Paragraph(new Run($"To'lov: {sale.PaidAmount:N0} so'm")));
+        doc.Blocks.Add(new Paragraph(new Run($"Qaytim: {sale.ChangeAmount:N0} so'm")));
+        return doc;
     }
 
     // ── Customer commands ──────────────────────────────────────────────────────

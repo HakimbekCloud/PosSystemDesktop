@@ -143,3 +143,9 @@ C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\Ne
 C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\NetworkLogWindow.baml
 C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\SaleHistoryWindow.baml
 C:\Users\User\source\repos\PosSystem\PosSystem\obj\Debug\net8.0-windows\Views\SaleHistoryWindow.g.cs
+C:\Users\User\source\repos\PosSystem\build-check\PosSystem.exe
+C:\Users\User\source\repos\PosSystem\build-check\PosSystem.dll.config
+C:\Users\User\source\repos\PosSystem\build-check\PosSystem.deps.json
+C:\Users\User\source\repos\PosSystem\build-check\PosSystem.runtimeconfig.json
+C:\Users\User\source\repos\PosSystem\build-check\PosSystem.dll
+C:\Users\User\source\repos\PosSystem\build-check\PosSystem.pdb
