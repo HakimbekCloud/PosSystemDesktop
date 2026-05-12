@@ -48,6 +48,38 @@ public partial class PosViewModel : ObservableObject
         await AddProductVm.LoadAsync();
     }
 
+    /// <summary>
+    /// Skanerdan kelgan barkod raqamini qayta ishlaydi.
+    /// Topilsa — savatga qo'shadi; topilmasa — "Mahsulot qo'shish" oynasini ochib barkodni to'ldiradi.
+    /// </summary>
+    [RelayCommand]
+    private async Task ProcessBarcodeAsync(string barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode)) return;
+
+        var product = _allProducts.FirstOrDefault(p =>
+            !string.IsNullOrEmpty(p.Barcode) && p.Barcode == barcode);
+
+        if (product is not null)
+        {
+            AddToCart(product);
+            return;
+        }
+
+        // Mahsulot topilmadi — Add Product paneli ochiq bo'lsa barkodni yangilash
+        if (IsAddProductOpen)
+        {
+            AddProductVm.BarcodeInput = barcode;
+            return;
+        }
+
+        // Panelni och va barkodni avtomatik to'ldir
+        AddProductVm.Reset();
+        AddProductVm.BarcodeInput = barcode;
+        IsAddProductOpen = true;
+        await AddProductVm.LoadAsync();
+    }
+
     public PosViewModel(
         ProductRepository products,
         CustomerRepository customers,
