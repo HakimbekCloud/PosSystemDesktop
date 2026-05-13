@@ -496,20 +496,20 @@ public partial class PosViewModel : ObservableObject
 
         _sales.Add(sale);
 
-        PrintReceiptIfConfigured(sale);
-
-        // Decrement stock immediately so the product grid reflects the sale at once
-        foreach (var item in sale.Items)
-            _products.DecrementStock(item.ProductRemoteUuid ?? "", item.Quantity);
+        QueueReceiptPrintIfConfigured(sale);
 
         ClearCart();
-
-        _allProducts = _products.GetAll();
-        ApplyFilters();
+        ApplySoldStockInMemory(sale.Items);
 
         _ = Task.Run(async () =>
         {
-            try { await _sync.TrySyncAsync(); }
+            try
+            {
+                foreach (var item in sale.Items)
+                    _products.DecrementStock(item.ProductRemoteUuid ?? "", item.Quantity);
+
+                await _sync.TrySyncAsync();
+            }
             catch { /* retry on next background cycle */ }
         });
 
@@ -518,6 +518,20 @@ public partial class PosViewModel : ObservableObject
 
     private bool CanCheckout() =>
         CartItems.Count > 0 && Total > 0 && PaidAmount >= Total;
+
+    private void ApplySoldStockInMemory(IEnumerable<SaleItem> items)
+    {
+        foreach (var item in items)
+        {
+            if (string.IsNullOrWhiteSpace(item.ProductRemoteUuid)) continue;
+
+            var product = _allProducts.FirstOrDefault(p => p.RemoteUuid == item.ProductRemoteUuid);
+            if (product is not null)
+                product.Stock = Math.Max(0, product.Stock - item.Quantity);
+        }
+
+        ApplyFilters();
+    }
 
     partial void OnCartDiscountChanged(decimal value) => RefreshTotals();
     partial void OnPaidAmountChanged(decimal value)   => RefreshTotals();
@@ -553,16 +567,19 @@ public partial class PosViewModel : ObservableObject
             SelectedLabelPrinter = AvailablePrinters[0];
     }
 
-    private void PrintReceiptIfConfigured(Sale sale)
+    private void QueueReceiptPrintIfConfigured(Sale sale)
     {
-        if (string.IsNullOrWhiteSpace(SelectedReceiptPrinter)) return;
+        if (!OperatingSystem.IsWindows()) return;
 
-        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        var printerName = SelectedReceiptPrinter;
+        if (string.IsNullOrWhiteSpace(printerName)) return;
+
+        var printThread = new Thread(() =>
         {
             try
             {
                 using var server = new LocalPrintServer();
-                var queue = server.GetPrintQueue(SelectedReceiptPrinter);
+                var queue = server.GetPrintQueue(printerName);
                 var dialog = new System.Windows.Controls.PrintDialog { PrintQueue = queue };
                 var document = BuildReceiptDocument(sale);
                 dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, $"Zakaz {sale.LocalId}");
@@ -572,6 +589,11 @@ public partial class PosViewModel : ObservableObject
                 // Sale must not fail because printer is unavailable.
             }
         });
+
+        printThread.Name = $"Receipt print {sale.LocalId}";
+        printThread.IsBackground = true;
+        printThread.SetApartmentState(ApartmentState.STA);
+        printThread.Start();
     }
 
     private static FlowDocument BuildReceiptDocument(Sale sale)

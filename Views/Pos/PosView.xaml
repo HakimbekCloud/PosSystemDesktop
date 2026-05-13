@@ -457,8 +457,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="184"/>  <!-- Navigation -->
                 <ColumnDefinition Width="*"/>    <!-- Products -->
-                <ColumnDefinition Width="370"/>  <!-- Cart -->
-                <ColumnDefinition Width="290"/>  <!-- Payment -->
+                <ColumnDefinition Width="235"/>  <!-- Cart -->
+                <ColumnDefinition Width="180"/>  <!-- Payment -->
             </Grid.ColumnDefinitions>
 
             <!-- в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ COLUMN 0: PRODUCTS в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
@@ -1190,32 +1190,32 @@
 
                     <!-- Totals -->
                     <Border Grid.Row="2" Background="#FBFCFE"
-                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,1" Padding="18,16"
+                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,1" Padding="18,12"
                             Visibility="Visible">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,6" Visibility="Collapsed">
-                                <TextBlock Text="Subtotal" Foreground="#667085" FontSize="13"/>
-                                <TextBlock HorizontalAlignment="Right" FontSize="13">
-                                    <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
-                                    <Run Text=" so'm" Foreground="#94A3B8"/>
-                                </TextBlock>
-                            </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                            <Separator Background="#E2E8F0" Margin="0,0,0,8"/>
-
-                            <Grid>
-                                <TextBlock Text="JAMI" FontSize="17" FontWeight="Bold" Foreground="#0A3A8C"/>
-                                <TextBlock HorizontalAlignment="Right"
-                                           FontSize="23" FontWeight="Bold" Foreground="#0B5BD3">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="JAMI" FontSize="16" FontWeight="Bold" Foreground="#0A3A8C"/>
+                                <TextBlock FontSize="22" FontWeight="Bold" Foreground="#0B5BD3">
                                     <Run Text="{Binding Total, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
                                     <Run Text=" so'm" FontSize="13" Foreground="#3B82F6"/>
                                 </TextBlock>
-                            </Grid>
-                        </StackPanel>
+                            </StackPanel>
+
+                            <Button Grid.Column="1" Content="Savatni tozalash"
+                                    Command="{Binding ClearCartCommand}"
+                                    Style="{StaticResource OutlineDangerButtonStyle}"
+                                    Height="36" Padding="10,0" FontSize="12"
+                                    VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
 
                     <!-- Clear cart -->
-                    <Border Grid.Row="3" Padding="18,12" Visibility="Visible">
+                    <Border Grid.Row="3" Padding="18,12" Visibility="Collapsed">
                         <Button Content="Savatni tozalash"
                                 Command="{Binding ClearCartCommand}"
                                 Style="{StaticResource OutlineDangerButtonStyle}"
@@ -1231,18 +1231,16 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="8"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="220"/>
-                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="128"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="132"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="7">
+                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="10"/>
@@ -1272,31 +1270,34 @@
                                     </Button>
                                 </Grid>
 
-                                <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" BorderBrush="#D8E1EE" BorderThickness="1"
-                                            CornerRadius="10" Background="White">
+                                <Border Grid.Row="2" Grid.Column="0" Background="White" CornerRadius="12"
+                                        Padding="10,8">
+                                    <StackPanel>
+                                        <TextBlock Text="QABUL QILINDI" FontSize="10" FontWeight="Bold"
+                                                   Foreground="#94A3B8"/>
                                         <TextBox Text="{Binding PaidAmount,
                                                  UpdateSourceTrigger=PropertyChanged,
                                                  StringFormat='{}{0:N0}'}"
-                                                 TextAlignment="Right"
-                                                 FontSize="18" FontWeight="Bold" Padding="10,6"
+                                                 TextAlignment="Left"
+                                                 FontSize="18" FontWeight="Bold" Padding="0,2"
                                                  BorderThickness="0" Background="Transparent"
                                                  helpers:NumericTextBox.IsNumeric="True"
                                                  Style="{StaticResource FlatTextBoxStyle}"/>
-                                    </Border>
-                                    <TextBlock Grid.Column="1" Text=" so'm" Foreground="#667085"
-                                               FontSize="12" Margin="4,0,0,0" VerticalAlignment="Center"/>
-                                </Grid>
+                                    </StackPanel>
+                                </Border>
 
-                                <StackPanel Grid.Row="2" Grid.Column="4" VerticalAlignment="Center">
-                                    <TextBlock Text="Qaytim" FontSize="10" FontWeight="Bold"
-                                               Foreground="#667085"/>
+                                <StackPanel Grid.Row="2" Grid.Column="2" Background="#FEF2F2"
+                                            VerticalAlignment="Stretch">
+                                    <StackPanel.Margin>0</StackPanel.Margin>
+                                    <StackPanel.Resources>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Margin" Value="10,0,10,0"/>
+                                        </Style>
+                                    </StackPanel.Resources>
+                                    <TextBlock Text="QAYTIM" FontSize="10" FontWeight="Bold"
+                                               Foreground="#94A3B8" Margin="10,8,10,0"/>
                                     <TextBlock FontSize="14" FontWeight="SemiBold"
-                                               TextTrimming="CharacterEllipsis">
+                                               TextTrimming="CharacterEllipsis" Margin="10,2,10,8">
                                         <Run Text="{Binding Change, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
                                         <Run Text=" so'm"/>
                                         <TextBlock.Style>
@@ -1314,10 +1315,10 @@
                                     </TextBlock>
                                 </StackPanel>
 
-                                <Button Grid.Row="2" Grid.Column="6"
+                                <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
                                         Command="{Binding CheckoutCommand}"
                                         Style="{StaticResource SuccessButtonStyle}"
-                                        Height="40" FontSize="16" FontWeight="Bold">
+                                        Height="58" FontSize="18" FontWeight="Bold">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
                                                    Margin="0,0,8,0" VerticalAlignment="Center"/>

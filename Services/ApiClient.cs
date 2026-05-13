@@ -12,6 +12,7 @@ public class ApiClient
 {
     private readonly HttpClient _http;
     private readonly SettingsRepository _settings;
+    private const string DefaultBaseUrl = "https://shefpos.uz";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,10 +31,22 @@ public class ApiClient
     public void ApplyBaseUrl()
     {
         var url = _settings.Get("api_base_url");
-        if (string.IsNullOrWhiteSpace(url)) return;
+        if (string.IsNullOrWhiteSpace(url) || IsLocalBaseUrl(url))
+        {
+            url = DefaultBaseUrl;
+            _settings.Set("api_base_url", url);
+        }
+
         if (!Uri.TryCreate(url.TrimEnd('/') + "/", UriKind.Absolute, out var uri)) return;
         if (_http.BaseAddress == uri) return;
         _http.BaseAddress = uri;
+    }
+
+    private static bool IsLocalBaseUrl(string url)
+    {
+        return Uri.TryCreate(url.TrimEnd('/') + "/", UriKind.Absolute, out var uri) &&
+               (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase));
     }
 
     public void ApplyTenantHeader()

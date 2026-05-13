@@ -31,13 +31,13 @@ export function ProductGrid({ products, selectedProductId, onSelectProduct }: Pr
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(164px,1fr))] gap-4">
+        <div className="grid justify-start gap-4 [grid-template-columns:repeat(auto-fill,minmax(164px,190px))]">
           {products.map((product) => (
             <button
               key={product.id}
               onClick={() => onSelectProduct(product.id)}
               className={[
-                'pos-card min-h-[184px] p-4 text-left cashier-focus',
+                'pos-card min-h-[184px] w-full p-4 text-left cashier-focus',
                 selectedProductId === product.id ? 'pos-card-selected' : ''
               ].join(' ')}
             >

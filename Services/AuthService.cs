@@ -10,9 +10,7 @@ public class AuthService(
     SettingsRepository settings,
     IDbContextFactory<AppDbContext> dbFactory)
 {
-    // Hardcoded for localhost development.
-    // Production: build URL from subdomain + domain (e.g. https://{subdomain}.example.com).
-    private const string BaseUrl = "http://localhost:8080";
+    private const string BaseUrl = "https://shefpos.uz";
 
     public bool HasValidSession() =>
         !string.IsNullOrEmpty(settings.Get("auth_token"));
