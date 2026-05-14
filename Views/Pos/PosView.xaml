@@ -1225,10 +1225,11 @@
                         </ListView>
                     </Grid>
 
-                    <!-- Totals -->
+                    <!-- Totals — eski JAMI bloki. Yangi mixed-payment bloki o'z
+                         JAMI + Savatni tozalash sarlavhasiga ega, shuning uchun bu yashirildi. -->
                     <Border Grid.Row="2" Background="#FBFCFE"
                             BorderBrush="#E2E8F0" BorderThickness="0,1,0,1" Padding="18,12"
-                            Visibility="Visible">
+                            Visibility="Collapsed">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
