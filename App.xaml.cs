@@ -6,11 +6,14 @@ using PosSystem.Data;
 using PosSystem.Data.Repositories;
 using PosSystem.Services;
 using PosSystem.ViewModels;
+using PosSystem.ViewModels.Admin;
+using PosSystem.ViewModels.Admin.Modules;
 using PosSystem.ViewModels.Game;
 using PosSystem.ViewModels.Ombor;
 using PosSystem.ViewModels.Pos;
 using PosSystem.ViewModels.Products;
 using PosSystem.Views;
+using PosSystem.Views.Admin;
 using PosSystem.Views.Game;
 using PosSystem.Views.Pos;
 
@@ -69,10 +72,23 @@ public partial class App : Application
             sp.GetRequiredService<ProductTypeRepository>()));
         sc.AddTransient<PosViewModel>();
 
+        // Admin shell + modules (singleton so navigating away preserves state).
+        sc.AddSingleton<AdminShellViewModel>();
+        sc.AddSingleton<DashboardViewModel>();
+        sc.AddSingleton<SalesEntryViewModel>();
+        sc.AddSingleton<ReturnsViewModel>();
+        sc.AddSingleton<ProductsAdminViewModel>();
+        sc.AddSingleton<InventoryViewModel>();
+        sc.AddSingleton<CustomersViewModel>();
+        sc.AddSingleton<EmployeesViewModel>();
+        sc.AddSingleton<StatisticsViewModel>();
+        sc.AddSingleton<SettingsViewModel>();
+
         // ── Views ─────────────────────────────────────────────────────────────
         sc.AddTransient<LoginView>();
         sc.AddTransient<GameView>();
         sc.AddTransient<PosView>();
+        sc.AddTransient<AdminShellView>();
         sc.AddSingleton<MainWindow>();
 
         return sc.BuildServiceProvider();

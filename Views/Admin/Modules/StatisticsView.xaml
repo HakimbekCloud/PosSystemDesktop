@@ -1,0 +1,305 @@
+<UserControl x:Class="PosSystem.Views.Admin.Modules.StatisticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PosSystem.ViewModels.Admin.Modules"
+             xmlns:c="clr-namespace:PosSystem.Views.Admin.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:StatisticsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="{StaticResource SurfaceApp}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <c:PageHeader Grid.Row="0"
+                      Crumb="ShefPos / Statistika"
+                      Title="Savdo statistikasi"
+                      Subtitle="Davriy tahlillar, foyda va xodimlar samaradorligi">
+            <c:PageHeader.Actions>
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource SegmentedGroupBorder}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource SegmentedItem}" GroupName="StatRange" Content="Bugun"/>
+                            <RadioButton Style="{StaticResource SegmentedItem}" GroupName="StatRange" IsChecked="True" Content="Bu hafta"/>
+                            <RadioButton Style="{StaticResource SegmentedItem}" GroupName="StatRange" Content="Oy"/>
+                            <RadioButton Style="{StaticResource SegmentedItem}" GroupName="StatRange" Content="Yil"/>
+                        </StackPanel>
+                    </Border>
+                    <Button Style="{StaticResource AdminSecondaryButtonSm}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74E;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Eksport"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AdminPrimaryButtonSm}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE749;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Chop etish"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20,16,20,24">
+
+                <UniformGrid Columns="4" Rows="1">
+                    <c:StatCard Margin="0,0,8,0" Label="TUSHUM"      Value="{Binding KpiRevenue}" Delta="{Binding KpiRevenueDelta}" DeltaTone="Up"   Sub="{Binding KpiRevenueSub}" Glyph="&#xE825;" Tone="Brand"/>
+                    <c:StatCard Margin="4,0,4,0" Label="CHEKLAR"     Value="{Binding KpiOrders}"  Unit="{Binding KpiOrdersUnit}"    Delta="{Binding KpiOrdersDelta}" DeltaTone="Up" Sub="haftada" Glyph="&#xE7C1;" Tone="Info"/>
+                    <c:StatCard Margin="4,0,4,0" Label="O'RTACHA CHEK" Value="{Binding KpiAverage}" Delta="{Binding KpiAverageDelta}" DeltaTone="Up" Sub="haftada" Glyph="&#xE9D9;" Tone="Success"/>
+                    <c:StatCard Margin="8,0,0,0" Label="SOF FOYDA"   Value="{Binding KpiProfit}"  Delta="{Binding KpiProfitDelta}"  DeltaTone="Down" Sub="haftada" Glyph="&#xEAFD;" Tone="Warning"/>
+                </UniformGrid>
+
+                <!-- Bar chart + categories -->
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource AdminCard}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,0,1" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="Haftalik tushum" Style="{StaticResource CardTitleText}"/>
+                                    <TextBlock Text="Kunlik taqsimot · 13.05.2026 dan boshlab" Style="{StaticResource CardSubText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid Margin="16,18,16,16" Height="240">
+                                <!-- Gridlines -->
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderBrush="{StaticResource N100}" BorderThickness="0,0,0,1" VerticalAlignment="Top"/>
+                                    <Border Grid.Row="1" BorderBrush="{StaticResource N100}" BorderThickness="0,0,0,1" VerticalAlignment="Top"/>
+                                    <Border Grid.Row="2" BorderBrush="{StaticResource N100}" BorderThickness="0,0,0,1" VerticalAlignment="Top"/>
+                                    <Border Grid.Row="3" BorderBrush="{StaticResource N100}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding DailyRevenue}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="10,0,10,0">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Border Grid.Row="0"
+                                                        VerticalAlignment="Bottom"
+                                                        CornerRadius="4,4,0,0"
+                                                        Background="{StaticResource Brand500}"
+                                                        MinHeight="6"
+                                                        Height="{Binding BarHeight}"/>
+                                                <TextBlock Grid.Row="1"
+                                                           Text="{Binding Label}"
+                                                           Style="{StaticResource MonoText}"
+                                                           Foreground="{StaticResource N500}"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,8,0,0"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Category share -->
+                    <Border Grid.Column="2" Style="{StaticResource AdminCard}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,0,1" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="Kategoriya bo'yicha ulush" Style="{StaticResource CardTitleText}"/>
+                                    <TextBlock Text="Haftalik tushum taqsimoti" Style="{StaticResource CardSubText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding Categories}" Padding="16,12">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="10" Height="10" CornerRadius="2"
+                                                        Background="{Binding Color}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource BodyText}" Margin="8,0,0,0"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding ShareFormatted}" Style="{StaticResource MonoText}" FontWeight="SemiBold" Foreground="{StaticResource N900}"/>
+                                            </Grid>
+                                            <ProgressBar Grid.Row="1"
+                                                         Style="{StaticResource AdminProgressBar}"
+                                                         Maximum="100"
+                                                         Value="{Binding Share}"
+                                                         Foreground="{Binding Color}"
+                                                         Margin="0,6,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Top products + Cashier perf -->
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.4*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource AdminCard}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,0,1" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="Eng ko'p sotilgan mahsulotlar" Style="{StaticResource CardTitleText}"/>
+                                    <TextBlock Text="Bu hafta TOP-10" Style="{StaticResource CardSubText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <DataGrid Style="{StaticResource AdminDataGrid}"
+                                      ItemsSource="{Binding TopProducts}"
+                                      RowHeight="36">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#"    Binding="{Binding Rank}" Width="40">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="Foreground" Value="{StaticResource N500}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="MAHSULOT" Binding="{Binding Name}" Width="*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="SOTILDI" Binding="{Binding Sold}" Width="90">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="TUSHUM" Binding="{Binding RevenueFormatted}" Width="160">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="TREND" Binding="{Binding TrendFormatted}" Width="80">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="Foreground" Value="{StaticResource Success700}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource AdminCard}">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Top" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,0,0,1" Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="Kassirlar samaradorligi" Style="{StaticResource CardTitleText}"/>
+                                    <TextBlock Text="Bu hafta tushum bo'yicha" Style="{StaticResource CardSubText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding Cashiers}" Padding="14,8">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource N100}" BorderThickness="0,0,0,1" Padding="0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="30" Height="30" CornerRadius="999"
+                                                        VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource Avatar0Bg}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Accent}" Value="1"><Setter Property="Background" Value="{StaticResource Avatar1Bg}"/></DataTrigger>
+                                                                <DataTrigger Binding="{Binding Accent}" Value="3"><Setter Property="Background" Value="{StaticResource Avatar3Bg}"/></DataTrigger>
+                                                                <DataTrigger Binding="{Binding Accent}" Value="5"><Setter Property="Background" Value="{StaticResource Avatar5Bg}"/></DataTrigger>
+                                                                <DataTrigger Binding="{Binding Accent}" Value="6"><Setter Property="Background" Value="{StaticResource Avatar6Bg}"/></DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Initials}" FontWeight="Bold" FontSize="11"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource Avatar0Fg}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Accent}" Value="1"><Setter Property="Foreground" Value="{StaticResource Avatar1Fg}"/></DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Accent}" Value="3"><Setter Property="Foreground" Value="{StaticResource Avatar3Fg}"/></DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Accent}" Value="5"><Setter Property="Foreground" Value="{StaticResource Avatar5Fg}"/></DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Accent}" Value="6"><Setter Property="Foreground" Value="{StaticResource Avatar6Fg}"/></DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource N900}" FontSize="13"/>
+                                                    <TextBlock Style="{StaticResource HintText}" Margin="0,1,0,0">
+                                                        <Run Text="{Binding Receipts, Mode=OneWay}"/>
+                                                        <Run Text="ta chek · o'rtacha"/>
+                                                        <Run Text="{Binding AverageFormatted, Mode=OneWay}" FontFamily="{StaticResource UiFontMono}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding RevenueFormatted}"
+                                                           FontFamily="{StaticResource UiFontMono}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="13"
+                                                           Foreground="{StaticResource N900}"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

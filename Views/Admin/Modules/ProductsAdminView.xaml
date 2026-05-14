@@ -1,0 +1,255 @@
+<UserControl x:Class="PosSystem.Views.Admin.Modules.ProductsAdminView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PosSystem.ViewModels.Admin.Modules"
+             xmlns:c="clr-namespace:PosSystem.Views.Admin.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:ProductsAdminViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="{StaticResource SurfaceApp}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <c:PageHeader Grid.Row="0"
+                      Crumb="ShefPos / Katalog / Mahsulotlar"
+                      Title="Mahsulotlar"
+                      Subtitle="Katalogda 428 ta nomenklatura · 10 kategoriya · ombor qiymati 184 220 000 so'm">
+            <c:PageHeader.Actions>
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource AdminSecondaryButtonSm}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE898;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Import"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AdminSecondaryButtonSm}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74E;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Eksport"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AdminSecondaryButtonSm}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE749;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Yorliqlar"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Style="{StaticResource VDivider}" Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource AdminPrimaryButtonSm}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Yangi mahsulot"/>
+                            <Border Style="{StaticResource KbdHint}" Background="#FFFFFF" Margin="8,0,0,0">
+                                <TextBlock Text="N" Style="{StaticResource KbdHintText}"/>
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20,16,20,24">
+
+                <UniformGrid Columns="4" Rows="1">
+                    <c:StatCard Margin="0,0,8,0" Label="JAMI NOMENKLATURA" Value="{Binding KpiTotal}" Unit="{Binding KpiTotalUnit}" Sub="{Binding KpiTotalSub}" Glyph="&#xE7B8;" Tone="Brand"/>
+                    <c:StatCard Margin="4,0,4,0" Label="OMBOR QIYMATI"    Value="{Binding KpiValue}" Delta="{Binding KpiValueDelta}" DeltaTone="Up" Sub="{Binding KpiValueSub}" Glyph="&#xE7E8;" Tone="Info"/>
+                    <c:StatCard Margin="4,0,4,0" Label="KAM QOLDIQ"       Value="{Binding KpiLow}"   Unit="{Binding KpiLowUnit}"   Sub="{Binding KpiLowSub}"   Glyph="&#xE7BA;" Tone="Warning"/>
+                    <c:StatCard Margin="8,0,0,0" Label="TUGAGAN"          Value="{Binding KpiOut}"   Unit="{Binding KpiOutUnit}"   Sub="{Binding KpiOutSub}"   Glyph="&#xE711;" Tone="Danger"/>
+                </UniformGrid>
+
+                <!-- Category chips -->
+                <ItemsControl ItemsSource="{Binding Categories}" Margin="0,16,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ToggleButton Style="{StaticResource AdminChip}" Margin="0,0,6,6">
+                                <ToggleButton.Content>
+                                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                </ToggleButton.Content>
+                            </ToggleButton>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Toolbar -->
+                <Border Background="{StaticResource Surface1}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="1"
+                        CornerRadius="8,8,0,0"
+                        Padding="12,10"
+                        Margin="0,8,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <Grid Width="320" Margin="0,0,8,0">
+                                <TextBox Style="{StaticResource AdminTextBoxSm}" Padding="30,0,8,0"
+                                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="&#xE721;" FontFamily="{StaticResource FluentIcons}" FontSize="12"
+                                           Foreground="{StaticResource N400}" VerticalAlignment="Center"
+                                           Margin="10,0,0,0" IsHitTestVisible="False"/>
+                                <TextBlock Text="Nomi, kodi yoki shtrix-kod…"
+                                           Style="{StaticResource HintText}"
+                                           VerticalAlignment="Center" Margin="32,0,0,0"
+                                           IsHitTestVisible="False"
+                                           Visibility="{Binding SearchQuery, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                            </Grid>
+                            <ComboBox Style="{StaticResource AdminComboBoxSm}" Width="150" Margin="0,0,8,0">
+                                <ComboBoxItem IsSelected="True">Holat: Barchasi</ComboBoxItem>
+                                <ComboBoxItem>Faol</ComboBoxItem>
+                                <ComboBoxItem>Kam qoldiq</ComboBoxItem>
+                                <ComboBoxItem>Tugagan</ComboBoxItem>
+                            </ComboBox>
+                            <ComboBox Style="{StaticResource AdminComboBoxSm}" Width="160">
+                                <ComboBoxItem IsSelected="True">Filial: Barchasi</ComboBoxItem>
+                                <ComboBoxItem>Chilonzor</ComboBoxItem>
+                                <ComboBoxItem>Mirobod</ComboBoxItem>
+                                <ComboBoxItem>Yunusobod</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Border Style="{StaticResource SegmentedGroupBorder}">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton Style="{StaticResource SegmentedItem}" GroupName="ProdDensity" IsChecked="True" Content="Qulay"/>
+                                    <RadioButton Style="{StaticResource SegmentedItem}" GroupName="ProdDensity" Content="Zich"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Background="{StaticResource Surface1}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="1,0,1,1"
+                        CornerRadius="0,0,8,8">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Bottom" Style="{StaticResource DataGridFooter}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Style="{StaticResource HintText}" VerticalAlignment="Center">
+                                    <Run Text="Jami:"/>
+                                    <Run Text="{Binding Products.Count, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    <Run Text="ta mahsulot · 1 dan 22 gacha"/>
+                                </TextBlock>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Sahifada:" Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <ComboBox Style="{StaticResource AdminComboBoxSm}" Width="74" Height="26">
+                                        <ComboBoxItem>25</ComboBoxItem>
+                                        <ComboBoxItem IsSelected="True">50</ComboBoxItem>
+                                        <ComboBoxItem>100</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <DataGrid Style="{StaticResource AdminDataGrid}"
+                                  ItemsSource="{Binding Products}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="KOD"        Binding="{Binding Code}"     Width="90"  FontFamily="{StaticResource UiFontMono}"/>
+                                <DataGridTextColumn Header="NOMI"       Binding="{Binding Name}"     Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Foreground" Value="{StaticResource N900}"/>
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="KATEGORIYA" Binding="{Binding Category}" Width="160"/>
+                                <DataGridTextColumn Header="QOLDIQ"     Binding="{Binding StockFormatted}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="TANNARX"    Binding="{Binding CostFormatted}"  Width="130">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="NARX"       Binding="{Binding PriceFormatted}" Width="130">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="MARJA"      Binding="{Binding MarginFormatted}" Width="80">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Foreground" Value="{StaticResource Success700}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="HOLAT" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <c:StatusBadge>
+                                                <c:StatusBadge.Style>
+                                                    <Style TargetType="c:StatusBadge">
+                                                        <Setter Property="Tone" Value="Success"/>
+                                                        <Setter Property="Text" Value="Faol"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="low">
+                                                                <Setter Property="Tone" Value="Warning"/>
+                                                                <Setter Property="Text" Value="Kam qoldiq"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="out">
+                                                                <Setter Property="Tone" Value="Danger"/>
+                                                                <Setter Property="Text" Value="Tugagan"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </c:StatusBadge.Style>
+                                            </c:StatusBadge>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource RowActionButton}" Content="&#xE70F;" ToolTip="Tahrirlash"/>
+                                                <Button Style="{StaticResource RowActionButton}" Content="&#xE8C8;" ToolTip="Nusxa olish"/>
+                                                <Button Style="{StaticResource RowActionDangerButton}" Content="&#xE74D;" ToolTip="O'chirish"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

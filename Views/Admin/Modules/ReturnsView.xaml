@@ -1,0 +1,168 @@
+<UserControl x:Class="PosSystem.Views.Admin.Modules.ReturnsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PosSystem.ViewModels.Admin.Modules"
+             xmlns:c="clr-namespace:PosSystem.Views.Admin.Controls"
+             d:DataContext="{d:DesignInstance Type=vm:ReturnsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="{StaticResource SurfaceApp}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <c:PageHeader Grid.Row="0"
+                      Crumb="ShefPos / Qaytarishlar"
+                      Title="Qaytarishlar (Vozvrat)"
+                      Subtitle="Mijoz qaytargan cheklar va tovarlar boshqaruvi">
+            <c:PageHeader.Actions>
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource AdminSecondaryButtonSm}" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74E;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Eksport"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AdminPrimaryButtonSm}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" FontFamily="{StaticResource FluentIcons}" FontSize="12" Margin="0,0,6,0"/>
+                            <TextBlock Text="Yangi qaytarish"/>
+                            <Border Style="{StaticResource KbdHint}" Background="#FFFFFF" Margin="8,0,0,0">
+                                <TextBlock Text="N" Style="{StaticResource KbdHintText}"/>
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </c:PageHeader.Actions>
+        </c:PageHeader>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20,16,20,24">
+
+                <UniformGrid Columns="4" Rows="1">
+                    <c:StatCard Margin="0,0,8,0" Label="BUGUN"           Value="{Binding KpiToday}"   Unit="{Binding KpiTodayUnit}"   Sub="{Binding KpiTodaySub}"   Glyph="&#xE7A7;" Tone="Warning"/>
+                    <c:StatCard Margin="4,0,4,0" Label="QAYTARILGAN SUMMA" Value="{Binding KpiAmount}" Sub="{Binding KpiAmountSub}" Glyph="&#xE8FB;" Tone="Brand"/>
+                    <c:StatCard Margin="4,0,4,0" Label="TASDIQLASH KUTILMOQDA" Value="{Binding KpiPending}" Unit="{Binding KpiPendingUnit}" Sub="{Binding KpiPendingSub}" Glyph="&#xE823;" Tone="Info"/>
+                    <c:StatCard Margin="8,0,0,0" Label="QAYTARISH FOIZI" Value="{Binding KpiRate}"     Sub="{Binding KpiRateSub}"    Glyph="&#xE9D9;" Tone="Neutral"/>
+                </UniformGrid>
+
+                <!-- Toolbar -->
+                <Border Background="{StaticResource Surface1}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="1"
+                        CornerRadius="8,8,0,0"
+                        Padding="12,10"
+                        Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <Grid Width="320" Margin="0,0,8,0">
+                                <TextBox Style="{StaticResource AdminTextBoxSm}" Padding="30,0,8,0"
+                                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="&#xE721;" FontFamily="{StaticResource FluentIcons}" FontSize="12"
+                                           Foreground="{StaticResource N400}" VerticalAlignment="Center"
+                                           Margin="10,0,0,0" IsHitTestVisible="False"/>
+                                <TextBlock Text="QYT raqami, mijoz yoki chek bo'yicha…"
+                                           Style="{StaticResource HintText}"
+                                           VerticalAlignment="Center" Margin="32,0,0,0"
+                                           IsHitTestVisible="False"
+                                           Visibility="{Binding SearchQuery, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                            </Grid>
+                            <ComboBox Style="{StaticResource AdminComboBoxSm}" Width="170" Margin="0,0,8,0"
+                                      ItemsSource="{Binding StatusFilters}"
+                                      SelectedItem="{Binding StatusFilter}"/>
+                            <ComboBox Style="{StaticResource AdminComboBoxSm}" Width="160">
+                                <ComboBoxItem IsSelected="True">Sabab: Barchasi</ComboBoxItem>
+                                <ComboBoxItem>Yaroqsiz mahsulot</ComboBoxItem>
+                                <ComboBoxItem>Noto'g'ri tovar</ComboBoxItem>
+                                <ComboBoxItem>Mijoz qabul qilmadi</ComboBoxItem>
+                                <ComboBoxItem>O'zgartirish so'rovi</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource AdminGhostButtonSm}" Content="Tozalash"/>
+                    </Grid>
+                </Border>
+
+                <Border Background="{StaticResource Surface1}"
+                        BorderBrush="{StaticResource BorderSubtle}"
+                        BorderThickness="1,0,1,1"
+                        CornerRadius="0,0,8,8">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Bottom" Style="{StaticResource DataGridFooter}">
+                            <TextBlock Style="{StaticResource HintText}">
+                                <Run Text="Jami:"/>
+                                <Run Text="{Binding Returns.Count, Mode=OneWay}" FontWeight="SemiBold"/>
+                                <Run Text="ta qaytarish"/>
+                            </TextBlock>
+                        </Border>
+
+                        <DataGrid Style="{StaticResource AdminDataGrid}"
+                                  ItemsSource="{Binding Returns}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="QAYT №"  Binding="{Binding Number}"          Width="110" FontFamily="{StaticResource UiFontMono}"/>
+                                <DataGridTextColumn Header="SANA"    Binding="{Binding Date}"            Width="150"/>
+                                <DataGridTextColumn Header="CHEK"    Binding="{Binding OriginalReceipt}" Width="100" FontFamily="{StaticResource UiFontMono}"/>
+                                <DataGridTextColumn Header="MIJOZ"   Binding="{Binding Customer}"        Width="180"/>
+                                <DataGridTextColumn Header="KASSIR"  Binding="{Binding Cashier}"         Width="140"/>
+                                <DataGridTextColumn Header="TOVAR"   Binding="{Binding Items}"           Width="70"/>
+                                <DataGridTextColumn Header="SABAB"   Binding="{Binding Reason}"          Width="*"/>
+                                <DataGridTemplateColumn Header="HOLAT" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <c:StatusBadge>
+                                                <c:StatusBadge.Style>
+                                                    <Style TargetType="c:StatusBadge">
+                                                        <Setter Property="Tone" Value="Warning"/>
+                                                        <Setter Property="Text" Value="Kutilmoqda"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="approved">
+                                                                <Setter Property="Tone" Value="Success"/>
+                                                                <Setter Property="Text" Value="Tasdiqlangan"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="rejected">
+                                                                <Setter Property="Tone" Value="Danger"/>
+                                                                <Setter Property="Text" Value="Rad etilgan"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </c:StatusBadge.Style>
+                                            </c:StatusBadge>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="SUMMA" Binding="{Binding TotalFormatted}" Width="140">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="FontFamily" Value="{StaticResource UiFontMono}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource RowActionButton}" Content="&#xE890;" ToolTip="Ko'rish"/>
+                                                <Button Style="{StaticResource RowActionButton}" Content="&#xE73E;" ToolTip="Tasdiqlash"/>
+                                                <Button Style="{StaticResource RowActionDangerButton}" Content="&#xE711;" ToolTip="Rad etish"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

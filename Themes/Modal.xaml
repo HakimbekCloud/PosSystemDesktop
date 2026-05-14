@@ -1,0 +1,88 @@
+<!--
+  ShefPos design system — Modal / dialog styles.
+  Used inside a ContentControl overlay (DialogHost-style pattern).
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Backdrop -->
+    <SolidColorBrush x:Key="ModalBackdrop" Color="#0F172A" Opacity="0.50"/>
+
+    <Style x:Key="ModalBackdropBorder" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource ModalBackdrop}"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment"   Value="Stretch"/>
+    </Style>
+
+    <!-- Container -->
+    <Style x:Key="ModalContainer" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource Surface2}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="{StaticResource ModalRadius}"/>
+        <Setter Property="MinWidth"        Value="420"/>
+        <Setter Property="MaxWidth"        Value="640"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment"   Value="Center"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="56" ShadowDepth="24" Opacity="0.24" Color="#0F172A"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Modal head -->
+    <Style x:Key="ModalHead" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding"         Value="16,14"/>
+    </Style>
+
+    <Style x:Key="ModalTitleText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"   Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource N900}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Modal footer -->
+    <Style x:Key="ModalFoot" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource SurfaceSunken}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Padding"         Value="16,12"/>
+    </Style>
+
+    <Style x:Key="ModalCloseButton" TargetType="Button">
+        <Setter Property="Width"            Value="28"/>
+        <Setter Property="Height"           Value="28"/>
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="Foreground"       Value="{StaticResource N500}"/>
+        <Setter Property="BorderThickness"  Value="0"/>
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FontFamily"       Value="{StaticResource FluentIcons}"/>
+        <Setter Property="FontSize"         Value="13"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Content"          Value="&#xE711;"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource N100}"/>
+                            <Setter Property="Foreground" Value="{StaticResource N900}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

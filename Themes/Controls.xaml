@@ -1,0 +1,612 @@
+<!--
+  ShefPos design system — Buttons, inputs, chips, badges, toggles, checkboxes.
+  Conforms to v2 spec: 32px control height, 5px radius, brand-blue focus ring.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:Double x:Key="ControlHeight">32</sys:Double>
+    <sys:Double x:Key="ControlHeightSm">28</sys:Double>
+    <sys:Double x:Key="ControlHeightLg">38</sys:Double>
+    <CornerRadius x:Key="ControlRadius">5</CornerRadius>
+    <CornerRadius x:Key="ChipRadius">5</CornerRadius>
+    <CornerRadius x:Key="CardRadius">8</CornerRadius>
+    <CornerRadius x:Key="ModalRadius">10</CornerRadius>
+
+    <!-- ════════════════════════════════════════════════════════════
+         BUTTON BASE (shared template, variants below set brushes)
+         ════════════════════════════════════════════════════════════ -->
+
+    <!-- Primary action -->
+    <Style x:Key="AdminPrimaryButton" TargetType="Button">
+        <Setter Property="FontFamily"        Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"          Value="13"/>
+        <Setter Property="FontWeight"        Value="SemiBold"/>
+        <Setter Property="Foreground"        Value="White"/>
+        <Setter Property="Background"        Value="{StaticResource Brand500}"/>
+        <Setter Property="Padding"           Value="12,0"/>
+        <Setter Property="Height"            Value="{StaticResource ControlHeight}"/>
+        <Setter Property="Cursor"            Value="Hand"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="BorderThickness"   Value="0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource ControlRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource Brand600}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{StaticResource Brand700}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                            <Setter Property="Cursor"  Value="Arrow"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Secondary (outline) -->
+    <Style x:Key="AdminSecondaryButton" TargetType="Button">
+        <Setter Property="FontFamily"        Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"          Value="13"/>
+        <Setter Property="FontWeight"        Value="SemiBold"/>
+        <Setter Property="Foreground"        Value="{StaticResource N800}"/>
+        <Setter Property="Background"        Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"       Value="{StaticResource BorderDefault}"/>
+        <Setter Property="BorderThickness"   Value="1"/>
+        <Setter Property="Padding"           Value="12,0"/>
+        <Setter Property="Height"            Value="{StaticResource ControlHeight}"/>
+        <Setter Property="Cursor"            Value="Hand"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource ControlRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource N50}"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{StaticResource N100}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Ghost (text-only) -->
+    <Style x:Key="AdminGhostButton" TargetType="Button">
+        <Setter Property="FontFamily"        Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"          Value="13"/>
+        <Setter Property="FontWeight"        Value="SemiBold"/>
+        <Setter Property="Foreground"        Value="{StaticResource N700}"/>
+        <Setter Property="Background"        Value="Transparent"/>
+        <Setter Property="BorderThickness"   Value="0"/>
+        <Setter Property="Padding"           Value="10,0"/>
+        <Setter Property="Height"            Value="{StaticResource ControlHeight}"/>
+        <Setter Property="Cursor"            Value="Hand"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource ControlRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource N100}"/>
+                            <Setter Property="Foreground" Value="{StaticResource N900}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{StaticResource N150}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Danger solid -->
+    <Style x:Key="AdminDangerButton" TargetType="Button" BasedOn="{StaticResource AdminPrimaryButton}">
+        <Setter Property="Background" Value="{StaticResource Danger600}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource ControlRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource Danger700}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="#991B1B"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Danger ghost -->
+    <Style x:Key="AdminDangerGhostButton" TargetType="Button" BasedOn="{StaticResource AdminGhostButton}">
+        <Setter Property="Foreground" Value="{StaticResource Danger600}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource ControlRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource Danger50}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Success -->
+    <Style x:Key="AdminSuccessButton" TargetType="Button" BasedOn="{StaticResource AdminPrimaryButton}">
+        <Setter Property="Background" Value="{StaticResource Success600}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource ControlRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource Success700}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Size variants (BasedOn switches) -->
+    <Style x:Key="AdminPrimaryButtonSm" TargetType="Button" BasedOn="{StaticResource AdminPrimaryButton}">
+        <Setter Property="Height"    Value="{StaticResource ControlHeightSm}"/>
+        <Setter Property="FontSize"  Value="12"/>
+        <Setter Property="Padding"   Value="10,0"/>
+    </Style>
+    <Style x:Key="AdminSecondaryButtonSm" TargetType="Button" BasedOn="{StaticResource AdminSecondaryButton}">
+        <Setter Property="Height"    Value="{StaticResource ControlHeightSm}"/>
+        <Setter Property="FontSize"  Value="12"/>
+        <Setter Property="Padding"   Value="10,0"/>
+    </Style>
+    <Style x:Key="AdminGhostButtonSm" TargetType="Button" BasedOn="{StaticResource AdminGhostButton}">
+        <Setter Property="Height"    Value="{StaticResource ControlHeightSm}"/>
+        <Setter Property="FontSize"  Value="12"/>
+    </Style>
+
+    <!-- Icon-only row action (table) -->
+    <Style x:Key="RowActionButton" TargetType="Button">
+        <Setter Property="Width"            Value="26"/>
+        <Setter Property="Height"           Value="26"/>
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="Foreground"       Value="{StaticResource N500}"/>
+        <Setter Property="BorderThickness"  Value="0"/>
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="FontFamily"       Value="{StaticResource FluentIcons}"/>
+        <Setter Property="FontSize"         Value="14"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource N100}"/>
+                            <Setter Property="Foreground" Value="{StaticResource N900}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="RowActionDangerButton" TargetType="Button" BasedOn="{StaticResource RowActionButton}">
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource Danger600}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         INPUT controls (TextBox, PasswordBox, ComboBox)
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminTextBox" TargetType="TextBox">
+        <Setter Property="FontFamily"       Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"         Value="13"/>
+        <Setter Property="Foreground"       Value="{StaticResource N900}"/>
+        <Setter Property="Background"       Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"      Value="{StaticResource BorderDefault}"/>
+        <Setter Property="BorderThickness"  Value="1"/>
+        <Setter Property="Height"           Value="{StaticResource ControlHeight}"/>
+        <Setter Property="Padding"          Value="10,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="CaretBrush"       Value="{StaticResource Brand500}"/>
+        <Setter Property="SelectionBrush"   Value="{StaticResource Brand200}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource ControlRadius}">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brand500}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource N50}"/>
+                            <Setter Property="Foreground" Value="{StaticResource N400}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AdminTextBoxSm" TargetType="TextBox" BasedOn="{StaticResource AdminTextBox}">
+        <Setter Property="Height"   Value="{StaticResource ControlHeightSm}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding"  Value="8,0"/>
+    </Style>
+
+    <!-- ComboBox -->
+    <Style x:Key="AdminComboBoxToggle" TargetType="ToggleButton">
+        <Setter Property="Focusable"        Value="False"/>
+        <Setter Property="ClickMode"        Value="Press"/>
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="22"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1"
+                                   Text="&#xE70D;"
+                                   FontFamily="{StaticResource FluentIcons}"
+                                   FontSize="10"
+                                   Foreground="{StaticResource N500}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AdminComboBox" TargetType="ComboBox">
+        <Setter Property="FontFamily"      Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"        Value="13"/>
+        <Setter Property="Foreground"      Value="{StaticResource N900}"/>
+        <Setter Property="Background"      Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderDefault}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Height"          Value="{StaticResource ControlHeight}"/>
+        <Setter Property="Padding"         Value="10,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource ControlRadius}"/>
+                        <ToggleButton x:Name="Toggle"
+                                      Style="{StaticResource AdminComboBoxToggle}"
+                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
+                        <ContentPresenter x:Name="ContentSite"
+                                          IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                          Margin="10,0,28,0"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Left"/>
+                        <Popup x:Name="Popup"
+                               Placement="Bottom"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Fade">
+                            <Border Background="{StaticResource Surface1}"
+                                    BorderBrush="{StaticResource BorderDefault}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource ControlRadius}"
+                                    Margin="0,4,0,0"
+                                    MinWidth="{TemplateBinding ActualWidth}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.12" Color="#0F172A"/>
+                                </Border.Effect>
+                                <ScrollViewer MaxHeight="280">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brand500}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AdminComboBoxItem" TargetType="ComboBoxItem">
+        <Setter Property="FontFamily"        Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"          Value="13"/>
+        <Setter Property="Foreground"        Value="{StaticResource N800}"/>
+        <Setter Property="Padding"           Value="10,7"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="3"
+                            Margin="3">
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource Brand50}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brand700}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource Brand50}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brand700}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AdminComboBoxSm" TargetType="ComboBox" BasedOn="{StaticResource AdminComboBox}">
+        <Setter Property="Height"   Value="{StaticResource ControlHeightSm}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Padding"  Value="8,0"/>
+    </Style>
+
+    <!-- Apply ComboBoxItem style to all combo items by default within scope -->
+    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource AdminComboBoxItem}"/>
+
+    <!-- ════════════════════════════════════════════════════════════
+         CHIP (toggleable filter pill)
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminChip" TargetType="ToggleButton">
+        <Setter Property="FontFamily"       Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"         Value="12"/>
+        <Setter Property="FontWeight"       Value="Medium"/>
+        <Setter Property="Foreground"       Value="{StaticResource N700}"/>
+        <Setter Property="Background"       Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"      Value="{StaticResource BorderDefault}"/>
+        <Setter Property="BorderThickness"  Value="1"/>
+        <Setter Property="Height"           Value="28"/>
+        <Setter Property="Padding"          Value="11,0"/>
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource ChipRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background"  Value="{StaticResource N50}"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background"  Value="{StaticResource Brand500}"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brand500}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         TOGGLE switch (CheckBox)
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminToggle" TargetType="CheckBox">
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border x:Name="Track" Width="34" Height="20" CornerRadius="999"
+                                Background="{StaticResource N300}" VerticalAlignment="Center">
+                            <Ellipse x:Name="Thumb" Width="16" Height="16"
+                                     Fill="White"
+                                     HorizontalAlignment="Left"
+                                     VerticalAlignment="Center"
+                                     Margin="2,0,0,0">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect ShadowDepth="1" BlurRadius="3" Opacity="0.20"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                        </Border>
+                        <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Track" Property="Background"          Value="{StaticResource Brand500}"/>
+                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="Thumb" Property="Margin"              Value="0,0,2,0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         CHECKBOX (square — used in DataGrid header/row select)
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminCheckBox" TargetType="CheckBox">
+        <Setter Property="Cursor"           Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="Root"
+                            Width="16" Height="16"
+                            CornerRadius="3"
+                            Background="White"
+                            BorderBrush="{StaticResource BorderStrong}"
+                            BorderThickness="1.5">
+                        <TextBlock x:Name="Glyph"
+                                   Text="&#xE73E;"
+                                   FontFamily="{StaticResource FluentIcons}"
+                                   FontSize="10"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brand500}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background"  Value="{StaticResource Brand500}"/>
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brand500}"/>
+                            <Setter TargetName="Glyph" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         CARD (Border preset)
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminCard" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="{StaticResource CardRadius}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         BADGE (Border preset — set Background + child TextBlock Foreground)
+         Variants are listed in the design system spec.
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminBadge" TargetType="Border">
+        <Setter Property="CornerRadius"      Value="3"/>
+        <Setter Property="Padding"           Value="7,2"/>
+        <Setter Property="BorderThickness"   Value="1"/>
+        <Setter Property="Background"        Value="{StaticResource N100}"/>
+        <Setter Property="BorderBrush"       Value="{StaticResource N200}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         AVATAR (round Border preset)
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AdminAvatar" TargetType="Border">
+        <Setter Property="Width"        Value="28"/>
+        <Setter Property="Height"       Value="28"/>
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Background"   Value="{StaticResource Brand100}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SEPARATOR / divider line
+         ════════════════════════════════════════════════════════════ -->
+    <Style x:Key="HDivider" TargetType="Border">
+        <Setter Property="Height"     Value="1"/>
+        <Setter Property="Background" Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+    <Style x:Key="VDivider" TargetType="Border">
+        <Setter Property="Width"      Value="1"/>
+        <Setter Property="Background" Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="Height"     Value="22"/>
+    </Style>
+
+</ResourceDictionary>

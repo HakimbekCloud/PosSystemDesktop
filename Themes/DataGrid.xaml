@@ -1,0 +1,180 @@
+<!--
+  ShefPos design system — DataGrid styling.
+  Compact rows (40px), sunken header (#F4F6FA), brand-blue selection + hover.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Column header -->
+    <Style x:Key="AdminDataGridHeader" TargetType="DataGridColumnHeader">
+        <Setter Property="FontFamily"      Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"        Value="11"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="Foreground"      Value="{StaticResource N600}"/>
+        <Setter Property="Background"      Value="{StaticResource SurfaceSunken}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding"         Value="12,0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="VerticalContentAlignment"   Value="Center"/>
+        <Setter Property="SnapsToDevicePixels"        Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridColumnHeader">
+                    <Grid>
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"
+                                                  TextBlock.FontFamily="{TemplateBinding FontFamily}"
+                                                  TextBlock.FontSize="{TemplateBinding FontSize}"
+                                                  TextBlock.FontWeight="{TemplateBinding FontWeight}"
+                                                  TextBlock.Foreground="{TemplateBinding Foreground}"/>
+                                <Path x:Name="SortGlyph"
+                                      Grid.Column="1"
+                                      Margin="6,0,0,0"
+                                      Width="8" Height="6"
+                                      Fill="{StaticResource Brand600}"
+                                      Visibility="Collapsed"
+                                      Stretch="Uniform"
+                                      Data="M 0 0 L 8 0 L 4 6 Z"/>
+                            </Grid>
+                        </Border>
+                        <Thumb x:Name="PART_RightHeaderGripper"
+                               HorizontalAlignment="Right"
+                               Width="6" Cursor="SizeWE" Opacity="0">
+                            <Thumb.Template>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Border Background="Transparent"/>
+                                </ControlTemplate>
+                            </Thumb.Template>
+                        </Thumb>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource N150}"/>
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Ascending">
+                            <Setter TargetName="SortGlyph" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="SortGlyph" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180" CenterX="4" CenterY="3"/>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource Brand50}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brand700}"/>
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Descending">
+                            <Setter TargetName="SortGlyph" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource Brand50}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brand700}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Cell -->
+    <Style x:Key="AdminDataGridCell" TargetType="DataGridCell">
+        <Setter Property="BorderThickness"   Value="0"/>
+        <Setter Property="Padding"           Value="12,0"/>
+        <Setter Property="FontFamily"        Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"          Value="13"/>
+        <Setter Property="Foreground"        Value="{StaticResource N800}"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border x:Name="Root"
+                            Background="Transparent"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          TextBlock.FontFamily="{TemplateBinding FontFamily}"
+                                          TextBlock.FontSize="{TemplateBinding FontSize}"
+                                          TextBlock.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Row -->
+    <Style x:Key="AdminDataGridRow" TargetType="DataGridRow">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource N100}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brand25}"/>
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource Brand50}"/>
+                <Setter Property="Foreground" Value="{StaticResource N900}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- DataGrid itself -->
+    <Style x:Key="AdminDataGrid" TargetType="DataGrid">
+        <Setter Property="FontFamily"               Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"                 Value="13"/>
+        <Setter Property="Foreground"               Value="{StaticResource N800}"/>
+        <Setter Property="Background"               Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"              Value="Transparent"/>
+        <Setter Property="BorderThickness"          Value="0"/>
+        <Setter Property="AutoGenerateColumns"      Value="False"/>
+        <Setter Property="HeadersVisibility"        Value="Column"/>
+        <Setter Property="GridLinesVisibility"      Value="None"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource N100}"/>
+        <Setter Property="VerticalGridLinesBrush"   Value="Transparent"/>
+        <Setter Property="RowHeight"                Value="40"/>
+        <Setter Property="ColumnHeaderHeight"       Value="34"/>
+        <Setter Property="CanUserResizeRows"        Value="False"/>
+        <Setter Property="CanUserAddRows"           Value="False"/>
+        <Setter Property="CanUserDeleteRows"        Value="False"/>
+        <Setter Property="CanUserResizeColumns"     Value="True"/>
+        <Setter Property="CanUserSortColumns"       Value="True"/>
+        <Setter Property="SelectionMode"            Value="Extended"/>
+        <Setter Property="SelectionUnit"            Value="FullRow"/>
+        <Setter Property="EnableRowVirtualization"  Value="True"/>
+        <Setter Property="EnableColumnVirtualization" Value="True"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing"    Value="True"/>
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+        <Setter Property="ScrollViewer.CanContentScroll"        Value="True"/>
+        <Setter Property="RowBackground"            Value="{StaticResource Surface1}"/>
+        <Setter Property="AlternatingRowBackground" Value="{StaticResource Surface1}"/>
+        <Setter Property="ColumnHeaderStyle"        Value="{StaticResource AdminDataGridHeader}"/>
+        <Setter Property="CellStyle"                Value="{StaticResource AdminDataGridCell}"/>
+        <Setter Property="RowStyle"                 Value="{StaticResource AdminDataGridRow}"/>
+    </Style>
+
+    <!-- Outer shell for a DataGrid (with rounded corners + border) -->
+    <Style x:Key="DataGridShell" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="{StaticResource CardRadius}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ClipToBounds"    Value="True"/>
+    </Style>
+
+    <!-- DataGrid footer container (pagination bar) -->
+    <Style x:Key="DataGridFooter" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource SurfaceSunken}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Padding"         Value="12,8"/>
+    </Style>
+
+</ResourceDictionary>
