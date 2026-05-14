@@ -10,8 +10,6 @@ public class AuthService(
     SettingsRepository settings,
     IDbContextFactory<AppDbContext> dbFactory)
 {
-    private const string BaseUrl = "https://shefpos.uz";
-
     public bool HasValidSession() =>
         !string.IsNullOrEmpty(settings.Get("auth_token"));
 
@@ -24,13 +22,20 @@ public class AuthService(
     public string GetLastTenantSubdomain() =>
         settings.Get("tenant_subdomain") ?? "";
 
+    public string GetSavedServerUrl() =>
+        settings.Get("api_base_url") ?? "";
+
     public async Task<(bool Success, string Message)> LoginAsync(
-        string tenantSubdomain, string username, string password)
+        string tenantSubdomain, string username, string password,
+        string? serverUrl = null)
     {
         if (string.IsNullOrWhiteSpace(tenantSubdomain))
             return (false, "Tashkilot kodini kiriting");
 
-        settings.Set("api_base_url",     BaseUrl);
+        // If the user typed a server URL, persist it; otherwise keep the saved one.
+        if (!string.IsNullOrWhiteSpace(serverUrl))
+            settings.Set("api_base_url", serverUrl.Trim());
+
         settings.Set("tenant_subdomain", tenantSubdomain.Trim());
         api.ApplyBaseUrl();
         api.ApplyTenantHeader();

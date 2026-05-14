@@ -8,6 +8,8 @@ using PosSystem.Core.Entities;
 using PosSystem.Data.Repositories;
 using PosSystem.Services;
 using PosSystem.ViewModels.Game;
+using PosSystem.ViewModels.Ombor;
+using PosSystem.ViewModels.Products;
 using System.Printing;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -30,9 +32,17 @@ public partial class PosViewModel : ObservableObject
 
     public GameViewModel       Game          { get; }
     public AddProductViewModel AddProductVm  { get; }
+    public ProductsViewModel   ProductsVm    { get; }
+    public OmborViewModel      OmborVm       { get; }
 
     [ObservableProperty]
     private bool _isGameOpen;
+
+    [ObservableProperty]
+    private bool _isProductsPageOpen;
+
+    [ObservableProperty]
+    private bool _isOmborPageOpen;
 
     [ObservableProperty]
     private bool _isAddProductOpen;
@@ -48,6 +58,8 @@ public partial class PosViewModel : ObservableObject
             IsAddProductOpen = false;
             return;
         }
+        IsProductsPageOpen = false;
+        IsOmborPageOpen    = false;
         AddProductVm.Reset();
         IsAddProductOpen = true;
         await AddProductVm.LoadAsync();
@@ -94,7 +106,9 @@ public partial class PosViewModel : ObservableObject
         ConnectivityService connectivity,
         SettingsRepository settings,
         GameViewModel game,
-        AddProductViewModel addProduct)
+        AddProductViewModel addProduct,
+        ProductsViewModel productsVm,
+        OmborViewModel omborVm)
     {
         _products = products;
         _customers = customers;
@@ -105,6 +119,8 @@ public partial class PosViewModel : ObservableObject
         _settings = settings;
         Game         = game;
         AddProductVm = addProduct;
+        ProductsVm   = productsVm;
+        OmborVm      = omborVm;
 
         addProduct.ProductSaved += OnProductSaved;
         CartItems.CollectionChanged += OnCartCollectionChanged;
@@ -390,21 +406,46 @@ public partial class PosViewModel : ObservableObject
     [RelayCommand]
     private void ShowSalesPage()
     {
-        IsSettingsPageOpen = false;
+        IsProductsPageOpen        = false;
+        IsOmborPageOpen           = false;
+        IsSettingsPageOpen        = false;
         IsPrinterSettingsPageOpen = false;
+    }
+
+    [RelayCommand]
+    private void ShowProductsPage()
+    {
+        IsOmborPageOpen           = false;
+        IsSettingsPageOpen        = false;
+        IsPrinterSettingsPageOpen = false;
+        ProductsVm.Load();
+        IsProductsPageOpen = true;
+    }
+
+    [RelayCommand]
+    private void ShowOmborPage()
+    {
+        IsProductsPageOpen        = false;
+        IsSettingsPageOpen        = false;
+        IsPrinterSettingsPageOpen = false;
+        OmborVm.Load();
+        IsOmborPageOpen = true;
     }
 
     [RelayCommand]
     private void ShowSettingsPage()
     {
-        IsSettingsPageOpen = true;
+        IsOmborPageOpen           = false;
+        IsProductsPageOpen        = false;
+        IsSettingsPageOpen        = true;
         IsPrinterSettingsPageOpen = false;
     }
 
     [RelayCommand]
     private void ShowPrinterSettingsPage()
     {
-        IsSettingsPageOpen = true;
+        IsOmborPageOpen           = false;
+        IsSettingsPageOpen        = true;
         IsPrinterSettingsPageOpen = true;
         LoadPrinters();
     }

@@ -138,6 +138,18 @@ public partial class PosView : UserControl
         _vm.ProcessBarcodeCommand.Execute(code);
     }
 
+    private void OnBranchBtnClick(object sender, RoutedEventArgs e)
+    {
+        var vm = (PosViewModel)DataContext!;
+        vm.ProductsVm.IsBranchOpen = !vm.ProductsVm.IsBranchOpen;
+    }
+
+    private void OnStatusBtnClick(object sender, RoutedEventArgs e)
+    {
+        var vm = (PosViewModel)DataContext!;
+        vm.ProductsVm.IsStatusOpen = !vm.ProductsVm.IsStatusOpen;
+    }
+
     private static T? FindAncestor<T>(DependencyObject obj) where T : DependencyObject
     {
         while (obj != null)

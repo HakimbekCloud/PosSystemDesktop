@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
-using CommunityToolkit.Mvvm.Messaging;
 
 namespace PosSystem.Services;
 
@@ -61,15 +60,6 @@ public class NetworkLogHandler(NetworkLogService log) : DelegatingHandler(new Ht
             RequestBody  = Truncate(reqBody),
             ResponseBody = Truncate(respBody)
         });
-
-        // 401 on any endpoint other than login/refresh means the token has expired.
-        var path = request.RequestUri?.AbsolutePath ?? "";
-        if (statusCode == 401
-            && !path.Contains("auth/login", StringComparison.OrdinalIgnoreCase)
-            && !path.Contains("auth/refresh", StringComparison.OrdinalIgnoreCase))
-        {
-            WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
-        }
 
         return response;
     }

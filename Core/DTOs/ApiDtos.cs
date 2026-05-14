@@ -142,6 +142,30 @@ public class CustomerDto
     public DateTime? UpdatedAt { get; set; }
 }
 
+public class CreateCustomerRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
+
+    [JsonPropertyName("address")]
+    public string? Address { get; set; }
+}
+
+public class UpdateCustomerRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
+
+    [JsonPropertyName("address")]
+    public string? Address { get; set; }
+}
+
 // ── Reference data ────────────────────────────────────────────────────────────
 
 public class ProductTypeDto
@@ -190,6 +214,18 @@ public class PriceListDto
 
     [JsonPropertyName("currency")]
     public string Currency { get; set; } = "";
+
+    [JsonPropertyName("active")]
+    public bool Active { get; set; } = true;
+}
+
+public class WarehouseDto
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
 
     [JsonPropertyName("active")]
     public bool Active { get; set; } = true;
@@ -337,4 +373,30 @@ public class OrderResponse
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = "";
+}
+
+// ── Debt payment ──────────────────────────────────────────────────────────────
+
+public class DebtPaymentRequest
+{
+    [JsonPropertyName("customerUuid")]
+    public string CustomerUuid { get; set; } = "";
+
+    [JsonPropertyName("branchUuid")]
+    public string BranchUuid { get; set; } = "";
+
+    [JsonPropertyName("cashboxUuid")]
+    public string CashboxUuid { get; set; } = "";
+
+    [JsonPropertyName("currencyCode")]
+    public string CurrencyCode { get; set; } = "UZS";
+
+    [JsonPropertyName("paymentType")]
+    public string PaymentType { get; set; } = "CASH";
+
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("idempotencyKey")]
+    public string? IdempotencyKey { get; set; }
 }

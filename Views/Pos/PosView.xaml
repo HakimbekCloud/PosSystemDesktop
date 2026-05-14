@@ -472,20 +472,57 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
-                        <Button Style="{StaticResource SelectedNavButtonStyle}" Margin="0,0,0,7"
-                                Command="{Binding ShowSalesPageCommand}">
+                        <Button Margin="0,0,0,7" Command="{Binding ShowSalesPageCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsProductsPageOpen}" Value="False"/>
+                                                <Condition Binding="{Binding IsOmborPageOpen}"    Value="False"/>
+                                                <Condition Binding="{Binding IsSettingsPageOpen}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Background"  Value="#EAF2FF"/>
+                                            <Setter Property="Foreground"  Value="#155EEF"/>
+                                            <Setter Property="FontWeight"  Value="SemiBold"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7BF;" Style="{StaticResource NavIconTextStyle}"/>
                                 <TextBlock Text="Sotuv" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                        <Button Margin="0,0,0,7" Command="{Binding ShowProductsPageCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsProductsPageOpen}" Value="True">
+                                            <Setter Property="Background" Value="#EAF2FF"/>
+                                            <Setter Property="Foreground" Value="#155EEF"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7B8;" Style="{StaticResource NavIconTextStyle}"/>
                                 <TextBlock Text="Mahsulotlar" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource NavButtonStyle}" Margin="0,0,0,7">
+                        <Button Margin="0,0,0,7" Command="{Binding ShowOmborPageCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOmborPageOpen}" Value="True">
+                                            <Setter Property="Background" Value="#EAF2FF"/>
+                                            <Setter Property="Foreground" Value="#155EEF"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE821;" Style="{StaticResource NavIconTextStyle}"/>
                                 <TextBlock Text="Ombor" VerticalAlignment="Center"/>
@@ -1731,6 +1768,1866 @@
                                            TextWrapping="Wrap" FontSize="12" Foreground="#334155"/>
                             </Border>
                         </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ════════════════ OMBOR PAGE OVERLAY ════════════════ -->
+            <Border Grid.Column="1" Grid.ColumnSpan="3"
+                    Background="#F8FAFC"
+                    BorderBrush="#E2E8F0" BorderThickness="1,0,0,0"
+                    Panel.ZIndex="46"
+                    Visibility="{Binding IsOmborPageOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- header     -->
+                        <RowDefinition Height="Auto"/> <!-- stats      -->
+                        <RowDefinition Height="Auto"/> <!-- tab bar    -->
+                        <RowDefinition Height="*"/>    <!-- tab content -->
+                    </Grid.RowDefinitions>
+
+                    <!-- ── Header ─────────────────────────────────────────────── -->
+                    <Border Grid.Row="0" Background="White" Padding="28,16"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Inventar -->
+                                <Button Padding="14,8" Margin="0,0,8,0"
+                                        Foreground="#344054" FontSize="13"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                        BorderBrush="#D0D5DD" BorderThickness="1" Background="White">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F9FAFB"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xEA3A;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                                   Margin="0,0,7,0" VerticalAlignment="Center" Foreground="#667085"/>
+                                        <TextBlock Text="Inventar" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <!-- Transfer -->
+                                <Button Padding="14,8" Margin="0,0,10,0"
+                                        Foreground="#344054" FontSize="13"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                        BorderBrush="#D0D5DD" BorderThickness="1" Background="White">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F9FAFB"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE8AB;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                                   Margin="0,0,7,0" VerticalAlignment="Center" Foreground="#667085"/>
+                                        <TextBlock Text="Transfer" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <!-- Yangi kirim -->
+                                <Button Padding="18,8" Style="{StaticResource PrimaryButtonStyle}" FontSize="13">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="+" FontWeight="Bold" FontSize="16" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Yangi kirim" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Ombor" FontSize="22" FontWeight="Bold" Foreground="#0F172A"/>
+                                <TextBlock Text="Kirim, chiqim, transfer va inventarizatsiya"
+                                           Foreground="#667085" FontSize="12" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- ── Stat cards ──────────────────────────────────────────── -->
+                    <Border Grid.Row="1" Background="White" Padding="24,14"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <UniformGrid Columns="4">
+                            <!-- Ombor qiymati -->
+                            <Border Margin="0,0,12,0" Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="OMBOR QIYMATI" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding OmborVm.TotalValue, StringFormat='{}{0:N0}', Mode=OneWay}"
+                                                       FontSize="22" FontWeight="Bold" Foreground="#155EEF"/>
+                                            <TextBlock Text=" so'm" FontSize="13" Foreground="#64748B" Margin="4,6,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#EEF2FF" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE83F;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                                   Foreground="#155EEF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <!-- Bugungi kirim -->
+                            <Border Margin="0,0,12,0" Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="BUGUNGI KIRIM" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding OmborVm.TodayIncoming, StringFormat='{}{0:N0}', Mode=OneWay}"
+                                                       FontSize="22" FontWeight="Bold" Foreground="#16A34A"/>
+                                            <TextBlock Text=" so'm" FontSize="13" Foreground="#64748B" Margin="4,6,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock Text="&#xE74B;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                       Foreground="#16A34A" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                            <TextBlock Text="+12.4%" FontSize="11" FontWeight="SemiBold" Foreground="#16A34A"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#DCFCE7" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE74B;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                                   Foreground="#16A34A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <!-- Bugungi chiqim -->
+                            <Border Margin="0,0,12,0" Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="BUGUNGI CHIQIM" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding OmborVm.TodayOutgoing, StringFormat='{}{0:N0}', Mode=OneWay}"
+                                                       FontSize="22" FontWeight="Bold" Foreground="#0369A1"/>
+                                            <TextBlock Text=" so'm" FontSize="13" Foreground="#64748B" Margin="4,6,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#E0F2FE" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                                   Foreground="#0369A1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <!-- Diqqat talab -->
+                            <Border Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="DIQQAT TALAB" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding OmborVm.AlertCount, Mode=OneWay}"
+                                                       FontSize="26" FontWeight="Bold" Foreground="#D97706"/>
+                                            <TextBlock Text=" ta" FontSize="14" Foreground="#64748B" Margin="4,8,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#FEF3C7" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                                   Foreground="#D97706" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- ── Tab bar ─────────────────────────────────────────────── -->
+                    <Border Grid.Row="2" Background="White"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal" Margin="24,0">
+                            <!-- Operatsiyalar tab -->
+                            <Button Command="{Binding OmborVm.ShowMovementsTabCommand}"
+                                    Padding="0,0,0,0" Margin="0,0,4,0"
+                                    BorderThickness="0" Background="Transparent"
+                                    Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="TabBorder1" Padding="16,12,16,10"
+                                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="TabLbl1" Text="Operatsiyalar"
+                                                           FontSize="14" FontWeight="SemiBold" Foreground="#667085"/>
+                                                <Border x:Name="TabBadge1" Margin="8,0,0,0"
+                                                        Background="#F1F5F9" CornerRadius="10" Padding="8,2">
+                                                    <TextBlock Text="{Binding DataContext.OmborVm.MovementsCount,
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                               FontSize="11" FontWeight="SemiBold" Foreground="#667085"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.OmborVm.ActiveTab,
+                                                         RelativeSource={RelativeSource AncestorType=UserControl}}" Value="movements">
+                                                <Setter TargetName="TabBorder1" Property="BorderBrush" Value="#155EEF"/>
+                                                <Setter TargetName="TabLbl1"    Property="Foreground"  Value="#155EEF"/>
+                                                <Setter TargetName="TabBadge1"  Property="Background"  Value="#EEF2FF"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <!-- Joriy qoldiq tab -->
+                            <Button Command="{Binding OmborVm.ShowStockTabCommand}"
+                                    Padding="0,0,0,0" Margin="0,0,4,0"
+                                    BorderThickness="0" Background="Transparent"
+                                    Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="TabBorder2" Padding="16,12,16,10"
+                                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="TabLbl2" Text="Joriy qoldiq"
+                                                           FontSize="14" FontWeight="SemiBold" Foreground="#667085"/>
+                                                <Border x:Name="TabBadge2" Margin="8,0,0,0"
+                                                        Background="#F1F5F9" CornerRadius="10" Padding="8,2">
+                                                    <TextBlock Text="{Binding DataContext.OmborVm.StockCount,
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                               FontSize="11" FontWeight="SemiBold" Foreground="#667085"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.OmborVm.ActiveTab,
+                                                         RelativeSource={RelativeSource AncestorType=UserControl}}" Value="stock">
+                                                <Setter TargetName="TabBorder2" Property="BorderBrush" Value="#155EEF"/>
+                                                <Setter TargetName="TabLbl2"    Property="Foreground"  Value="#155EEF"/>
+                                                <Setter TargetName="TabBadge2"  Property="Background"  Value="#EEF2FF"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <!-- Ogohlantirishlar tab -->
+                            <Button Command="{Binding OmborVm.ShowAlertsTabCommand}"
+                                    Padding="0,0,0,0"
+                                    BorderThickness="0" Background="Transparent"
+                                    Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="TabBorder3" Padding="16,12,16,10"
+                                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="TabLbl3" Text="Ogohlantirishlar"
+                                                           FontSize="14" FontWeight="SemiBold" Foreground="#667085"/>
+                                                <Border x:Name="TabBadge3" Margin="8,0,0,0"
+                                                        Background="#FEF3C7" CornerRadius="10" Padding="8,2">
+                                                    <TextBlock Text="{Binding DataContext.OmborVm.AlertCount,
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                               FontSize="11" FontWeight="SemiBold" Foreground="#D97706"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.OmborVm.ActiveTab,
+                                                         RelativeSource={RelativeSource AncestorType=UserControl}}" Value="alerts">
+                                                <Setter TargetName="TabBorder3" Property="BorderBrush" Value="#155EEF"/>
+                                                <Setter TargetName="TabLbl3"    Property="Foreground"  Value="#155EEF"/>
+                                                <Setter TargetName="TabBadge3"  Property="Background"  Value="#EEF2FF"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── Tab content ─────────────────────────────────────────── -->
+                    <Grid Grid.Row="3">
+
+                        <!-- ── TAB: Operatsiyalar ── -->
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding OmborVm.ActiveTab}" Value="movements">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <!-- Table header -->
+                            <Border Grid.Row="0" Background="#F8FAFC"
+                                    BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="0,10">
+                                <Grid Margin="24,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="105"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="40"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="SANA"           FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="HUJJAT"         FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="TURI"           FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="3" Text="KONTRAGENT"     FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="4" Text="POS." TextAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="5" Text="SUMMA" TextAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="6" Text="MAS'UL"         FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="7" Text="HOLATI"         FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <!-- Table body -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding OmborVm.Movements}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#F2F4F7" BorderThickness="0,0,0,1"
+                                                    Background="White" Padding="0,11">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="#F8FAFC"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Margin="24,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="120"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                        <ColumnDefinition Width="105"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="130"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                        <ColumnDefinition Width="40"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <!-- Sana -->
+                                                    <TextBlock Grid.Column="0" Text="{Binding Date}"
+                                                               FontSize="12" Foreground="#667085" VerticalAlignment="Center"/>
+                                                    <!-- Hujjat -->
+                                                    <TextBlock Grid.Column="1" Text="{Binding DocNumber}"
+                                                               FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"
+                                                               VerticalAlignment="Center"
+                                                               FontFamily="Consolas, Courier New"/>
+                                                    <!-- Turi badge -->
+                                                    <Border Grid.Column="2" CornerRadius="6" Padding="9,3"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            Background="{Binding TypeBg, Converter={StaticResource HexToBrushConverter}}">
+                                                        <TextBlock Text="{Binding TypeLabel}" FontSize="12" FontWeight="SemiBold"
+                                                                   Foreground="{Binding TypeColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                    </Border>
+                                                    <!-- Kontragent -->
+                                                    <TextBlock Grid.Column="3" Text="{Binding Supplier}"
+                                                               FontSize="13" Foreground="#344054" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <!-- Pozitsiyalar -->
+                                                    <TextBlock Grid.Column="4" Text="{Binding Items}"
+                                                               FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"
+                                                               TextAlignment="Right" VerticalAlignment="Center"/>
+                                                    <!-- Summa -->
+                                                    <TextBlock Grid.Column="5" Text="{Binding SumDisplay}"
+                                                               FontSize="13" FontWeight="Bold" Foreground="#0F172A"
+                                                               TextAlignment="Right" VerticalAlignment="Center"/>
+                                                    <!-- Mas'ul -->
+                                                    <TextBlock Grid.Column="6" Text="{Binding By}"
+                                                               FontSize="12" Foreground="#667085" VerticalAlignment="Center"/>
+                                                    <!-- Holati badge -->
+                                                    <Border Grid.Column="7" CornerRadius="6" Padding="9,3"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            Background="{Binding StatusBg, Converter={StaticResource HexToBrushConverter}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Ellipse Width="6" Height="6" VerticalAlignment="Center" Margin="0,0,5,0"
+                                                                     Fill="{Binding StatusColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                            <TextBlock Text="{Binding StatusLabel}" FontSize="12" FontWeight="SemiBold"
+                                                                       Foreground="{Binding StatusColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <!-- Action -->
+                                                    <Button Grid.Column="8" Width="28" Height="28"
+                                                            Style="{StaticResource IconButtonStyle}" ToolTip="Ko'rish">
+                                                        <TextBlock Text="&#xE890;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- Movements pagination -->
+                            <Border Grid.Row="2" Background="White"
+                                    BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="24,10">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center"
+                                               FontSize="13" Foreground="#667085">
+                                        <Run Text="Jami "/>
+                                        <Run Text="{Binding OmborVm.MovTotalCount, Mode=OneWay}"/>
+                                        <Run Text=" ta operatsiya · "/>
+                                        <Run Text="{Binding OmborVm.MovPage, Mode=OneWay}"/>
+                                        <Run Text="-sahifa, "/>
+                                        <Run Text="{Binding OmborVm.MovTotalPages, Mode=OneWay}"/>
+                                        <Run Text=" dan"/>
+                                    </TextBlock>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                        <Button Width="32" Height="32" Margin="0,0,4,0"
+                                                Command="{Binding OmborVm.MovPrevPageCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="MP1" Background="White" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="6">
+                                                        <TextBlock x:Name="MP1T" Text="&#x276E;" FontSize="14" Foreground="#344054" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="MP1" Property="Background" Value="#F3F4F6"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter TargetName="MP1"  Property="Background"  Value="#F9FAFB"/>
+                                                            <Setter TargetName="MP1T" Property="Foreground"  Value="#D0D5DD"/>
+                                                            <Setter TargetName="MP1"  Property="BorderBrush" Value="#E2E8F0"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Border Width="32" Height="32" Margin="0,0,4,0" Background="#155EEF" CornerRadius="6">
+                                            <TextBlock Text="{Binding OmborVm.MovPage, Mode=OneWay}"
+                                                       FontSize="13" FontWeight="SemiBold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <Button Width="32" Height="32"
+                                                Command="{Binding OmborVm.MovNextPageCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="MN1" Background="White" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="6">
+                                                        <TextBlock x:Name="MN1T" Text="&#x276F;" FontSize="14" Foreground="#344054" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="MN1" Property="Background" Value="#F3F4F6"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter TargetName="MN1"  Property="Background"  Value="#F9FAFB"/>
+                                                            <Setter TargetName="MN1T" Property="Foreground"  Value="#D0D5DD"/>
+                                                            <Setter TargetName="MN1"  Property="BorderBrush" Value="#E2E8F0"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- ── TAB: Joriy qoldiq ── -->
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding OmborVm.ActiveTab}" Value="stock">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <!-- Table header -->
+                            <Border Grid.Row="0" Background="#F8FAFC"
+                                    BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="0,10">
+                                <Grid Margin="24,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="130"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="MAHSULOT"          FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="KATEGORIYA"        FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="QOLDIQ" TextAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="3" Text="MIN"    TextAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="4" Text="HOLATI"             FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="5" Text="TANNARX (JAMI)" TextAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <!-- Table body -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding OmborVm.StockItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#F2F4F7" BorderThickness="0,0,0,1"
+                                                    Background="White" Padding="0,10">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="#F8FAFC"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Margin="24,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="120"/>
+                                                        <ColumnDefinition Width="100"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="160"/>
+                                                        <ColumnDefinition Width="130"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <!-- Mahsulot -->
+                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Border Width="34" Height="34" CornerRadius="8"
+                                                                Background="#EEF2FF" Margin="0,0,10,0">
+                                                            <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets"
+                                                                       FontSize="16" Foreground="#155EEF"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                                       FontSize="13" Foreground="#0F172A"/>
+                                                            <TextBlock Text="{Binding Code}" FontSize="11"
+                                                                       Foreground="#94A3B8"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <!-- Kategoriya -->
+                                                    <TextBlock Grid.Column="1" Text="{Binding Category}"
+                                                               FontSize="13" Foreground="#64748B" VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <!-- Qoldiq -->
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                                                HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Stock, StringFormat='{}{0:N0}'}"
+                                                                   FontSize="13" FontWeight="Bold"
+                                                                   Foreground="{Binding BarColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                        <TextBlock Text="{Binding Unit}" FontSize="11"
+                                                                   Foreground="#64748B" Margin="4,2,0,0"/>
+                                                    </StackPanel>
+                                                    <!-- Min -->
+                                                    <TextBlock Grid.Column="3" Text="{Binding MinStock, StringFormat='{}{0:N0}'}"
+                                                               FontSize="12" Foreground="#94A3B8"
+                                                               TextAlignment="Right" VerticalAlignment="Center"/>
+                                                    <!-- Progress bar + label -->
+                                                    <StackPanel Grid.Column="4" VerticalAlignment="Center" Margin="8,0,0,0">
+                                                        <Grid Height="6" Width="120" HorizontalAlignment="Left">
+                                                            <Border Background="#E2E8F0" CornerRadius="3"/>
+                                                            <Border HorizontalAlignment="Left" CornerRadius="3"
+                                                                    Width="{Binding FillWidth}"
+                                                                    Background="{Binding BarColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding StatusLabel}" FontSize="11"
+                                                                   Foreground="{Binding BarColor, Converter={StaticResource HexToBrushConverter}}"
+                                                                   Margin="0,4,0,0" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                    <!-- Tannarx jami -->
+                                                    <StackPanel Grid.Column="5" Orientation="Horizontal"
+                                                                HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding CostTotal, StringFormat='{}{0:N0}'}"
+                                                                   FontSize="13" Foreground="#344054" FontWeight="SemiBold"/>
+                                                        <TextBlock Text=" so'm" FontSize="11" Foreground="#94A3B8" Margin="2,2,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- Stock pagination -->
+                            <Border Grid.Row="2" Background="White"
+                                    BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="24,10">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center"
+                                               FontSize="13" Foreground="#667085">
+                                        <Run Text="Jami "/>
+                                        <Run Text="{Binding OmborVm.StockTotalCount, Mode=OneWay}"/>
+                                        <Run Text=" ta mahsulot · "/>
+                                        <Run Text="{Binding OmborVm.StockPage, Mode=OneWay}"/>
+                                        <Run Text="-sahifa, "/>
+                                        <Run Text="{Binding OmborVm.StockTotalPages, Mode=OneWay}"/>
+                                        <Run Text=" dan"/>
+                                    </TextBlock>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                        <Button Width="32" Height="32" Margin="0,0,4,0"
+                                                Command="{Binding OmborVm.StockPrevPageCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="SP1" Background="White" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="6">
+                                                        <TextBlock x:Name="SP1T" Text="&#x276E;" FontSize="14" Foreground="#344054" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="SP1" Property="Background" Value="#F3F4F6"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter TargetName="SP1"  Property="Background"  Value="#F9FAFB"/>
+                                                            <Setter TargetName="SP1T" Property="Foreground"  Value="#D0D5DD"/>
+                                                            <Setter TargetName="SP1"  Property="BorderBrush" Value="#E2E8F0"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Border Width="32" Height="32" Margin="0,0,4,0" Background="#155EEF" CornerRadius="6">
+                                            <TextBlock Text="{Binding OmborVm.StockPage, Mode=OneWay}"
+                                                       FontSize="13" FontWeight="SemiBold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <Button Width="32" Height="32"
+                                                Command="{Binding OmborVm.StockNextPageCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="SN1" Background="White" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="6">
+                                                        <TextBlock x:Name="SN1T" Text="&#x276F;" FontSize="14" Foreground="#344054" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="SN1" Property="Background" Value="#F3F4F6"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter TargetName="SN1"  Property="Background"  Value="#F9FAFB"/>
+                                                            <Setter TargetName="SN1T" Property="Foreground"  Value="#D0D5DD"/>
+                                                            <Setter TargetName="SN1"  Property="BorderBrush" Value="#E2E8F0"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- ── TAB: Ogohlantirishlar ── -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,16">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding OmborVm.ActiveTab}" Value="alerts">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <StackPanel>
+                                <!-- Empty state -->
+                                <Border Background="White" CornerRadius="12" Padding="32"
+                                        BorderBrush="#E2E8F0" BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.OmborVm.AlertCount,
+                                                             RelativeSource={RelativeSource AncestorType=UserControl}}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <Border Width="64" Height="64" CornerRadius="16"
+                                                Background="#DCFCE7" HorizontalAlignment="Center" Margin="0,0,0,16">
+                                            <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="28" Foreground="#16A34A"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="Barcha mahsulotlar yetarli" FontSize="16" FontWeight="Bold"
+                                                   Foreground="#0F172A" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Hozircha ogohlantirish yo'q." FontSize="13"
+                                                   Foreground="#667085" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <!-- Alert cards -->
+                                <ItemsControl ItemsSource="{Binding DataContext.OmborVm.Alerts,
+                                              RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="White" CornerRadius="12"
+                                                    BorderBrush="#E2E8F0" BorderThickness="1"
+                                                    Padding="20,16" Margin="0,0,0,10">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.05" Color="#0F172A"/>
+                                                </Border.Effect>
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#CBD5E1"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <DockPanel>
+                                                    <!-- Icon -->
+                                                    <Border DockPanel.Dock="Left" Width="48" Height="48"
+                                                            CornerRadius="12" Margin="0,0,16,0"
+                                                            Background="{Binding AlertBg, Converter={StaticResource HexToBrushConverter}}">
+                                                        <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="22" VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Center"
+                                                                   Foreground="{Binding AlertFg, Converter={StaticResource HexToBrushConverter}}"/>
+                                                    </Border>
+                                                    <!-- Order button -->
+                                                    <Button DockPanel.Dock="Right" Padding="14,7"
+                                                            VerticalAlignment="Center"
+                                                            Foreground="#344054" FontSize="12"
+                                                            Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                                            BorderBrush="#D0D5DD" BorderThickness="1" Background="White">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                                        CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#F9FAFB"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="+" FontWeight="Bold" FontSize="14" Margin="0,0,5,0"/>
+                                                            <TextBlock Text="Buyurtma" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <!-- Badge -->
+                                                    <Border DockPanel.Dock="Right" CornerRadius="6" Padding="10,4"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            Margin="0,0,12,0"
+                                                            Background="{Binding AlertBg, Converter={StaticResource HexToBrushConverter}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Ellipse Width="6" Height="6" VerticalAlignment="Center" Margin="0,0,5,0"
+                                                                     Fill="{Binding AlertFg, Converter={StaticResource HexToBrushConverter}}"/>
+                                                            <TextBlock Text="{Binding BadgeText}" FontSize="12" FontWeight="SemiBold"
+                                                                       Foreground="{Binding AlertFg, Converter={StaticResource HexToBrushConverter}}"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <!-- Name + message -->
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"
+                                                                   FontSize="14" Foreground="#0F172A"/>
+                                                        <TextBlock Text="{Binding Message}" FontSize="12"
+                                                                   Foreground="#667085" Margin="0,4,0,0"
+                                                                   TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- ════════════════ MAHSULOTLAR PAGE OVERLAY ════════════════ -->
+            <Border Grid.Column="1" Grid.ColumnSpan="3"
+                    Background="#F8FAFC"
+                    BorderBrush="#E2E8F0" BorderThickness="1,0,0,0"
+                    Panel.ZIndex="45"
+                    Visibility="{Binding IsProductsPageOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- header -->
+                        <RowDefinition Height="Auto"/> <!-- stats -->
+                        <RowDefinition Height="Auto"/> <!-- search -->
+                        <RowDefinition Height="Auto"/> <!-- category pills -->
+                        <RowDefinition Height="Auto"/> <!-- table header -->
+                        <RowDefinition Height="*"/>    <!-- table body -->
+                        <RowDefinition Height="Auto"/> <!-- pagination -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Background="White" Padding="28,16"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Padding="16,9" Margin="0,0,8,0"
+                                        Foreground="#344054" FontSize="13"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                        BorderBrush="#D0D5DD" BorderThickness="1" Background="White">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Btn1" Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F9FAFB"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x2191;" Margin="0,0,6,0" FontSize="14"/>
+                                        <TextBlock Text="Import"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Padding="16,9" Margin="0,0,10,0"
+                                        Foreground="#344054" FontSize="13"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                        BorderBrush="#D0D5DD" BorderThickness="1" Background="White">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Btn2" Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F9FAFB"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x2193;" Margin="0,0,6,0" FontSize="14"/>
+                                        <TextBlock Text="Eksport"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Padding="18,9"
+                                        Command="{Binding ToggleAddProductCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        FontSize="13">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="+" FontWeight="Bold" FontSize="16" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Yangi mahsulot" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Mahsulotlar" FontSize="22" FontWeight="Bold" Foreground="#0F172A"/>
+                                <TextBlock Foreground="#667085" FontSize="12" Margin="0,3,0,0">
+                                    <Run Text="Katalogda "/>
+                                    <Run Text="{Binding ProductsVm.TotalCount, Mode=OneWay}"/>
+                                    <Run Text=" ta nomenklatura · "/>
+                                    <Run Text="{Binding ProductsVm.CategoryCount, Mode=OneWay}"/>
+                                    <Run Text=" ta kategoriya"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Stat cards -->
+                    <Border Grid.Row="1" Background="White" Padding="24,14"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <UniformGrid Columns="4">
+                            <!-- Jami mahsulotlar -->
+                            <Border Margin="0,0,12,0" Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="JAMI MAHSULOTLAR" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ProductsVm.TotalCount, Mode=OneWay}"
+                                                       FontSize="26" FontWeight="Bold" Foreground="#0F172A"/>
+                                            <TextBlock Text=" ta" FontSize="14" Foreground="#64748B" Margin="4,8,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#EEF2FF" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xF158;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                                   Foreground="#155EEF" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <!-- Ombor qiymati -->
+                            <Border Margin="0,0,12,0" Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="OMBOR QIYMATI" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ProductsVm.TotalStockValue, Mode=OneWay, StringFormat='{}{0:N0}'}"
+                                                       FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                                            <TextBlock Text=" so'm" FontSize="12" Foreground="#64748B" Margin="4,5,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#FFF7ED" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE9F9;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                                   Foreground="#EA580C" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <!-- Kam qoldiq -->
+                            <Border Margin="0,0,12,0" Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="KAM QOLDIQ" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ProductsVm.LowStockCount, Mode=OneWay}"
+                                                       FontSize="26" FontWeight="Bold" Foreground="#F59E0B"/>
+                                            <TextBlock Text=" ta" FontSize="14" Foreground="#64748B" Margin="4,8,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#FFFBEB" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                                   Foreground="#F59E0B" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <!-- Tugagan -->
+                            <Border Background="White" CornerRadius="12"
+                                    BorderBrush="#E2E8F0" BorderThickness="1" Padding="16,14">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="TUGAGAN" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="#667085" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ProductsVm.OutOfStockCount, Mode=OneWay}"
+                                                       FontSize="26" FontWeight="Bold" Foreground="#EF4444"/>
+                                            <TextBlock Text=" ta" FontSize="14" Foreground="#64748B" Margin="4,8,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="10"
+                                            Background="#FEF2F2" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="20"
+                                                   Foreground="#EF4444" HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- Search + filter toolbar -->
+                    <Border Grid.Row="2" Background="White" Padding="24,10"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <DockPanel LastChildFill="False">
+                            <!-- Search box -->
+                            <Border DockPanel.Dock="Left" BorderBrush="#D8E1EE" BorderThickness="1"
+                                    CornerRadius="10" Background="#FBFCFE" Width="300">
+                                <Grid>
+                                    <TextBlock Text="&#xE721;" Margin="12,0,0,0"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               Foreground="#94A3B8" FontSize="14"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding ProductsVm.SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="38,10,12,10" FontSize="13" BorderThickness="0"
+                                             Background="Transparent" Style="{StaticResource FlatTextBoxStyle}"/>
+                                    <TextBlock Text="Nomi, kodi yoki barkod bo'yicha..."
+                                               Foreground="#94A3B8" FontSize="13"
+                                               Margin="38,0,0,0" VerticalAlignment="Center"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ProductsVm.SearchQuery}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
+
+                            <!-- Right: dropdowns + view toggles -->
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+
+                                <!-- Barcha filiallar dropdown -->
+                                <Grid Margin="0,0,8,0">
+                                    <Button x:Name="BranchBtn"
+                                            Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                            BorderBrush="#D0D5DD" BorderThickness="1"
+                                            Background="White" Padding="12,7"
+                                            Click="OnBranchBtnClick">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F9FAFB"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Barcha filiallar" FontSize="13" Foreground="#344054" VerticalAlignment="Center"/>
+                                            <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                       Foreground="#667085" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Popup x:Name="BranchPopup"
+                                           PlacementTarget="{Binding ElementName=BranchBtn}"
+                                           IsOpen="{Binding ProductsVm.IsBranchOpen, Mode=TwoWay}"
+                                           Placement="Bottom" StaysOpen="False"
+                                           AllowsTransparency="True" PopupAnimation="Fade">
+                                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                                                CornerRadius="8" Padding="4" MinWidth="180"
+                                                DataContext="{Binding DataContext, ElementName=BranchBtn}">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.12" Color="#0F172A"/>
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <Border CornerRadius="6" Background="#EEF2FF" Padding="12,8">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="11" Foreground="#155EEF" Margin="0,0,8,0"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Barcha filiallar" FontSize="13"
+                                                                   FontWeight="SemiBold" Foreground="#155EEF"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+
+                                <!-- Statusi dropdown -->
+                                <Grid Margin="0,0,12,0">
+                                    <Button x:Name="StatusBtn"
+                                            Cursor="Hand" FocusVisualStyle="{x:Null}"
+                                            BorderBrush="#D0D5DD" BorderThickness="1"
+                                            Background="White" Padding="12,7"
+                                            Click="OnStatusBtnClick">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F9FAFB"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Statusi: " FontSize="13" Foreground="#667085" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ProductsVm.SelectedStatus}"
+                                                       FontSize="13" FontWeight="SemiBold" Foreground="#344054" VerticalAlignment="Center"/>
+                                            <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                       Foreground="#667085" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Popup x:Name="StatusPopup"
+                                           PlacementTarget="{Binding ElementName=StatusBtn}"
+                                           IsOpen="{Binding ProductsVm.IsStatusOpen, Mode=TwoWay}"
+                                           Placement="Bottom" StaysOpen="False"
+                                           AllowsTransparency="True" PopupAnimation="Fade">
+                                        <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                                                CornerRadius="8" Padding="4" MinWidth="190"
+                                                DataContext="{Binding DataContext, ElementName=StatusBtn}">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.12" Color="#0F172A"/>
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <Button Command="{Binding ProductsVm.PickStatusCommand}" CommandParameter="Barchasi"
+                                                        Padding="12,9" HorizontalContentAlignment="Left"
+                                                        Background="Transparent" BorderThickness="0"
+                                                        Cursor="Hand" FocusVisualStyle="{x:Null}" FontSize="13">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Si0" Background="{TemplateBinding Background}" CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <DockPanel>
+                                                                    <TextBlock DockPanel.Dock="Left" Text="Barchasi" FontSize="13" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                                                    <TextBlock DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                                               Foreground="#155EEF" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding ProductsVm.SelectedStatus}" Value="Barchasi">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                </DockPanel>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F5F8FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                                <Button Command="{Binding ProductsVm.PickStatusCommand}" CommandParameter="Faol"
+                                                        Padding="12,9" HorizontalContentAlignment="Left"
+                                                        Background="Transparent" BorderThickness="0"
+                                                        Cursor="Hand" FocusVisualStyle="{x:Null}" FontSize="13">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Si1" Background="{TemplateBinding Background}" CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <DockPanel>
+                                                                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                                                        <Ellipse Width="8" Height="8" Fill="#22C55E" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                        <TextBlock Text="Faol" FontSize="13" Foreground="#0F172A"/>
+                                                                    </StackPanel>
+                                                                    <TextBlock DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                                               Foreground="#155EEF" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding ProductsVm.SelectedStatus}" Value="Faol">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                </DockPanel>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F5F8FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                                <Button Command="{Binding ProductsVm.PickStatusCommand}" CommandParameter="Kam qoldiq"
+                                                        Padding="12,9" HorizontalContentAlignment="Left"
+                                                        Background="Transparent" BorderThickness="0"
+                                                        Cursor="Hand" FocusVisualStyle="{x:Null}" FontSize="13">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Si2" Background="{TemplateBinding Background}" CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <DockPanel>
+                                                                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                                                        <Ellipse Width="8" Height="8" Fill="#F59E0B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                        <TextBlock Text="Kam qoldiq" FontSize="13" Foreground="#0F172A"/>
+                                                                    </StackPanel>
+                                                                    <TextBlock DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                                               Foreground="#155EEF" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding ProductsVm.SelectedStatus}" Value="Kam qoldiq">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                </DockPanel>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F5F8FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                                <Button Command="{Binding ProductsVm.PickStatusCommand}" CommandParameter="Tugagan"
+                                                        Padding="12,9" HorizontalContentAlignment="Left"
+                                                        Background="Transparent" BorderThickness="0"
+                                                        Cursor="Hand" FocusVisualStyle="{x:Null}" FontSize="13">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Si3" Background="{TemplateBinding Background}" CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <DockPanel>
+                                                                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                                                        <Ellipse Width="8" Height="8" Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                        <TextBlock Text="Tugagan" FontSize="13" Foreground="#0F172A"/>
+                                                                    </StackPanel>
+                                                                    <TextBlock DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                                               Foreground="#155EEF" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding ProductsVm.SelectedStatus}" Value="Tugagan">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                </DockPanel>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F5F8FF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+
+                                <!-- View toggle: filter reset | list | grid -->
+                                <Border BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="8" Background="White">
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- Reset filters -->
+                                        <Button Width="32" Height="32" BorderThickness="0"
+                                                Command="{Binding ProductsVm.ResetFiltersCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}" ToolTip="Filtrlarni tozalash">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="VtA" Background="{TemplateBinding Background}" CornerRadius="7,0,0,7">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#F3F4F6"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                            <TextBlock Text="&#xEA23;" FontFamily="Segoe MDL2 Assets" FontSize="13" Foreground="#667085"/>
+                                        </Button>
+                                        <Border Width="1" Background="#D0D5DD"/>
+                                        <!-- List view -->
+                                        <Button Width="32" Height="32" BorderThickness="0"
+                                                Command="{Binding ProductsVm.SetListViewCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}" ToolTip="Jadval ko'rinishi">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="VtB" Background="{TemplateBinding Background}" CornerRadius="0">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#F3F4F6"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="False">
+                                                            <Setter Property="Background" Value="#EEF2FF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" FontSize="13">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#667085"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="False">
+                                                                <Setter Property="Foreground" Value="#155EEF"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Button>
+                                        <Border Width="1" Background="#D0D5DD"/>
+                                        <!-- Grid view -->
+                                        <Button Width="32" Height="32" BorderThickness="0"
+                                                Command="{Binding ProductsVm.SetGridViewCommand}"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}" ToolTip="Grid ko'rinishi">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="VtC" Background="{TemplateBinding Background}" CornerRadius="0,7,7,0">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#F3F4F6"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="True">
+                                                            <Setter Property="Background" Value="#EEF2FF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <TextBlock Text="&#xF0E2;" FontFamily="Segoe MDL2 Assets" FontSize="13">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#667085"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="True">
+                                                                <Setter Property="Foreground" Value="#155EEF"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Category filter pills -->
+                    <Border Grid.Row="3" Background="White" Padding="24,10"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                        <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding ProductsVm.CategoryFilters}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding Display}"
+                                                Command="{Binding DataContext.ProductsVm.SelectFilterCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,0,6,0" Padding="16,7"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background"       Value="White"/>
+                                                    <Setter Property="Foreground"       Value="#344054"/>
+                                                    <Setter Property="BorderBrush"      Value="#D0D5DD"/>
+                                                    <Setter Property="BorderThickness"  Value="1.5"/>
+                                                    <Setter Property="FontSize"         Value="13"/>
+                                                    <Setter Property="FontWeight"       Value="Normal"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="PillRoot"
+                                                                        RenderTransformOrigin="0.5,0.5"
+                                                                        Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                                        CornerRadius="20" Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                                      VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#F5F8FF"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                        <Setter TargetName="PillRoot" Property="RenderTransform">
+                                                                            <Setter.Value>
+                                                                                <ScaleTransform ScaleX="0.97" ScaleY="0.97"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="Background"      Value="#155EEF"/>
+                                                            <Setter Property="Foreground"      Value="White"/>
+                                                            <Setter Property="BorderBrush"     Value="#155EEF"/>
+                                                            <Setter Property="FontWeight"      Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Table header -->
+                    <Border Grid.Row="4" Background="#F8FAFC"
+                            BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="0,10">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid Margin="24,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="110"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="110"/>
+                                <ColumnDefinition Width="110"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Grid.Column="0" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="MAHSULOT"    FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="KATEGORIYA"  FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="SOTISH NARXI" FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="TANNARX"     FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="5" Text="QOLDIQ"      FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="6" Text="HOLATI"      FontSize="11" FontWeight="SemiBold" Foreground="#667085" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Table body (list view) -->
+                    <ScrollViewer Grid.Row="5"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer.Style>
+                            <Style TargetType="ScrollViewer">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Style>
+                        <ItemsControl ItemsSource="{Binding ProductsVm.FilteredProducts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#F2F4F7" BorderThickness="0,0,0,1"
+                                            Background="White" Padding="0,10">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F8FAFC"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid Margin="24,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="130"/>
+                                                <ColumnDefinition Width="130"/>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="110"/>
+                                                <ColumnDefinition Width="110"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <CheckBox Grid.Column="0" VerticalAlignment="Center"/>
+
+                                            <!-- Mahsulot nomi + kodi -->
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <Border Width="34" Height="34" CornerRadius="8"
+                                                        Background="#EEF2FF" Margin="0,0,10,0">
+                                                    <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="16" Foreground="#155EEF"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                               FontSize="13" Foreground="#0F172A"/>
+                                                    <TextBlock Text="{Binding Code}" FontSize="11"
+                                                               Foreground="#94A3B8"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Kategoriya -->
+                                            <TextBlock Grid.Column="2" Text="{Binding CategoryName}"
+                                                       Foreground="#155EEF" FontSize="13"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+
+                                            <!-- Sotish narxi -->
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Price, StringFormat='{}{0:N0}'}"
+                                                           FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                                                <TextBlock Text=" so'm" FontSize="11" Foreground="#64748B"
+                                                           Margin="3,2,0,0"/>
+                                            </StackPanel>
+
+                                            <!-- Tannarx -->
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding CostPrice, StringFormat='{}{0:N0}'}"
+                                                           FontSize="13" Foreground="#64748B"/>
+                                                <TextBlock Text=" so'm" FontSize="11" Foreground="#94A3B8"
+                                                           Margin="3,2,0,0"/>
+                                            </StackPanel>
+
+                                            <!-- Qoldiq -->
+                                            <StackPanel Grid.Column="5" Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Stock, StringFormat='{}{0:N0}'}"
+                                                           FontSize="13" FontWeight="Bold"
+                                                           Foreground="{Binding StatusColor,
+                                                                        Converter={StaticResource HexToBrushConverter}}"/>
+                                                <TextBlock Text="{Binding Unit}" FontSize="11"
+                                                           Foreground="#64748B" Margin="4,2,0,0"/>
+                                            </StackPanel>
+
+                                            <!-- Holati badge -->
+                                            <Border Grid.Column="6"
+                                                    CornerRadius="6" Padding="10,4"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Background="{Binding StatusBg,
+                                                                 Converter={StaticResource HexToBrushConverter}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                                             Margin="0,0,5,0"
+                                                             Fill="{Binding StatusColor,
+                                                                    Converter={StaticResource HexToBrushConverter}}"/>
+                                                    <TextBlock Text="{Binding Status}" FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{Binding StatusColor,
+                                                                            Converter={StaticResource HexToBrushConverter}}"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Amallar -->
+                                            <StackPanel Grid.Column="7" Orientation="Horizontal"
+                                                        VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                <Button Width="28" Height="28" Margin="0,0,4,0"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        ToolTip="Ko'rish">
+                                                    <TextBlock Text="&#xE890;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Width="28" Height="28" Margin="0,0,4,0"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        ToolTip="Tahrirlash">
+                                                    <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Width="28" Height="28" Margin="0,0,4,0"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        ToolTip="Chop etish">
+                                                    <TextBlock Text="&#xE749;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Width="28" Height="28"
+                                                        Style="{StaticResource DeleteRowButtonStyle}"
+                                                        ToolTip="O'chirish">
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Grid view (card layout) -->
+                    <ScrollViewer Grid.Row="5"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="24,16,24,16">
+                        <ScrollViewer.Style>
+                            <Style TargetType="ScrollViewer">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ProductsVm.IsGridView}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Style>
+                        <ItemsControl ItemsSource="{Binding ProductsVm.FilteredProducts}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="220" Margin="0,0,16,16" CornerRadius="12"
+                                            Background="White" BorderBrush="#E2E8F0" BorderThickness="1">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
+                                        </Border.Effect>
+                                        <Grid Margin="16">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Icon + status badge -->
+                                            <Grid Grid.Row="0" Margin="0,0,0,12">
+                                                <Border Width="44" Height="44" CornerRadius="10"
+                                                        Background="#EEF2FF" HorizontalAlignment="Left">
+                                                    <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets"
+                                                               FontSize="20" Foreground="#155EEF"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                        CornerRadius="6" Padding="8,3"
+                                                        Background="{Binding StatusBg, Converter={StaticResource HexToBrushConverter}}">
+                                                    <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold"
+                                                               Foreground="{Binding StatusColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Name + category -->
+                                            <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                                           Foreground="#0F172A" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding CategoryName}" FontSize="12"
+                                                           Foreground="#155EEF" Margin="0,2,0,0"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+
+                                            <!-- Price + stock -->
+                                            <Grid Grid.Row="2" Margin="0,0,0,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="Narx" FontSize="11" Foreground="#94A3B8"/>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Price, StringFormat='{}{0:N0}'}"
+                                                                   FontSize="13" FontWeight="Bold" Foreground="#0F172A"/>
+                                                        <TextBlock Text=" so'm" FontSize="10" Foreground="#64748B" Margin="2,2,0,0"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="Qoldiq" FontSize="11" Foreground="#94A3B8"/>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Stock, StringFormat='{}{0:N0}'}"
+                                                                   FontSize="13" FontWeight="Bold"
+                                                                   Foreground="{Binding StatusColor, Converter={StaticResource HexToBrushConverter}}"/>
+                                                        <TextBlock Text="{Binding Unit}" FontSize="10" Foreground="#64748B" Margin="3,2,0,0"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- Actions -->
+                                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Width="28" Height="28" Margin="0,0,4,0"
+                                                        Style="{StaticResource IconButtonStyle}" ToolTip="Ko'rish">
+                                                    <TextBlock Text="&#xE890;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Width="28" Height="28" Margin="0,0,4,0"
+                                                        Style="{StaticResource IconButtonStyle}" ToolTip="Tahrirlash">
+                                                    <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                                <Button Width="28" Height="28"
+                                                        Style="{StaticResource DeleteRowButtonStyle}" ToolTip="O'chirish">
+                                                    <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Pagination bar -->
+                    <Border Grid.Row="6" Background="White"
+                            BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                            Padding="24,10">
+                        <DockPanel LastChildFill="False">
+                            <!-- Info text -->
+                            <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center"
+                                       FontSize="13" Foreground="#667085">
+                                <Run Text="Jami "/>
+                                <Run Text="{Binding ProductsVm.TotalFiltered, Mode=OneWay}"/>
+                                <Run Text=" ta yozuv · "/>
+                                <Run Text="{Binding ProductsVm.CurrentPage, Mode=OneWay}"/>
+                                <Run Text="-sahifa, "/>
+                                <Run Text="{Binding ProductsVm.TotalPages, Mode=OneWay}"/>
+                                <Run Text=" dan"/>
+                            </TextBlock>
+                            <!-- Page buttons -->
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <!-- Prev -->
+                                <Button Width="32" Height="32" Margin="0,0,4,0"
+                                        Command="{Binding ProductsVm.PrevPageCommand}"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="PgPrev" Background="White"
+                                                    BorderBrush="#D0D5DD" BorderThickness="1"
+                                                    CornerRadius="6">
+                                                <TextBlock x:Name="PgPrevTxt"
+                                                           Text="&#x276E;" FontSize="14"
+                                                           Foreground="#344054"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="PgPrev" Property="Background" Value="#F3F4F6"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="PgPrev"    Property="Background"    Value="#F9FAFB"/>
+                                                    <Setter TargetName="PgPrevTxt" Property="Foreground"   Value="#D0D5DD"/>
+                                                    <Setter TargetName="PgPrev"    Property="BorderBrush"  Value="#E2E8F0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                <!-- Current page -->
+                                <Border Width="32" Height="32" Margin="0,0,4,0"
+                                        Background="#155EEF" CornerRadius="6">
+                                    <TextBlock Text="{Binding ProductsVm.CurrentPage, Mode=OneWay}"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <!-- Next -->
+                                <Button Width="32" Height="32"
+                                        Command="{Binding ProductsVm.NextPageCommand}"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="PgNext" Background="White"
+                                                    BorderBrush="#D0D5DD" BorderThickness="1"
+                                                    CornerRadius="6">
+                                                <TextBlock x:Name="PgNextTxt"
+                                                           Text="&#x276F;" FontSize="14"
+                                                           Foreground="#344054"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="PgNext" Property="Background" Value="#F3F4F6"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="PgNext"    Property="Background"   Value="#F9FAFB"/>
+                                                    <Setter TargetName="PgNextTxt" Property="Foreground"  Value="#D0D5DD"/>
+                                                    <Setter TargetName="PgNext"    Property="BorderBrush" Value="#E2E8F0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                        </DockPanel>
                     </Border>
                 </Grid>
             </Border>

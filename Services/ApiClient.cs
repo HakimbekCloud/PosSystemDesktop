@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using CommunityToolkit.Mvvm.Messaging;
 using PosSystem.Core.DTOs;
 using PosSystem.Core.Entities;
 using PosSystem.Data.Repositories;
@@ -13,6 +14,8 @@ public class ApiClient
     private readonly HttpClient _http;
     private readonly SettingsRepository _settings;
     private const string DefaultBaseUrl = "https://shefpos.uz";
+
+    private readonly SemaphoreSlim _refreshSemaphore = new(1, 1);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -31,22 +34,12 @@ public class ApiClient
     public void ApplyBaseUrl()
     {
         var url = _settings.Get("api_base_url");
-        if (string.IsNullOrWhiteSpace(url) || IsLocalBaseUrl(url))
-        {
+        if (string.IsNullOrWhiteSpace(url))
             url = DefaultBaseUrl;
-            _settings.Set("api_base_url", url);
-        }
 
         if (!Uri.TryCreate(url.TrimEnd('/') + "/", UriKind.Absolute, out var uri)) return;
         if (_http.BaseAddress == uri) return;
         _http.BaseAddress = uri;
-    }
-
-    private static bool IsLocalBaseUrl(string url)
-    {
-        return Uri.TryCreate(url.TrimEnd('/') + "/", UriKind.Absolute, out var uri) &&
-               (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase));
     }
 
     public void ApplyTenantHeader()
@@ -79,7 +72,7 @@ public class ApiClient
 
     public async Task<List<MeasurementDto>> GetMeasurementsAsync()
     {
-        var resp = await _http.GetAsync("api/measurements?page=0&size=200");
+        var resp = await GetWithRefreshAsync("api/measurements?page=0&size=200");
         await EnsureSuccessAsync(resp);
         var result = await resp.Content.ReadFromJsonAsync<PageResponse<MeasurementDto>>(JsonOptions);
         return result?.Content ?? [];
@@ -95,8 +88,7 @@ public class ApiClient
 
         do
         {
-            var resp = await _http.GetAsync(
-                $"api/products?is_pos=true&page={page}&size=200");
+            var resp = await GetWithRefreshAsync($"api/products?is_pos=true&page={page}&size=200");
             await EnsureSuccessAsync(resp);
             var result = await resp.Content.ReadFromJsonAsync<PageResponse<ProductDto>>(JsonOptions);
             if (result is null) break;
@@ -111,9 +103,9 @@ public class ApiClient
 
     public async Task<ProductDto> CreateProductAsync(CreateProductRequest request)
     {
-        var response = await _http.PostAsJsonAsync("api/products", request);
-        await EnsureSuccessAsync(response);
-        return await response.Content.ReadFromJsonAsync<ProductDto>(JsonOptions)
+        var resp = await PostWithRefreshAsync("api/products", request);
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<ProductDto>(JsonOptions)
                ?? throw new InvalidOperationException("Server javobi noto'g'ri");
     }
 
@@ -127,7 +119,7 @@ public class ApiClient
 
         do
         {
-            var resp = await _http.GetAsync($"api/customers?page={page}&size=200");
+            var resp = await GetWithRefreshAsync($"api/customers?page={page}&size=200");
             await EnsureSuccessAsync(resp);
             var result = await resp.Content.ReadFromJsonAsync<PageResponse<CustomerDto>>(JsonOptions);
             if (result is null) break;
@@ -140,11 +132,27 @@ public class ApiClient
         return all;
     }
 
+    public async Task<CustomerDto> CreateCustomerAsync(CreateCustomerRequest request)
+    {
+        var resp = await PostWithRefreshAsync("api/customers", request);
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<CustomerDto>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
+    }
+
+    public async Task<CustomerDto> UpdateCustomerAsync(string uuid, UpdateCustomerRequest request)
+    {
+        var resp = await PutWithRefreshAsync($"api/customers/{uuid}", request);
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<CustomerDto>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
+    }
+
     // ── Reference data ────────────────────────────────────────────────────────
 
     public async Task<List<BranchDto>> GetBranchesAsync()
     {
-        var resp = await _http.GetAsync("api/branches?page=0&size=50");
+        var resp = await GetWithRefreshAsync("api/branches?page=0&size=50");
         await EnsureSuccessAsync(resp);
         var result = await resp.Content.ReadFromJsonAsync<PageResponse<BranchDto>>(JsonOptions);
         return result?.Content ?? [];
@@ -152,7 +160,7 @@ public class ApiClient
 
     public async Task<List<CashboxDto>> GetCashboxesAsync()
     {
-        var resp = await _http.GetAsync("api/cashboxes?page=0&size=50");
+        var resp = await GetWithRefreshAsync("api/cashboxes?page=0&size=50");
         await EnsureSuccessAsync(resp);
         var result = await resp.Content.ReadFromJsonAsync<PageResponse<CashboxDto>>(JsonOptions);
         return result?.Content ?? [];
@@ -160,7 +168,7 @@ public class ApiClient
 
     public async Task<List<PriceListDto>> GetPriceListsAsync()
     {
-        var resp = await _http.GetAsync("api/price-lists?page=0&size=50");
+        var resp = await GetWithRefreshAsync("api/price-lists?page=0&size=50");
         await EnsureSuccessAsync(resp);
         var result = await resp.Content.ReadFromJsonAsync<PageResponse<PriceListDto>>(JsonOptions);
         return result?.Content ?? [];
@@ -168,10 +176,28 @@ public class ApiClient
 
     public async Task<List<ProductTypeDto>> GetProductTypesAsync()
     {
-        var resp = await _http.GetAsync("api/product-types?page=0&size=50");
+        var resp = await GetWithRefreshAsync("api/product-types?page=0&size=50");
         await EnsureSuccessAsync(resp);
         var result = await resp.Content.ReadFromJsonAsync<PageResponse<ProductTypeDto>>(JsonOptions);
         return result?.Content ?? [];
+    }
+
+    public async Task<List<WarehouseDto>> GetWarehousesAsync()
+    {
+        var resp = await GetWithRefreshAsync("api/warehouses?page=0&size=50");
+        await EnsureSuccessAsync(resp);
+        var result = await resp.Content.ReadFromJsonAsync<PageResponse<WarehouseDto>>(JsonOptions);
+        return result?.Content ?? [];
+    }
+
+    // ── Debt payment ──────────────────────────────────────────────────────────
+
+    public async Task<CustomerDto> PayDebtAsync(DebtPaymentRequest request)
+    {
+        var resp = await PostWithRefreshAsync("api/debt/pay", request);
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<CustomerDto>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
     }
 
     // ── Sale sync ─────────────────────────────────────────────────────────────
@@ -265,11 +291,100 @@ public class ApiClient
             Transactions = transactions
         };
 
-        var response = await _http.PostAsJsonAsync("api/orders", order);
+        var response = await PostWithRefreshAsync("api/orders", order);
         await EnsureSuccessAsync(response);
         var result = await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions);
         return result?.Uuid ?? "";
     }
+
+    // ── Token refresh ─────────────────────────────────────────────────────────
+
+    private async Task<bool> TryRefreshTokenAsync()
+    {
+        await _refreshSemaphore.WaitAsync();
+        try
+        {
+            var refreshToken = _settings.Get("refresh_token");
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+                return false;
+            }
+
+            var req = new HttpRequestMessage(HttpMethod.Post, "api/v1/auth/refresh");
+            req.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", refreshToken);
+
+            using var resp = await _http.SendAsync(req);
+
+            if (resp.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                // Refresh token itself is expired or revoked — force re-login.
+                WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+                return false;
+            }
+
+            if (!resp.IsSuccessStatusCode)
+                return false; // Network/server error — don't force re-login
+
+            var result = await resp.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions);
+            if (result is null) return false;
+
+            _settings.Set("auth_token", result.AccessToken);
+            _settings.Set("refresh_token", result.RefreshToken);
+            ApplyAuthToken();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            _refreshSemaphore.Release();
+        }
+    }
+
+    // ── Private HTTP helpers ──────────────────────────────────────────────────
+
+    private async Task<HttpResponseMessage> GetWithRefreshAsync(string url)
+    {
+        var resp = await _http.GetAsync(url);
+        if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
+        {
+            resp.Dispose();
+            resp = await _http.GetAsync(url);
+        }
+        return resp;
+    }
+
+    private async Task<HttpResponseMessage> PostWithRefreshAsync<T>(string url, T body)
+    {
+        var resp = await _http.SendAsync(BuildPost(url, body));
+        if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
+        {
+            resp.Dispose();
+            resp = await _http.SendAsync(BuildPost(url, body));
+        }
+        return resp;
+    }
+
+    private async Task<HttpResponseMessage> PutWithRefreshAsync<T>(string url, T body)
+    {
+        var resp = await _http.SendAsync(BuildPut(url, body));
+        if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
+        {
+            resp.Dispose();
+            resp = await _http.SendAsync(BuildPut(url, body));
+        }
+        return resp;
+    }
+
+    private static HttpRequestMessage BuildPost<T>(string url, T body) =>
+        new(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
+
+    private static HttpRequestMessage BuildPut<T>(string url, T body) =>
+        new(HttpMethod.Put, url) { Content = JsonContent.Create(body) };
 
     // ── Error handling ────────────────────────────────────────────────────────
 
@@ -286,7 +401,6 @@ public class ApiClient
 
     private static string ParseErrorMessage(string body, HttpStatusCode status)
     {
-        // Try to extract a human-readable message from the JSON error body.
         if (!string.IsNullOrWhiteSpace(body))
         {
             try

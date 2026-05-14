@@ -13,7 +13,11 @@ public partial class LoginViewModel : BaseViewModel
     {
         _auth = auth;
         TenantSubdomain = auth.GetLastTenantSubdomain();
+        ServerUrl       = auth.GetSavedServerUrl();
     }
+
+    [ObservableProperty]
+    private string _serverUrl = "";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
@@ -27,6 +31,7 @@ public partial class LoginViewModel : BaseViewModel
     [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
     private string _password = "";
 
+    partial void OnServerUrlChanged(string value)       => ErrorMessage = "";
     partial void OnTenantSubdomainChanged(string value) => ErrorMessage = "";
     partial void OnUsernameChanged(string value)        => ErrorMessage = "";
     partial void OnPasswordChanged(string value)        => ErrorMessage = "";
@@ -38,7 +43,7 @@ public partial class LoginViewModel : BaseViewModel
         ErrorMessage = "";
         try
         {
-            var (success, message) = await _auth.LoginAsync(TenantSubdomain, Username, Password);
+            var (success, message) = await _auth.LoginAsync(TenantSubdomain, Username, Password, ServerUrl);
             if (success)
                 WeakReferenceMessenger.Default.Send(
                     new LoginSuccessMessage(_auth.GetCurrentUserName() ?? Username));

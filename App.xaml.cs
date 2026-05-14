@@ -7,7 +7,9 @@ using PosSystem.Data.Repositories;
 using PosSystem.Services;
 using PosSystem.ViewModels;
 using PosSystem.ViewModels.Game;
+using PosSystem.ViewModels.Ombor;
 using PosSystem.ViewModels.Pos;
+using PosSystem.ViewModels.Products;
 using PosSystem.Views;
 using PosSystem.Views.Game;
 using PosSystem.Views.Pos;
@@ -59,6 +61,8 @@ public partial class App : Application
         // ── ViewModels (transient: fresh per navigation) ───────────────────────
         sc.AddTransient<LoginViewModel>();
         sc.AddTransient<GameViewModel>();
+        sc.AddTransient<ProductsViewModel>();
+        sc.AddTransient<OmborViewModel>();
         sc.AddTransient<AddProductViewModel>(sp => new AddProductViewModel(
             sp.GetRequiredService<ApiClient>(),
             sp.GetRequiredService<PriceListRepository>(),
