@@ -1272,6 +1272,12 @@
                                  in PosView.xaml.cs).
                                  ════════════════════════════════════════════════════════ -->
                             <Grid x:Name="MixedPaymentBlock">
+                                <Grid.Resources>
+                                    <!-- Horseshoe magnet glyph used on the "tortib olish" buttons.
+                                         Path data renders identically on every Windows version. -->
+                                    <PathGeometry x:Key="MagnetGeometry"
+                                                  Figures="M 3 3 L 7 3 L 7 9 A 1 1 0 0 1 9 9 L 9 3 L 13 3 L 13 9 A 5 5 0 0 1 3 9 Z"/>
+                                </Grid.Resources>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/> <!-- 0: JAMI + clear -->
                                     <RowDefinition Height="10"/>
@@ -1425,19 +1431,18 @@
                                         </Grid>
                                     </Border>
 
-                                    <!-- Fill remaining -->
+                                    <!-- Fill remaining (magnit ikoni = qolgan summani "tortib olish") -->
                                     <Button Grid.Column="4" Height="42"
                                             Command="{Binding FillRemainingCommand}"
                                             CommandParameter="cash"
-                                            Content="= QOL."
-                                            ToolTip="Qolgan summani Naqt qatoriga to'ldirish"
+                                            ToolTip="Qolgan summani Naqt qatoriga tortib olish"
                                             Background="White"
-                                            Foreground="#475569"
                                             BorderBrush="#D8E1EE"
                                             BorderThickness="1"
-                                            FontSize="11" FontWeight="Bold"
                                             FocusVisualStyle="{x:Null}"
                                             Cursor="Hand">
+                                        <Path Data="{StaticResource MagnetGeometry}"
+                                              Fill="#475569" Width="18" Height="18" Stretch="Uniform"/>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}"
@@ -1567,15 +1572,14 @@
                                     <Button Grid.Column="4" Height="42"
                                             Command="{Binding FillRemainingCommand}"
                                             CommandParameter="card"
-                                            Content="= QOL."
-                                            ToolTip="Qolgan summani Karta qatoriga to'ldirish"
+                                            ToolTip="Qolgan summani Karta qatoriga tortib olish"
                                             Background="White"
-                                            Foreground="#475569"
                                             BorderBrush="#D8E1EE"
                                             BorderThickness="1"
-                                            FontSize="11" FontWeight="Bold"
                                             FocusVisualStyle="{x:Null}"
                                             Cursor="Hand">
+                                        <Path Data="{StaticResource MagnetGeometry}"
+                                              Fill="#475569" Width="18" Height="18" Stretch="Uniform"/>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}"
@@ -1715,15 +1719,14 @@
                                         <Button Grid.Column="4" Height="42"
                                                 Command="{Binding FillRemainingCommand}"
                                                 CommandParameter="debt"
-                                                Content="= QOL."
-                                                ToolTip="Qolgan summani Qarz qatoriga to'ldirish"
+                                                ToolTip="Qolgan summani Qarz qatoriga tortib olish"
                                                 Background="White"
-                                                Foreground="#475569"
                                                 BorderBrush="#D8E1EE"
                                                 BorderThickness="1"
-                                                FontSize="11" FontWeight="Bold"
                                                 FocusVisualStyle="{x:Null}"
                                                 Cursor="Hand">
+                                            <Path Data="{StaticResource MagnetGeometry}"
+                                                  Fill="#475569" Width="18" Height="18" Stretch="Uniform"/>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border Background="{TemplateBinding Background}"
