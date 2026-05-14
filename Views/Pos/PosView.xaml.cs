@@ -31,6 +31,45 @@ public partial class PosView : UserControl
         PreviewTextInput += OnScannerTextInput;
         PreviewKeyDown   += OnScannerKeyDown;
         PreviewKeyDown   += OnPaymentHotkeys;
+        PreviewKeyDown   += OnAddProductHotkeys;
+    }
+
+    // ── Add Product modal: keyboard + backdrop handlers ────────────────────────
+    //  Esc      — close the modal (calls ToggleAddProductCommand).
+    //  Ctrl+S   — fire the existing SaveCommand when allowed.
+    //  Only active while IsAddProductOpen=true so we don't intercept hotkeys
+    //  when the modal is hidden.
+    private void OnAddProductHotkeys(object sender, KeyEventArgs e)
+    {
+        if (!_vm.IsAddProductOpen) return;
+
+        if (e.Key == Key.Escape)
+        {
+            _vm.ToggleAddProductCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (_vm.AddProductVm.SaveCommand.CanExecute(null))
+                _vm.AddProductVm.SaveCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    // Clicking the dimmed backdrop closes the modal — same as Esc.
+    private void OnAddProductBackdropClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm.IsAddProductOpen)
+            _vm.ToggleAddProductCommand.Execute(null);
+    }
+
+    // Card eats its own MouseDown so clicks inside the form don't bubble up
+    // to the backdrop and close the modal.
+    private void OnAddProductCardClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
     }
 
     // ── Mixed-payment keyboard shortcuts ───────────────────────────────────────
