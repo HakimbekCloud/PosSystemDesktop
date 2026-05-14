@@ -1263,96 +1263,685 @@
                             BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
                             Padding="12,10" Visibility="Visible">
                         <StackPanel>
-                            <Grid>
+                            <!-- ════════════════════════════════════════════════════════
+                                 MIXED PAYMENT BLOCK
+                                 Three payment rows (Naqt / Karta / Qarz) + quick-fill
+                                 chips + summary strip + SOTISH. Active row is driven
+                                 by ActivePaymentRow on the VM (F1/F2/F3 shortcuts wired
+                                 in PosView.xaml.cs).
+                                 ════════════════════════════════════════════════════════ -->
+                            <Grid x:Name="MixedPaymentBlock">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="8"/>
-                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/> <!-- 0: JAMI + clear -->
                                     <RowDefinition Height="10"/>
-                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/> <!-- 2: Naqt -->
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/> <!-- 4: Karta -->
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/> <!-- 6: Qarz + warning -->
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/> <!-- 8: quick chips -->
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/> <!-- 10: summary strip -->
+                                    <RowDefinition Height="12"/>
+                                    <RowDefinition Height="Auto"/> <!-- 12: SOTISH -->
                                 </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
 
-                                <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+                                <!-- ── Row 0: JAMI + "Savatni tozalash" pill ── -->
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="JAMI" FontSize="10" FontWeight="Bold"
+                                                   Foreground="#94A3B8"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                            <TextBlock FontSize="24" FontWeight="Bold"
+                                                       Foreground="#0F172A"
+                                                       Text="{Binding Total, StringFormat='{}{0:N0}'}"/>
+                                            <TextBlock Text=" so'm" FontSize="12"
+                                                       Foreground="#94A3B8"
+                                                       VerticalAlignment="Bottom"
+                                                       Margin="4,0,0,4"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="Savatni tozalash"
+                                            Command="{Binding ClearCartCommand}"
+                                            Style="{StaticResource OutlineDangerButtonStyle}"
+                                            Height="32" Padding="14,0" FontSize="12"/>
+                                </Grid>
+
+                                <!-- ── Row 2: Naqt ── -->
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="118"/>
+                                        <ColumnDefinition Width="6"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="6"/>
+                                        <ColumnDefinition Width="68"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Row label button -->
+                                    <Button Grid.Column="0" Height="42"
+                                            Command="{Binding SetActivePaymentRowCommand}"
+                                            CommandParameter="cash"
+                                            HorizontalContentAlignment="Stretch"
+                                            FocusVisualStyle="{x:Null}"
+                                            Cursor="Hand"
+                                            BorderThickness="0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="RowLabel"
+                                                        Background="White"
+                                                        BorderBrush="#D8E1EE"
+                                                        BorderThickness="1"
+                                                        CornerRadius="8"
+                                                        Padding="10,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="&#x1F4B5;" FontFamily="Segoe UI Emoji"
+                                                                   FontSize="14" VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                                        <TextBlock Grid.Column="1" Text="Naqt"
+                                                                   x:Name="LabelText"
+                                                                   FontSize="13" FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="#475569"/>
+                                                        <Border Grid.Column="2"
+                                                                x:Name="KbdBadge"
+                                                                BorderBrush="#D8E1EE"
+                                                                BorderThickness="1"
+                                                                CornerRadius="3"
+                                                                Padding="5,1"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="F1" FontSize="10"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="#94A3B8"
+                                                                       FontFamily="Consolas"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding ActivePaymentRow}" Value="cash">
+                                                        <Setter TargetName="RowLabel"  Property="Background"  Value="#EAF2FF"/>
+                                                        <Setter TargetName="RowLabel"  Property="BorderBrush" Value="#155EEF"/>
+                                                        <Setter TargetName="LabelText" Property="Foreground"  Value="#0B5BD3"/>
+                                                        <Setter TargetName="KbdBadge"  Property="BorderBrush" Value="#155EEF"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Amount input -->
+                                    <Border Grid.Column="2"
+                                            x:Name="CashInputBorder"
+                                            Background="White"
+                                            BorderBrush="#D8E1EE"
+                                            BorderThickness="1"
+                                            CornerRadius="8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BorderBrush" Value="#D8E1EE"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ActivePaymentRow}" Value="cash">
+                                                        <Setter Property="BorderBrush" Value="#155EEF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0"
+                                                     Tag="cash"
+                                                     GotFocus="OnPaymentInputGotFocus"
+                                                     Text="{Binding CashAmount,
+                                                            UpdateSourceTrigger=PropertyChanged,
+                                                            StringFormat='{}{0:N0}'}"
+                                                     TextAlignment="Right"
+                                                     FontSize="16" FontWeight="Bold"
+                                                     Padding="12,0,6,0"
+                                                     Height="42"
+                                                     VerticalContentAlignment="Center"
+                                                     BorderThickness="0"
+                                                     Background="Transparent"
+                                                     helpers:NumericTextBox.IsNumeric="True"
+                                                     Style="{StaticResource FlatTextBoxStyle}"/>
+                                            <TextBlock Grid.Column="1" Text="so'm"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="#94A3B8"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2,0,12,0"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Fill remaining -->
+                                    <Button Grid.Column="4" Height="42"
+                                            Command="{Binding FillRemainingCommand}"
+                                            CommandParameter="cash"
+                                            Content="= QOL."
+                                            ToolTip="Qolgan summani Naqt qatoriga to'ldirish"
+                                            Background="White"
+                                            Foreground="#475569"
+                                            BorderBrush="#D8E1EE"
+                                            BorderThickness="1"
+                                            FontSize="11" FontWeight="Bold"
+                                            FocusVisualStyle="{x:Null}"
+                                            Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F8FAFC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+
+                                <!-- ── Row 4: Karta ── -->
+                                <Grid Grid.Row="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="118"/>
+                                        <ColumnDefinition Width="6"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="6"/>
+                                        <ColumnDefinition Width="68"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0" Height="42"
+                                            Command="{Binding SetActivePaymentRowCommand}"
+                                            CommandParameter="card"
+                                            HorizontalContentAlignment="Stretch"
+                                            FocusVisualStyle="{x:Null}"
+                                            Cursor="Hand"
+                                            BorderThickness="0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="RowLabel"
+                                                        Background="White"
+                                                        BorderBrush="#D8E1EE"
+                                                        BorderThickness="1"
+                                                        CornerRadius="8"
+                                                        Padding="10,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="&#x1F4B3;" FontFamily="Segoe UI Emoji"
+                                                                   FontSize="14" VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                                        <TextBlock Grid.Column="1" Text="Karta"
+                                                                   x:Name="LabelText"
+                                                                   FontSize="13" FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="#475569"/>
+                                                        <Border Grid.Column="2"
+                                                                x:Name="KbdBadge"
+                                                                BorderBrush="#D8E1EE"
+                                                                BorderThickness="1"
+                                                                CornerRadius="3"
+                                                                Padding="5,1"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="F2" FontSize="10"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="#94A3B8"
+                                                                       FontFamily="Consolas"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding ActivePaymentRow}" Value="card">
+                                                        <Setter TargetName="RowLabel"  Property="Background"  Value="#EAF2FF"/>
+                                                        <Setter TargetName="RowLabel"  Property="BorderBrush" Value="#155EEF"/>
+                                                        <Setter TargetName="LabelText" Property="Foreground"  Value="#0B5BD3"/>
+                                                        <Setter TargetName="KbdBadge"  Property="BorderBrush" Value="#155EEF"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <Border Grid.Column="2"
+                                            Background="White"
+                                            BorderThickness="1"
+                                            CornerRadius="8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BorderBrush" Value="#D8E1EE"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ActivePaymentRow}" Value="card">
+                                                        <Setter Property="BorderBrush" Value="#155EEF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0"
+                                                     Tag="card"
+                                                     GotFocus="OnPaymentInputGotFocus"
+                                                     Text="{Binding CardAmount,
+                                                            UpdateSourceTrigger=PropertyChanged,
+                                                            StringFormat='{}{0:N0}'}"
+                                                     TextAlignment="Right"
+                                                     FontSize="16" FontWeight="Bold"
+                                                     Padding="12,0,6,0"
+                                                     Height="42"
+                                                     VerticalContentAlignment="Center"
+                                                     BorderThickness="0"
+                                                     Background="Transparent"
+                                                     helpers:NumericTextBox.IsNumeric="True"
+                                                     Style="{StaticResource FlatTextBoxStyle}"/>
+                                            <TextBlock Grid.Column="1" Text="so'm"
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="#94A3B8"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2,0,12,0"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <Button Grid.Column="4" Height="42"
+                                            Command="{Binding FillRemainingCommand}"
+                                            CommandParameter="card"
+                                            Content="= QOL."
+                                            ToolTip="Qolgan summani Karta qatoriga to'ldirish"
+                                            Background="White"
+                                            Foreground="#475569"
+                                            BorderBrush="#D8E1EE"
+                                            BorderThickness="1"
+                                            FontSize="11" FontWeight="Bold"
+                                            FocusVisualStyle="{x:Null}"
+                                            Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F8FAFC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+
+                                <!-- ── Row 6: Qarz (+ inline customer warning) ── -->
+                                <Grid Grid.Row="6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="118"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="68"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0" Height="42"
+                                                Command="{Binding SetActivePaymentRowCommand}"
+                                                CommandParameter="debt"
+                                                HorizontalContentAlignment="Stretch"
+                                                FocusVisualStyle="{x:Null}"
+                                                Cursor="Hand"
+                                                BorderThickness="0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="RowLabel"
+                                                            Background="White"
+                                                            BorderBrush="#D8E1EE"
+                                                            BorderThickness="1"
+                                                            CornerRadius="8"
+                                                            Padding="10,0">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="&#xE7BF;"
+                                                                       FontFamily="Segoe MDL2 Assets"
+                                                                       FontSize="14" VerticalAlignment="Center"
+                                                                       Margin="0,0,8,0"
+                                                                       Foreground="#94A3B8"/>
+                                                            <TextBlock Grid.Column="1" Text="Qarz"
+                                                                       x:Name="LabelText"
+                                                                       FontSize="13" FontWeight="SemiBold"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="#475569"/>
+                                                            <Border Grid.Column="2"
+                                                                    x:Name="KbdBadge"
+                                                                    BorderBrush="#D8E1EE"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="3"
+                                                                    Padding="5,1"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock Text="F3" FontSize="10"
+                                                                           FontWeight="Bold"
+                                                                           Foreground="#94A3B8"
+                                                                           FontFamily="Consolas"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding ActivePaymentRow}" Value="debt">
+                                                            <Setter TargetName="RowLabel"  Property="Background"  Value="#EAF2FF"/>
+                                                            <Setter TargetName="RowLabel"  Property="BorderBrush" Value="#155EEF"/>
+                                                            <Setter TargetName="LabelText" Property="Foreground"  Value="#0B5BD3"/>
+                                                            <Setter TargetName="KbdBadge"  Property="BorderBrush" Value="#155EEF"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <Border Grid.Column="2"
+                                                Background="White"
+                                                BorderThickness="1"
+                                                CornerRadius="8">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="BorderBrush" Value="#D8E1EE"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ActivePaymentRow}" Value="debt">
+                                                            <Setter Property="BorderBrush" Value="#155EEF"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsDebtBlocked}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#F59E0B"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0"
+                                                         Tag="debt"
+                                                         GotFocus="OnPaymentInputGotFocus"
+                                                         Text="{Binding DebtAmount,
+                                                                UpdateSourceTrigger=PropertyChanged,
+                                                                StringFormat='{}{0:N0}'}"
+                                                         TextAlignment="Right"
+                                                         FontSize="16" FontWeight="Bold"
+                                                         Padding="12,0,6,0"
+                                                         Height="42"
+                                                         VerticalContentAlignment="Center"
+                                                         BorderThickness="0"
+                                                         Background="Transparent"
+                                                         helpers:NumericTextBox.IsNumeric="True"
+                                                         Style="{StaticResource FlatTextBoxStyle}"/>
+                                                <TextBlock Grid.Column="1" Text="so'm"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#94A3B8"
+                                                           VerticalAlignment="Center"
+                                                           Margin="2,0,12,0"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <Button Grid.Column="4" Height="42"
+                                                Command="{Binding FillRemainingCommand}"
+                                                CommandParameter="debt"
+                                                Content="= QOL."
+                                                ToolTip="Qolgan summani Qarz qatoriga to'ldirish"
+                                                Background="White"
+                                                Foreground="#475569"
+                                                BorderBrush="#D8E1EE"
+                                                BorderThickness="1"
+                                                FontSize="11" FontWeight="Bold"
+                                                FocusVisualStyle="{x:Null}"
+                                                Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                                            CornerRadius="8">
+                                                        <ContentPresenter HorizontalAlignment="Center"
+                                                                          VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#F8FAFC"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Qarz: customer-required warning -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal"
+                                                Margin="124,4,0,0"
+                                                Visibility="{Binding IsDebtBlocked,
+                                                             Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="11" Foreground="#B45309"
+                                                   VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Qarz uchun mijoz tanlanishi shart"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="#B45309"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- ── Row 8: Quick-fill chips ── -->
+                                <Grid Grid.Row="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="TEZKOR"
+                                               FontSize="10" FontWeight="Bold"
+                                               Foreground="#94A3B8"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,10,0"/>
+                                    <WrapPanel Grid.Column="1" Orientation="Horizontal">
+                                        <WrapPanel.Resources>
+                                            <Style x:Key="QuickChip" TargetType="Button">
+                                                <Setter Property="Height"            Value="28"/>
+                                                <Setter Property="Padding"           Value="12,0"/>
+                                                <Setter Property="Margin"            Value="0,0,6,6"/>
+                                                <Setter Property="Background"        Value="White"/>
+                                                <Setter Property="Foreground"        Value="#475569"/>
+                                                <Setter Property="BorderBrush"       Value="#D8E1EE"/>
+                                                <Setter Property="BorderThickness"   Value="1"/>
+                                                <Setter Property="FontSize"          Value="12"/>
+                                                <Setter Property="FontWeight"        Value="Bold"/>
+                                                <Setter Property="Cursor"            Value="Hand"/>
+                                                <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                                    CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F8FAFC"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                            <Style x:Key="QuickChipAccent" TargetType="Button" BasedOn="{StaticResource QuickChip}">
+                                                <Setter Property="BorderBrush" Value="#155EEF"/>
+                                                <Setter Property="Foreground"  Value="#0B5BD3"/>
+                                            </Style>
+                                            <Style x:Key="QuickChipMuted" TargetType="Button" BasedOn="{StaticResource QuickChip}">
+                                                <Setter Property="Foreground"  Value="#94A3B8"/>
+                                            </Style>
+                                        </WrapPanel.Resources>
+                                        <Button Style="{StaticResource QuickChip}" Content="+10K"
+                                                Command="{Binding AddQuickAmountCommand}" CommandParameter="10000"/>
+                                        <Button Style="{StaticResource QuickChip}" Content="+20K"
+                                                Command="{Binding AddQuickAmountCommand}" CommandParameter="20000"/>
+                                        <Button Style="{StaticResource QuickChip}" Content="+50K"
+                                                Command="{Binding AddQuickAmountCommand}" CommandParameter="50000"/>
+                                        <Button Style="{StaticResource QuickChip}" Content="+100K"
+                                                Command="{Binding AddQuickAmountCommand}" CommandParameter="100000"/>
+                                        <Button Style="{StaticResource QuickChipAccent}" Content="= JAMI"
+                                                Command="{Binding FillRemainingCommand}"
+                                                CommandParameter="{Binding ActivePaymentRow}"/>
+                                    </WrapPanel>
+                                    <Button Grid.Column="2"
+                                            Command="{Binding ClearPaymentsCommand}"
+                                            Content="Tozalash"
+                                            Height="28" Padding="12,0"
+                                            Background="White"
+                                            Foreground="#94A3B8"
+                                            BorderBrush="#D8E1EE"
+                                            BorderThickness="1"
+                                            FontSize="12" FontWeight="Bold"
+                                            Cursor="Hand"
+                                            FocusVisualStyle="{x:Null}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="6"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F8FAFC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+
+                                <!-- ── Row 10: Summary strip (QABUL QILINDI + QOLDIQ/QAYTIM) ── -->
+                                <Grid Grid.Row="10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="10"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Height="46"
-                                            Command="{Binding SelectPaymentTypeCommand}" CommandParameter="cash"
-                                            Style="{StaticResource PayTypeBtn}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="&#x1F4B5;" FontFamily="Segoe UI Emoji"
-                                                       FontSize="22" Margin="0,0,10,0"
-                                                       VerticalAlignment="Center"/>
-                                            <TextBlock Text="Naqt" FontSize="15" FontWeight="SemiBold"
-                                                       VerticalAlignment="Center"/>
+
+                                    <!-- QABUL QILINDI (always shown, green) -->
+                                    <Border Grid.Column="0"
+                                            Background="#ECFDF3"
+                                            BorderBrush="#DCFCE7"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            MinHeight="56">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="QABUL QILINDI"
+                                                       FontSize="10" FontWeight="Bold"
+                                                       Foreground="#15803D"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock FontSize="20" FontWeight="Bold"
+                                                           Foreground="#15803D"
+                                                           Text="{Binding TotalTendered, StringFormat='{}{0:N0}'}"/>
+                                                <TextBlock Text=" so'm"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#15803D" Opacity="0.85"
+                                                           VerticalAlignment="Bottom"
+                                                           Margin="3,0,0,3"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="2" Height="46"
-                                            Command="{Binding SelectPaymentTypeCommand}" CommandParameter="card"
-                                            Style="{StaticResource PayTypeBtn}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="&#x1F4B3;" FontFamily="Segoe UI Emoji"
-                                                       FontSize="22" Margin="0,0,10,0"
-                                                       VerticalAlignment="Center"/>
-                                            <TextBlock Text="Karta" FontSize="15" FontWeight="SemiBold"
-                                                       VerticalAlignment="Center"/>
+                                    </Border>
+
+                                    <!-- QOLDIQ (amber) — visible until fully paid -->
+                                    <Border Grid.Column="2"
+                                            Background="#FFFBEB"
+                                            BorderBrush="#FDE68A"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            MinHeight="56"
+                                            Visibility="{Binding IsFullyPaid,
+                                                         Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="QOLDIQ"
+                                                       FontSize="10" FontWeight="Bold"
+                                                       Foreground="#B45309"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock FontSize="20" FontWeight="Bold"
+                                                           Foreground="#B45309"
+                                                           Text="{Binding Remaining, StringFormat='{}{0:N0}'}"/>
+                                                <TextBlock Text=" so'm"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#B45309" Opacity="0.85"
+                                                           VerticalAlignment="Bottom"
+                                                           Margin="3,0,0,3"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </Button>
+                                    </Border>
+
+                                    <!-- QAYTIM (rose) — visible once fully paid -->
+                                    <Border Grid.Column="2"
+                                            Background="#FEF2F2"
+                                            BorderBrush="#FECACA"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="12,8"
+                                            MinHeight="56"
+                                            Visibility="{Binding IsFullyPaid,
+                                                         Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="QAYTIM"
+                                                       FontSize="10" FontWeight="Bold"
+                                                       Foreground="#DC2626"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock FontSize="20" FontWeight="Bold"
+                                                           Foreground="#DC2626"
+                                                           Text="{Binding MixedChange, StringFormat='{}{0:N0}'}"/>
+                                                <TextBlock Text=" so'm"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#DC2626" Opacity="0.85"
+                                                           VerticalAlignment="Bottom"
+                                                           Margin="3,0,0,3"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
 
-                                <Border Grid.Row="2" Grid.Column="0" Background="White" CornerRadius="12"
-                                        Padding="10,8">
-                                    <StackPanel>
-                                        <TextBlock Text="QABUL QILINDI" FontSize="10" FontWeight="Bold"
-                                                   Foreground="#94A3B8"/>
-                                        <TextBox Text="{Binding PaidAmount,
-                                                 UpdateSourceTrigger=PropertyChanged,
-                                                 StringFormat='{}{0:N0}'}"
-                                                 TextAlignment="Left"
-                                                 FontSize="18" FontWeight="Bold" Padding="0,2"
-                                                 BorderThickness="0" Background="Transparent"
-                                                 helpers:NumericTextBox.IsNumeric="True"
-                                                 Style="{StaticResource FlatTextBoxStyle}"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <StackPanel Grid.Row="2" Grid.Column="2" Background="#FEF2F2"
-                                            VerticalAlignment="Stretch">
-                                    <StackPanel.Margin>0</StackPanel.Margin>
-                                    <StackPanel.Resources>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Margin" Value="10,0,10,0"/>
-                                        </Style>
-                                    </StackPanel.Resources>
-                                    <TextBlock Text="QAYTIM" FontSize="10" FontWeight="Bold"
-                                               Foreground="#94A3B8" Margin="10,8,10,0"/>
-                                    <TextBlock FontSize="14" FontWeight="SemiBold"
-                                               TextTrimming="CharacterEllipsis" Margin="10,2,10,8">
-                                        <Run Text="{Binding Change, Mode=OneWay, StringFormat='{}{0:N0}'}"/>
-                                        <Run Text=" so'm"/>
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#16A34A"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Change,
-                                                                 Converter={StaticResource IsNegativeConverter}}"
-                                                                 Value="True">
-                                                        <Setter Property="Foreground" Value="#DC2626"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </StackPanel>
-
-                                <Button Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                                <!-- ── Row 12: SOTISH ── -->
+                                <Button Grid.Row="12"
                                         Command="{Binding CheckoutCommand}"
                                         Style="{StaticResource SuccessButtonStyle}"
                                         Height="58" FontSize="18" FontWeight="Bold">
@@ -1360,6 +1949,16 @@
                                         <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
                                                    Margin="0,0,8,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="SOTISH" VerticalAlignment="Center"/>
+                                        <Border BorderBrush="#FFFFFF" BorderThickness="1"
+                                                CornerRadius="3" Padding="6,1"
+                                                Margin="10,0,0,0"
+                                                Opacity="0.7"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="F12" FontSize="10"
+                                                       FontWeight="Bold"
+                                                       FontFamily="Consolas"
+                                                       Foreground="White"/>
+                                        </Border>
                                     </StackPanel>
                                 </Button>
                             </Grid>

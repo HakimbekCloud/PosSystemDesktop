@@ -30,6 +30,46 @@ public partial class PosView : UserControl
 
         PreviewTextInput += OnScannerTextInput;
         PreviewKeyDown   += OnScannerKeyDown;
+        PreviewKeyDown   += OnPaymentHotkeys;
+    }
+
+    // ── Mixed-payment keyboard shortcuts ───────────────────────────────────────
+    //  F1 / F2 / F3 — jump between Naqt / Karta / Qarz rows.
+    //  F12         — fire CheckoutCommand (SOTISH) when allowed.
+    //  Anything typed into AddProduct or Customer search fields is left alone.
+    private void OnPaymentHotkeys(object sender, KeyEventArgs e)
+    {
+        if (_vm.IsAddProductOpen || _vm.IsCustomerPopupOpen) return;
+
+        switch (e.Key)
+        {
+            case Key.F1:
+                _vm.SetActivePaymentRowCommand.Execute("cash");
+                e.Handled = true;
+                break;
+            case Key.F2:
+                _vm.SetActivePaymentRowCommand.Execute("card");
+                e.Handled = true;
+                break;
+            case Key.F3:
+                _vm.SetActivePaymentRowCommand.Execute("debt");
+                e.Handled = true;
+                break;
+            case Key.F12:
+                if (_vm.CheckoutCommand.CanExecute(null))
+                    _vm.CheckoutCommand.Execute(null);
+                e.Handled = true;
+                break;
+        }
+    }
+
+    // The 3 payment-row TextBoxes tag themselves with "cash"/"card"/"debt".
+    // Focusing any of them switches the active row so quick-fill chips
+    // and the "= JAMI" shortcut target the right field.
+    private void OnPaymentInputGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is string row)
+            _vm.SetActivePaymentRowCommand.Execute(row);
     }
 
     private NetworkLogWindow?    _networkLogWin;

@@ -161,9 +161,36 @@ public partial class PosViewModel : ObservableObject
     public decimal Change   => PaidAmount - Total;
 
     // ── Payment ────────────────────────────────────────────────────────────────
+    // Mixed payment model: the cashier can split a single sale across cash,
+    // card and debt. Existing PaidAmount stays in sync with the sum so the
+    // rest of the checkout flow keeps working unchanged.
 
     [ObservableProperty]
     private string _paymentType = "";
+
+    [ObservableProperty] private decimal _cashAmount;
+    [ObservableProperty] private decimal _cardAmount;
+    [ObservableProperty] private decimal _debtAmount;
+
+    // Which row receives quick-fill chip taps. "cash" | "card" | "debt".
+    [ObservableProperty] private string _activePaymentRow = "cash";
+
+    // Sum of all three rows — what's been tendered overall.
+    public decimal TotalTendered => CashAmount + CardAmount + DebtAmount;
+
+    // Amount still owed (>0 while the customer hasn't covered Total).
+    public decimal Remaining     => Math.Max(0, Total - TotalTendered);
+
+    // Overpaid cash/card portion only (debt cannot produce change).
+    public decimal MixedChange   => Math.Max(0, (CashAmount + CardAmount) - Total);
+
+    // True while the cart is fully paid (used to flip summary strip from
+    // "QOLDIQ" to "QAYTIM").
+    public bool    IsFullyPaid   => TotalTendered >= Total && Total > 0;
+
+    // True while the cashier has typed a Qarz amount but hasn't picked a
+    // customer — checkout stays disabled and a warning shows on the Qarz row.
+    public bool    IsDebtBlocked => DebtAmount > 0 && !_selectedCustomerId.HasValue;
 
     // ── Customer ───────────────────────────────────────────────────────────────
 
@@ -376,6 +403,77 @@ public partial class PosViewModel : ObservableObject
         PaidAmount = Total;
     }
 
+    // Switch the active row (F1/F2/F3 or row-button click). The quick-fill
+    // chips below apply to whichever row is active.
+    [RelayCommand]
+    private void SetActivePaymentRow(string row)
+    {
+        if (row is "cash" or "card" or "debt")
+            ActivePaymentRow = row;
+    }
+
+    // Fill the named row with exactly the amount needed to cover Total
+    // (clamped at >=0 once the other rows are subtracted).
+    [RelayCommand]
+    private void FillRemaining(string row)
+    {
+        switch (row)
+        {
+            case "cash":
+                CashAmount = Math.Max(0, Total - (CardAmount + DebtAmount));
+                break;
+            case "card":
+                CardAmount = Math.Max(0, Total - (CashAmount + DebtAmount));
+                break;
+            case "debt":
+                DebtAmount = Math.Max(0, Total - (CashAmount + CardAmount));
+                break;
+        }
+    }
+
+    // Add a fixed amount to the active row (used by +10K, +20K, +50K, +100K).
+    [RelayCommand]
+    private void AddQuickAmount(string amount)
+    {
+        if (!decimal.TryParse(amount, System.Globalization.NumberStyles.Number,
+                              System.Globalization.CultureInfo.InvariantCulture, out var add))
+            return;
+
+        switch (ActivePaymentRow)
+        {
+            case "cash": CashAmount += add; break;
+            case "card": CardAmount += add; break;
+            case "debt": DebtAmount += add; break;
+        }
+    }
+
+    // Clear all three rows back to 0.
+    [RelayCommand]
+    private void ClearPayments()
+    {
+        CashAmount = 0;
+        CardAmount = 0;
+        DebtAmount = 0;
+    }
+
+    // Keep PaidAmount + Change + derived flags in sync whenever any row changes.
+    partial void OnCashAmountChanged(decimal value) => RecomputePaidAmount();
+    partial void OnCardAmountChanged(decimal value) => RecomputePaidAmount();
+    partial void OnDebtAmountChanged(decimal value) => RecomputePaidAmount();
+
+    private void RecomputePaidAmount()
+    {
+        // PaidAmount mirrors the full tendered total so existing checkout
+        // gating (PaidAmount >= Total) continues to work.
+        PaidAmount = TotalTendered;
+        OnPropertyChanged(nameof(TotalTendered));
+        OnPropertyChanged(nameof(Remaining));
+        OnPropertyChanged(nameof(MixedChange));
+        OnPropertyChanged(nameof(IsFullyPaid));
+        OnPropertyChanged(nameof(IsDebtBlocked));
+        CheckoutCommand.NotifyCanExecuteChanged();
+    }
+
     [RelayCommand]
     private void KeypadInput(string key)
     {
@@ -498,9 +596,14 @@ public partial class PosViewModel : ObservableObject
         CartItems.Clear();
         CartDiscount = 0;
         PaidAmount   = 0;
+        CashAmount   = 0;
+        CardAmount   = 0;
+        DebtAmount   = 0;
+        ActivePaymentRow = "cash";
         _selectedCustomerId         = null;
         _selectedCustomerRemoteUuid = "";
         SelectedCustomerDisplay     = "Mijoz tanlanmagan";
+        OnPropertyChanged(nameof(IsDebtBlocked));
     }
 
     [RelayCommand(CanExecute = nameof(CanCheckout))]
@@ -516,8 +619,8 @@ public partial class PosViewModel : ObservableObject
             TotalAmount         = Total,
             Discount            = CartDiscount,
             PaidAmount          = PaidAmount,
-            ChangeAmount        = Math.Max(0, Change),
-            PaymentType         = string.IsNullOrEmpty(PaymentType) ? "cash" : PaymentType,
+            ChangeAmount        = MixedChange,
+            PaymentType         = ResolvePaymentType(),
             Synced              = false,
             CreatedAt           = DateTime.Now,
             Items               = CartItems.Select(i => new SaleItem
@@ -558,7 +661,23 @@ public partial class PosViewModel : ObservableObject
     }
 
     private bool CanCheckout() =>
-        CartItems.Count > 0 && Total > 0 && PaidAmount >= Total;
+        CartItems.Count > 0 && Total > 0 && PaidAmount >= Total && !IsDebtBlocked;
+
+    // Maps the row breakdown into the Sale.PaymentType column. Backend
+    // integration can extend this later (e.g. emit a JSON breakdown).
+    private string ResolvePaymentType()
+    {
+        var methods = new List<string>(3);
+        if (CashAmount > 0) methods.Add("cash");
+        if (CardAmount > 0) methods.Add("card");
+        if (DebtAmount > 0) methods.Add("debt");
+        return methods.Count switch
+        {
+            0 => string.IsNullOrEmpty(PaymentType) ? "cash" : PaymentType,
+            1 => methods[0],
+            _ => "mixed:" + string.Join("+", methods),
+        };
+    }
 
     private void ApplySoldStockInMemory(IEnumerable<SaleItem> items)
     {
@@ -730,6 +849,8 @@ public partial class PosViewModel : ObservableObject
 
         CustomerSearchText  = "";
         IsCustomerPopupOpen = false;
+        OnPropertyChanged(nameof(IsDebtBlocked));
+        CheckoutCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]
@@ -739,6 +860,8 @@ public partial class PosViewModel : ObservableObject
         _selectedCustomerRemoteUuid = "";
         SelectedCustomerDisplay     = "Mijoz tanlanmagan";
         CustomerSearchText          = "";
+        OnPropertyChanged(nameof(IsDebtBlocked));
+        CheckoutCommand.NotifyCanExecuteChanged();
     }
 
     // ── Sync / auth commands ───────────────────────────────────────────────────
