@@ -32,16 +32,19 @@ public partial class AdminShellViewModel : BaseViewModel
         _services = services;
         _auth     = auth;
 
+        // Glyphs use Segoe MDL2 Assets codepoints — these are guaranteed
+        // to exist on every Windows 10+ installation, so they never fall
+        // back to tofu boxes (the symptom the v1 nav items showed before).
         NavItems = new ObservableCollection<NavigationItem>
         {
-            new() { Module = AdminModule.Sotuv,       Title = "Sotuv",                 Glyph = "", ScreenLabel = "01 Sotuv"                 },
-            new() { Module = AdminModule.Mahsulotlar, Title = "Mahsulotlar",           Glyph = "", ScreenLabel = "02 Mahsulotlar"           },
-            new() { Module = AdminModule.Ombor,       Title = "Ombor",                 Glyph = "", ScreenLabel = "03 Ombor"                 },
-            new() { Module = AdminModule.Hisobotlar,  Title = "Hisobotlar",            Glyph = "", ScreenLabel = "04 Hisobotlar"            },
-            new() { Module = AdminModule.Mijozlar,    Title = "Mijozlar",              Glyph = "", ScreenLabel = "05 Mijozlar"              },
-            new() { Module = AdminModule.Yetkazib,    Title = "Yetkazib beruvchilar",  Glyph = "", ScreenLabel = "06 Yetkazib beruvchilar"  },
-            new() { Module = AdminModule.Xodimlar,    Title = "Xodimlar",              Glyph = "", ScreenLabel = "07 Xodimlar"              },
-            new() { Module = AdminModule.Sozlamalar,  Title = "Sozlamalar",            Glyph = "", ScreenLabel = "08 Sozlamalar"            },
+            new() { Module = AdminModule.Sotuv,       Title = "Sotuv",                 Glyph = "", ScreenLabel = "01 Sotuv"                 }, // ShoppingCart
+            new() { Module = AdminModule.Mahsulotlar, Title = "Mahsulotlar",           Glyph = "", ScreenLabel = "02 Mahsulotlar"           }, // StorageOptical (stacked items)
+            new() { Module = AdminModule.Ombor,       Title = "Ombor",                 Glyph = "", ScreenLabel = "03 Ombor"                 }, // Page
+            new() { Module = AdminModule.Hisobotlar,  Title = "Hisobotlar",            Glyph = "", ScreenLabel = "04 Hisobotlar"            }, // ChartMultiple (E9F9) — confirmed via existing PosView
+            new() { Module = AdminModule.Mijozlar,    Title = "Mijozlar",              Glyph = "", ScreenLabel = "05 Mijozlar"              }, // People
+            new() { Module = AdminModule.Yetkazib,    Title = "Yetkazib beruvchilar",  Glyph = "", ScreenLabel = "06 Yetkazib beruvchilar"  }, // Map
+            new() { Module = AdminModule.Xodimlar,    Title = "Xodimlar",              Glyph = "", ScreenLabel = "07 Xodimlar"              }, // Contact
+            new() { Module = AdminModule.Sozlamalar,  Title = "Sozlamalar",            Glyph = "", ScreenLabel = "08 Sozlamalar"            }, // Settings
         };
 
         _clockTimer = new System.Windows.Threading.DispatcherTimer

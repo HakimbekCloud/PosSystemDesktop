@@ -34,9 +34,9 @@
 
                 <UniformGrid Columns="4" Rows="1">
                     <c:StatCard Margin="0,0,6,0" Label="JAMI"         Value="{Binding KpiTotal}"   Unit="xodim" Glyph="&#xE716;" Tone="Brand"/>
-                    <c:StatCard Margin="3,0,3,0" Label="SMENADA"      Value="{Binding KpiOnShift}" Unit="ta"    Glyph="&#xE823;" Tone="Success"/>
-                    <c:StatCard Margin="3,0,3,0" Label="OYLIK FONDI"  Value="{Binding KpiPayroll}"              Glyph="&#xEAFD;" Tone="Info"/>
-                    <c:StatCard Margin="6,0,0,0" Label="DAVOMAT"      Value="{Binding KpiRate}"                 Glyph="&#xE9D9;" Tone="Warning"/>
+                    <c:StatCard Margin="3,0,3,0" Label="SMENADA"      Value="{Binding KpiOnShift}" Unit="ta"    Glyph="&#xE77B;" Tone="Success"/>
+                    <c:StatCard Margin="3,0,3,0" Label="OYLIK FONDI"  Value="{Binding KpiPayroll}"              Glyph="&#xE7BF;" Tone="Info"/>
+                    <c:StatCard Margin="6,0,0,0" Label="DAVOMAT"      Value="{Binding KpiRate}"                 Glyph="&#xE73E;" Tone="Warning"/>
                 </UniformGrid>
 
                 <!-- Employee cards (WrapPanel) -->

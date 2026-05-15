@@ -23,10 +23,10 @@
                 <c:WpfMappingBanner Hint="{Binding WpfHint}"/>
 
                 <UniformGrid Columns="4" Rows="1">
-                    <c:StatCard Margin="0,0,6,0" Label="TUSHUM"      Value="{Binding KpiRevenue}" Glyph="&#xE825;" Tone="Brand"   Delta="+18.4% o'tgan haftadan" DeltaTone="Up"/>
-                    <c:StatCard Margin="3,0,3,0" Label="FOYDA"       Value="{Binding KpiProfit}"  Glyph="&#xE9D9;" Tone="Success" Delta="+12.1%" DeltaTone="Up"/>
+                    <c:StatCard Margin="0,0,6,0" Label="TUSHUM"      Value="{Binding KpiRevenue}" Glyph="&#xE7BF;" Tone="Brand"   Delta="+18.4% o'tgan haftadan" DeltaTone="Up"/>
+                    <c:StatCard Margin="3,0,3,0" Label="FOYDA"       Value="{Binding KpiProfit}"  Glyph="&#xE73E;" Tone="Success" Delta="+12.1%" DeltaTone="Up"/>
                     <c:StatCard Margin="3,0,3,0" Label="CHEKLAR"     Value="{Binding KpiOrders}" Unit="ta" Glyph="&#xE7C1;" Tone="Info" Delta="+96 chek" DeltaTone="Up"/>
-                    <c:StatCard Margin="6,0,0,0" Label="O'RTACHA CHEK" Value="{Binding KpiAverage}" Glyph="&#xE9A6;" Tone="Warning" Delta="+5.2%" DeltaTone="Up"/>
+                    <c:StatCard Margin="6,0,0,0" Label="O'RTACHA CHEK" Value="{Binding KpiAverage}" Glyph="&#xE7C3;" Tone="Warning" Delta="+5.2%" DeltaTone="Up"/>
                 </UniformGrid>
 
                 <!-- Daily bar chart + Payments donut row -->

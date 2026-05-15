@@ -441,15 +441,18 @@ public partial class SozlamalarViewModel : BaseViewModel
 
     public SozlamalarViewModel()
     {
+        // Segoe MDL2 Assets glyphs — guaranteed to render on Win10+.
+        // Use \u escapes so the source itself encodes the codepoint and
+        // is robust to any transit/editor that might strip raw Unicode.
         Tabs = new ObservableCollection<SettingsTab>
         {
-            new() { Key="general",      Title="Umumiy",         Glyph="" },
-            new() { Key="branches",     Title="Filiallar",       Glyph="" },
-            new() { Key="receipt",      Title="Chek shabloni",   Glyph="" },
-            new() { Key="payments",     Title="To'lov tizimlari",Glyph="" },
-            new() { Key="hardware",     Title="Qurilmalar",      Glyph="" },
-            new() { Key="security",     Title="Xavfsizlik",      Glyph="" },
-            new() { Key="audit",        Title="Audit jurnali",   Glyph="" },
+            new() { Key="general",      Title="Umumiy",          Glyph="" }, // Settings
+            new() { Key="branches",     Title="Filiallar",        Glyph="" }, // Map
+            new() { Key="receipt",      Title="Chek shabloni",    Glyph="" }, // Print
+            new() { Key="payments",     Title="To'lov tizimlari", Glyph="" }, // ShoppingCart
+            new() { Key="hardware",     Title="Qurilmalar",       Glyph="" }, // StorageOptical
+            new() { Key="security",     Title="Xavfsizlik",       Glyph="" }, // Lock
+            new() { Key="audit",        Title="Audit jurnali",    Glyph="" }, // Memo
         };
         SelectedTab = Tabs[0];
     }

@@ -8,7 +8,10 @@
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, system-ui</FontFamily>
     <FontFamily x:Key="UiFontDisplay">Segoe UI Variable Display, Segoe UI, system-ui</FontFamily>
     <FontFamily x:Key="UiFontMono">Cascadia Mono, Consolas, monospace</FontFamily>
-    <FontFamily x:Key="FluentIcons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <!-- Use Segoe MDL2 Assets as the primary icon font: it ships with every
+         Windows 10+ install and contains all codepoints used in this admin.
+         Segoe Fluent Icons (Win11 only) is listed as a graceful upgrade. -->
+    <FontFamily x:Key="FluentIcons">Segoe MDL2 Assets, Segoe Fluent Icons</FontFamily>
 
     <!-- Page-head title h1: 20px SemiBold -->
     <Style x:Key="PageTitleText" TargetType="TextBlock">

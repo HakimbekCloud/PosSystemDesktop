@@ -40,8 +40,8 @@
                 <UniformGrid Columns="4" Rows="1">
                     <c:StatCard Margin="0,0,6,0" Label="JAMI MIJOZLAR"    Value="{Binding KpiTotal}"  Glyph="&#xE716;" Tone="Brand"/>
                     <c:StatCard Margin="3,0,3,0" Label="YANGI MIJOZLAR"   Value="{Binding KpiNew}"    Glyph="&#xE77B;" Tone="Success"/>
-                    <c:StatCard Margin="3,0,3,0" Label="FAOL MIJOZLAR"    Value="{Binding KpiActive}" Unit="ta" Glyph="&#xE9D9;" Tone="Info"/>
-                    <c:StatCard Margin="6,0,0,0" Label="UMUMIY QARZDORLIK" Value="{Binding KpiDebt}"  Glyph="&#xE7BB;" Tone="Warning"/>
+                    <c:StatCard Margin="3,0,3,0" Label="FAOL MIJOZLAR"    Value="{Binding KpiActive}" Unit="ta" Glyph="&#xE73E;" Tone="Info"/>
+                    <c:StatCard Margin="6,0,0,0" Label="UMUMIY QARZDORLIK" Value="{Binding KpiDebt}"  Glyph="&#xE7BA;" Tone="Warning"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource DataGridShell}" Margin="0,16,0,0">
