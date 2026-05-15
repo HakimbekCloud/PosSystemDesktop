@@ -6,11 +6,14 @@ using PosSystem.Data;
 using PosSystem.Data.Repositories;
 using PosSystem.Services;
 using PosSystem.ViewModels;
+using PosSystem.ViewModels.Admin;
+using PosSystem.ViewModels.Admin.Modules;
 using PosSystem.ViewModels.Game;
 using PosSystem.ViewModels.Ombor;
 using PosSystem.ViewModels.Pos;
 using PosSystem.ViewModels.Products;
 using PosSystem.Views;
+using PosSystem.Views.Admin;
 using PosSystem.Views.Game;
 using PosSystem.Views.Pos;
 
@@ -62,17 +65,29 @@ public partial class App : Application
         sc.AddTransient<LoginViewModel>();
         sc.AddTransient<GameViewModel>();
         sc.AddTransient<ProductsViewModel>();
-        sc.AddTransient<OmborViewModel>();
+        sc.AddTransient<ViewModels.Ombor.OmborViewModel>();
         sc.AddTransient<AddProductViewModel>(sp => new AddProductViewModel(
             sp.GetRequiredService<ApiClient>(),
             sp.GetRequiredService<PriceListRepository>(),
             sp.GetRequiredService<ProductTypeRepository>()));
         sc.AddTransient<PosViewModel>();
 
+        // Admin v1 shell + 8 module VMs (singletons preserve state across nav).
+        sc.AddSingleton<AdminShellViewModel>();
+        sc.AddSingleton<SotuvViewModel>();
+        sc.AddSingleton<MahsulotlarViewModel>();
+        sc.AddSingleton<ViewModels.Admin.Modules.OmborViewModel>();
+        sc.AddSingleton<HisobotlarViewModel>();
+        sc.AddSingleton<MijozlarViewModel>();
+        sc.AddSingleton<YetkazibViewModel>();
+        sc.AddSingleton<XodimlarViewModel>();
+        sc.AddSingleton<SozlamalarViewModel>();
+
         // ── Views ─────────────────────────────────────────────────────────────
         sc.AddTransient<LoginView>();
         sc.AddTransient<GameView>();
         sc.AddTransient<PosView>();
+        sc.AddTransient<AdminShellView>();
         sc.AddSingleton<MainWindow>();
 
         return sc.BuildServiceProvider();

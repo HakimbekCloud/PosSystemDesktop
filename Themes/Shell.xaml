@@ -1,0 +1,131 @@
+<!--
+  ShefPos Admin v1 — Shell pieces (sidebar nav, page-head border, tabs)
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Sidebar nav item: 38px tall, brand-50 active with 3-px brand-500 left bar -->
+    <Style x:Key="SidebarListBox" TargetType="ListBox">
+        <Setter Property="Background"       Value="Transparent"/>
+        <Setter Property="BorderThickness"  Value="0"/>
+        <Setter Property="Padding"          Value="0"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ItemContainerStyle" Value="{DynamicResource SidebarNavItem}"/>
+    </Style>
+
+    <Style x:Key="SidebarNavItem" TargetType="ListBoxItem">
+        <Setter Property="FontFamily"        Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"          Value="14"/>
+        <Setter Property="Foreground"        Value="{StaticResource N700}"/>
+        <Setter Property="Cursor"            Value="Hand"/>
+        <Setter Property="Padding"           Value="0"/>
+        <Setter Property="Margin"            Value="0,1,0,1"/>
+        <Setter Property="FocusVisualStyle"  Value="{x:Null}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Root"
+                            Background="Transparent"
+                            BorderBrush="{StaticResource Brand500}"
+                            BorderThickness="0"
+                            CornerRadius="6"
+                            Height="38"
+                            Padding="12,0">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          TextBlock.Foreground="{TemplateBinding Foreground}"
+                                          TextBlock.FontWeight="{TemplateBinding FontWeight}"
+                                          TextBlock.FontSize="{TemplateBinding FontSize}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{StaticResource N100}"/>
+                            <Setter Property="Foreground" Value="{StaticResource N900}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background"      Value="{StaticResource Brand50}"/>
+                            <Setter TargetName="Root" Property="BorderThickness" Value="3,0,0,0"/>
+                            <Setter TargetName="Root" Property="Padding"         Value="9,0,12,0"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brand700}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Page head border preset -->
+    <Style x:Key="PageHeadBorder" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource Surface1}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource BorderSubtle}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding"         Value="24,16,24,12"/>
+        <Setter Property="MinHeight"       Value="60"/>
+    </Style>
+
+    <!-- TabControl (underline) -->
+    <Style x:Key="AdminTabControl" TargetType="TabControl">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"         Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                BorderBrush="{StaticResource BorderSubtle}"
+                                BorderThickness="0,0,0,1">
+                            <TabPanel IsItemsHost="True" Panel.ZIndex="1" Background="Transparent"/>
+                        </Border>
+                        <ContentPresenter Grid.Row="1" ContentSource="SelectedContent" Margin="0,16,0,0"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AdminTabItem" TargetType="TabItem">
+        <Setter Property="FontFamily"      Value="{StaticResource UiFont}"/>
+        <Setter Property="FontSize"        Value="14"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="Foreground"      Value="{StaticResource N500}"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Padding"         Value="16,10"/>
+        <Setter Property="Margin"          Value="0,0,2,-1"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Root"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0,0,0,2"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter ContentSource="Header"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextBlock.FontFamily="{TemplateBinding FontFamily}"
+                                          TextBlock.FontSize="{TemplateBinding FontSize}"
+                                          TextBlock.FontWeight="{TemplateBinding FontWeight}"
+                                          TextBlock.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource N900}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brand500}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brand700}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

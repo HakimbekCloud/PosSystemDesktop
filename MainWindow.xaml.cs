@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using PosSystem.Services;
 using PosSystem.Views;
+using PosSystem.Views.Admin;
 using PosSystem.Views.Pos;
 
 namespace PosSystem;
@@ -19,7 +20,7 @@ public partial class MainWindow : Window
         _auth = auth;
 
         WeakReferenceMessenger.Default.Register<LoginSuccessMessage>(this,
-            (_, _) => Dispatcher.Invoke(NavigateToPOS));
+            (_, _) => Dispatcher.Invoke(NavigateToAdmin));
 
         WeakReferenceMessenger.Default.Register<LogoutMessage>(this,
             (_, _) => Dispatcher.Invoke(NavigateToLogin));
@@ -37,7 +38,7 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
         if (_auth.HasValidSession())
-            NavigateToPOS();
+            NavigateToAdmin();
         else
             NavigateToLogin();
     }
@@ -45,8 +46,8 @@ public partial class MainWindow : Window
     private void NavigateToLogin() =>
         MainContent.Content = _services.GetRequiredService<LoginView>();
 
-    private void NavigateToPOS() =>
-        MainContent.Content = _services.GetRequiredService<PosView>();
+    private void NavigateToAdmin() =>
+        MainContent.Content = _services.GetRequiredService<AdminShellView>();
 
     protected override void OnClosed(EventArgs e)
     {

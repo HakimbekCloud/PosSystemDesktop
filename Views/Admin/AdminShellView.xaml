@@ -1,0 +1,274 @@
+<UserControl x:Class="PosSystem.Views.Admin.AdminShellView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:PosSystem.ViewModels.Admin"
+             xmlns:mvm="clr-namespace:PosSystem.ViewModels.Admin.Modules"
+             xmlns:modules="clr-namespace:PosSystem.Views.Admin.Modules"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:AdminShellViewModel}"
+             Background="{StaticResource AppSurface}">
+
+    <UserControl.Resources>
+        <!-- Module-VM → View routing -->
+        <DataTemplate DataType="{x:Type mvm:SotuvViewModel}">       <modules:SotuvView/>       </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:MahsulotlarViewModel}"> <modules:MahsulotlarView/> </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:OmborViewModel}">       <modules:OmborView/>       </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:HisobotlarViewModel}">  <modules:HisobotlarView/>  </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:MijozlarViewModel}">    <modules:MijozlarView/>    </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:YetkazibViewModel}">    <modules:YetkazibView/>    </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:XodimlarViewModel}">    <modules:XodimlarView/>    </DataTemplate>
+        <DataTemplate DataType="{x:Type mvm:SozlamalarViewModel}">  <modules:SozlamalarView/>  </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="64"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ════════════════════════════════════════════════════════
+             TOPBAR — solid brand-700, 64px tall
+             ════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Background="{StaticResource TopbarBg}"
+                BorderBrush="{StaticResource TopbarBorderBottom}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="16,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT: brand mark -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36"
+                            Background="{StaticResource TopbarPillBg}"
+                            CornerRadius="8">
+                        <TextBlock Text="&#xE7BF;"
+                                   FontFamily="{StaticResource FluentIcons}"
+                                   FontSize="18"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="ShefPos"
+                                   FontFamily="{StaticResource UiFontDisplay}"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock Text="{Binding BranchInfo}"
+                                   FontFamily="{StaticResource UiFont}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TopbarTextMuted}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- CENTER: status pills -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Background="{StaticResource TopbarPillBg}"
+                            BorderBrush="{StaticResource TopbarPillBorder}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,0"
+                            Height="32"
+                            Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8"
+                                     Fill="{StaticResource Success500}"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding SyncLabel}"
+                                       Foreground="White"
+                                       FontSize="12"
+                                       FontWeight="Medium"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource TopbarPillBg}"
+                            BorderBrush="{StaticResource TopbarPillBorder}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,0"
+                            Height="32">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE701;"
+                                       FontFamily="{StaticResource FluentIcons}"
+                                       FontSize="13"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding OnlineLabel}"
+                                       Foreground="White"
+                                       FontSize="12"
+                                       FontWeight="Medium"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- RIGHT: icon buttons + pills + Chiqish -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource TopbarIconButton}" Content="&#xE81C;" ToolTip="Tarix"/>
+                    <Button Style="{StaticResource TopbarIconButton}" Content="&#xE787;" ToolTip="Kalendar"/>
+                    <Button Style="{StaticResource TopbarIconButton}" Content="&#xE713;" ToolTip="Asboblar"/>
+                    <Button Style="{StaticResource TopbarIconButton}" Content="&#xEA8F;" ToolTip="Bildirishnomalar"/>
+
+                    <Border Background="{StaticResource TopbarPillBg}"
+                            BorderBrush="{StaticResource TopbarPillBorder}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,0"
+                            Height="36"
+                            Margin="6,0,0,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE77B;"
+                                       FontFamily="{StaticResource FluentIcons}"
+                                       FontSize="13"
+                                       Foreground="White"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding UserName}"
+                                       Foreground="White"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{StaticResource TopbarPillBg}"
+                            BorderBrush="{StaticResource TopbarPillBorder}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,0"
+                            Height="36"
+                            Margin="6,0,0,0">
+                        <TextBlock Text="{Binding ClockText}"
+                                   FontFamily="{StaticResource UiFontMono}"
+                                   FontSize="12"
+                                   Foreground="White"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+
+                    <Button Command="{Binding LogoutCommand}"
+                            Height="36" Padding="14,0"
+                            Margin="6,0,0,0"
+                            Background="{StaticResource Danger600}"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontSize="12" FontWeight="SemiBold"
+                            Cursor="Hand"
+                            FocusVisualStyle="{x:Null}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        CornerRadius="6"
+                                        Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE7E8;"
+                                                   FontFamily="{StaticResource FluentIcons}"
+                                                   FontSize="13"
+                                                   Foreground="White"
+                                                   Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"/>
+                                        <ContentPresenter VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource Danger700}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        Chiqish
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ════════════════════════════════════════════════════════
+             MAIN: 220px sidebar + workspace
+             ════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- SIDEBAR -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource SurfaceMuted}"
+                    BorderBrush="{StaticResource BorderSubtle}"
+                    BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ListBox Grid.Row="0"
+                             Style="{StaticResource SidebarListBox}"
+                             ItemsSource="{Binding NavItems}"
+                             SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                             Padding="8">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Style="{StaticResource FluentIconText}"
+                                               Text="{Binding Glyph}" FontSize="15"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                               Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Sidebar footer (online status block — v1 unique) -->
+                    <Border Grid.Row="1"
+                            Margin="8"
+                            Background="{StaticResource Surface1}"
+                            BorderBrush="{StaticResource BorderSubtle}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="12">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8"
+                                         Fill="{StaticResource Success500}"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,8,0"/>
+                                <TextBlock Text="Onlayn"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           Foreground="{StaticResource N900}"/>
+                            </StackPanel>
+                            <TextBlock Text="Backend bilan ulanish faol"
+                                       FontSize="11" Foreground="{StaticResource N500}"
+                                       Margin="0,4,0,0"/>
+                            <TextBlock Text="v1.0.0 · build 248"
+                                       FontSize="11" Foreground="{StaticResource N500}"
+                                       FontFamily="{StaticResource UiFontMono}"
+                                       Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- WORKSPACE -->
+            <ContentControl Grid.Column="1"
+                            Content="{Binding CurrentPage}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"/>
+        </Grid>
+    </Grid>
+</UserControl>
