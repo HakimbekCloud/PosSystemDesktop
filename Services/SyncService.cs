@@ -367,7 +367,25 @@ public class SyncService
         var tenant = _settings.Get("tenant_subdomain") ?? "";
         if (string.IsNullOrEmpty(tenant)) return; // tenant guard mirrors push path
 
+        // Self-healing bootstrap: if the local catalog has zero server-backed
+        // products for this tenant, the stored watermark is unsafe — using it
+        // would issue `?updatedAfter=<watermark>`, which the backend filters
+        // strictly (>), so any product whose `updatedAt` is older than the
+        // watermark would be invisible until something edits it. That's the
+        // "logged out then logged back in, products are gone" failure mode:
+        // ClearLegacyUserData wiped Products but the per-tenant watermark
+        // survived in Settings.
+        //
+        // Detect the empty state up front and ignore the watermark just for
+        // this call. The full GET pulls every POS product, the upsert writes
+        // them all, and the watermark gets re-derived from max(updatedAt) so
+        // the *next* sync goes back to being incremental.
         var since = _settings.Get($"last_product_sync_at:{tenant}");
+        bool localCacheEmpty = _products.GetAll()
+            .Any(p => !string.IsNullOrEmpty(p.RemoteUuid)) == false;
+        if (localCacheEmpty)
+            since = null;
+
         var dtos = await _api.GetProductsAsync(since);
 
         // Stock-reconcile marker: any sale this tenant has already pushed
