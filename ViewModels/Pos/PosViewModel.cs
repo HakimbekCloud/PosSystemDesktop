@@ -952,12 +952,19 @@ public partial class PosViewModel : ObservableObject
         }
     }
 
+    // RoundtripKind cannot be combined with AssumeUniversal /
+    // AssumeLocal / AdjustToUniversal — DateTime.TryParse throws ArgumentException
+    // ("The DateTimeStyles value RoundtripKind cannot be used with the values
+    // AssumeLocal, AssumeUniversal or AdjustToUniversal"). The intent here is
+    // "parse an ISO-8601 watermark, treat naive timestamps as UTC, return UTC".
+    // AssumeUniversal | AdjustToUniversal does exactly that without the illegal
+    // pairing.
     private DateTime ParseUtcSetting(string key) =>
-        DateTime.TryParse(_settings.Get(key), null,
-            System.Globalization.DateTimeStyles.RoundtripKind |
-            System.Globalization.DateTimeStyles.AssumeUniversal,
+        DateTime.TryParse(_settings.Get(key), System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal |
+            System.Globalization.DateTimeStyles.AdjustToUniversal,
             out var dt)
-                ? dt.ToUniversalTime()
+                ? dt
                 : DateTime.MinValue.ToUniversalTime();
 
     partial void OnCartDiscountChanged(decimal value) => RefreshTotals();

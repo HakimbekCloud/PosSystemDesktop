@@ -20,7 +20,18 @@ public class ApiClient
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        // System.Text.Json's built-in DateTime reader rejects ISO-8601 with
+        // more than 7 fractional-second digits — Jackson on the backend can
+        // emit 9 (nanoseconds from java.time.Instant / LocalDateTime). The
+        // converters below normalize all timestamps to UTC DateTime and tolerate
+        // the extra precision, so product / customer / shift DTOs deserialize
+        // regardless of which timestamp shape the backend produces.
+        Converters =
+        {
+            new UtcDateTimeJsonConverter(),
+            new NullableUtcDateTimeJsonConverter(),
+        }
     };
 
     public ApiClient(HttpClient http, SettingsRepository settings, GlobalSettingsRepository globalSettings)
