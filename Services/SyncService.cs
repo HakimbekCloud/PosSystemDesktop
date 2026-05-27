@@ -169,16 +169,23 @@ public class SyncService
         finally { _syncGate.Release(); }
     }
 
-    // Operator-initiated: clears the IsPoison flag on every quarantined sale for
-    // the current tenant and triggers an immediate sync attempt. Bind to a
-    // "Retry blocked sales" button in the sync error panel when UI lands.
-    // Returns the number of sales unpoisoned.
+    // Operator-initiated: clears IsPoison + backoff bookkeeping on every stuck
+    // sale for the current tenant, then triggers an immediate sync attempt.
+    // Bound to the toolbar "Hammasini qayta urinish" button.
+    //
+    // The sync runs unconditionally even when the reset touched zero rows —
+    // the operator clicked a "retry now" action and deserves immediate
+    // feedback in the toolbar status pill regardless of whether anything was
+    // technically stuck. Without that, a click that resets zero rows produces
+    // no UI change and looks broken.
+    //
+    // Returns the number of sales whose retry-bookkeeping was reset.
     public async Task<int> RequeuePoisonSalesAsync()
     {
         var tenant = _settings.Get("tenant_subdomain") ?? "";
         if (string.IsNullOrEmpty(tenant)) return 0;
         var count = _sales.RequeueAllPoisonForTenant(tenant);
-        if (count > 0) await SyncAllAsync();
+        await SyncAllAsync();
         return count;
     }
 
