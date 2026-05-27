@@ -13,6 +13,7 @@ public class ApiClient
 {
     private readonly HttpClient _http;
     private readonly SettingsRepository _settings;
+    private readonly GlobalSettingsRepository _globalSettings;
     private const string DefaultBaseUrl = "https://shefpos.uz";
 
     private readonly SemaphoreSlim _refreshSemaphore = new(1, 1);
@@ -22,10 +23,11 @@ public class ApiClient
         PropertyNameCaseInsensitive = true
     };
 
-    public ApiClient(HttpClient http, SettingsRepository settings)
+    public ApiClient(HttpClient http, SettingsRepository settings, GlobalSettingsRepository globalSettings)
     {
         _http = http;
         _settings = settings;
+        _globalSettings = globalSettings;
         ApplyBaseUrl();
         ApplyTenantHeader();
         ApplyAuthToken();
@@ -33,7 +35,7 @@ public class ApiClient
 
     public void ApplyBaseUrl()
     {
-        var url = _settings.Get("api_base_url");
+        var url = _globalSettings.Get("api_base_url") ?? _settings.Get("api_base_url");
         if (string.IsNullOrWhiteSpace(url))
             url = DefaultBaseUrl;
 
@@ -52,10 +54,10 @@ public class ApiClient
 
     public void ApplyAuthToken()
     {
-        var token = _settings.Get("auth_token");
-        _http.DefaultRequestHeaders.Authorization = token is not null
-            ? new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token)
-            : null;
+        var token = _settings.GetDecrypted("auth_token");
+        _http.DefaultRequestHeaders.Authorization = string.IsNullOrEmpty(token)
+            ? null
+            : new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }
 
     // ── Auth ──────────────────────────────────────────────────────────────────
@@ -80,15 +82,23 @@ public class ApiClient
 
     // ── Products ──────────────────────────────────────────────────────────────
 
-    public async Task<List<ProductDto>> GetProductsAsync()
+    // updatedAfter: ISO-8601 UTC timestamp. When non-null, server returns only rows
+    // with updatedAt > updatedAfter AND includes soft-deleted/disabled rows
+    // (tombstones) so the client can mirror remote state. is_pos filter is dropped
+    // in incremental mode for the same reason.
+    public async Task<List<ProductDto>> GetProductsAsync(string? updatedAfter = null)
     {
         var all = new List<ProductDto>();
         int page = 0;
         int totalPages;
 
+        string baseQuery = string.IsNullOrEmpty(updatedAfter)
+            ? "api/products?is_pos=true"
+            : $"api/products?updatedAfter={Uri.EscapeDataString(updatedAfter)}";
+
         do
         {
-            var resp = await GetWithRefreshAsync($"api/products?is_pos=true&page={page}&size=200");
+            var resp = await GetWithRefreshAsync($"{baseQuery}&page={page}&size=200");
             await EnsureSuccessAsync(resp);
             var result = await resp.Content.ReadFromJsonAsync<PageResponse<ProductDto>>(JsonOptions);
             if (result is null) break;
@@ -111,15 +121,19 @@ public class ApiClient
 
     // ── Customers ─────────────────────────────────────────────────────────────
 
-    public async Task<List<CustomerDto>> GetCustomersAsync()
+    public async Task<List<CustomerDto>> GetCustomersAsync(string? updatedAfter = null)
     {
         var all = new List<CustomerDto>();
         int page = 0;
         int totalPages;
 
+        string baseQuery = string.IsNullOrEmpty(updatedAfter)
+            ? "api/customers?"
+            : $"api/customers?updatedAfter={Uri.EscapeDataString(updatedAfter)}&";
+
         do
         {
-            var resp = await GetWithRefreshAsync($"api/customers?page={page}&size=200");
+            var resp = await GetWithRefreshAsync($"{baseQuery}page={page}&size=200");
             await EnsureSuccessAsync(resp);
             var result = await resp.Content.ReadFromJsonAsync<PageResponse<CustomerDto>>(JsonOptions);
             if (result is null) break;
@@ -190,6 +204,58 @@ public class ApiClient
         return result?.Content ?? [];
     }
 
+    // ── POS Shift (Phase G.1) ─────────────────────────────────────────────────
+
+    // GET /api/pos/shifts/current?cashboxUuid={uuid}
+    // Backend returns 404 NO_OPEN_SHIFT when no OPEN shift exists for the
+    // cashbox+tenant — that's an expected state for an idle drawer, so we
+    // surface it to the caller as `null` instead of propagating it as an
+    // HttpRequestException. Every other non-success status is still thrown
+    // through EnsureSuccessAsync so the UI can show the parsed message.
+    public async Task<PosShiftResponse?> GetCurrentShiftAsync(string cashboxUuid)
+    {
+        if (string.IsNullOrWhiteSpace(cashboxUuid))
+            throw new ArgumentException("cashboxUuid is required", nameof(cashboxUuid));
+
+        var resp = await GetWithRefreshAsync(
+            $"api/pos/shifts/current?cashboxUuid={Uri.EscapeDataString(cashboxUuid)}");
+
+        if (resp.StatusCode == HttpStatusCode.NotFound) return null;
+
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PosShiftResponse>(JsonOptions);
+    }
+
+    public async Task<PosShiftResponse> OpenShiftAsync(OpenShiftRequest request)
+    {
+        var resp = await PostWithRefreshAsync("api/pos/shifts/open", request);
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PosShiftResponse>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
+    }
+
+    public async Task<PosShiftResponse> CloseShiftAsync(string shiftUuid, CloseShiftRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(shiftUuid))
+            throw new ArgumentException("shiftUuid is required", nameof(shiftUuid));
+
+        var resp = await PostWithRefreshAsync($"api/pos/shifts/{shiftUuid}/close", request);
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PosShiftResponse>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
+    }
+
+    public async Task<PosShiftReportResponse> GetShiftReportAsync(string shiftUuid)
+    {
+        if (string.IsNullOrWhiteSpace(shiftUuid))
+            throw new ArgumentException("shiftUuid is required", nameof(shiftUuid));
+
+        var resp = await GetWithRefreshAsync($"api/pos/shifts/{shiftUuid}/report");
+        await EnsureSuccessAsync(resp);
+        return await resp.Content.ReadFromJsonAsync<PosShiftReportResponse>(JsonOptions)
+               ?? throw new InvalidOperationException("Server javobi noto'g'ri");
+    }
+
     // ── Debt payment ──────────────────────────────────────────────────────────
 
     public async Task<CustomerDto> PayDebtAsync(DebtPaymentRequest request)
@@ -236,45 +302,8 @@ public class ApiClient
         if (apiTotal <= 0)
             throw new InvalidOperationException("Zakaz summasi noldan katta bo'lishi kerak");
 
-        // Build transactions that sum precisely to apiTotal.
-        //
-        // sale.PaidAmount   = what the customer physically paid (may include change overpayment)
-        // sale.TotalAmount  = discounted cart total  (= subtotal - cart discount)
-        // Fully paid        = PaidAmount >= TotalAmount
-        //
-        // If fully paid, send the whole apiTotal as a single non-debt transaction.
-        // If partially paid (with a linked customer), split into a paid + debt pair.
-        // If no customer exists, we cannot register debt → treat as fully paid on the server.
-
-        var hasCustomer  = !string.IsNullOrEmpty(sale.CustomerRemoteUuid);
-        var isFullyPaid  = sale.PaidAmount >= sale.TotalAmount;
-
-        decimal paidPortion = isFullyPaid || !hasCustomer
-            ? apiTotal
-            : Math.Clamp(sale.PaidAmount, 0, apiTotal);
-        decimal debtPortion = apiTotal - paidPortion;
-
-        var transactions = new List<CreateTransactionRequest>();
-
-        if (paidPortion > 0)
-            transactions.Add(new CreateTransactionRequest
-            {
-                CashboxUuid = cashboxUuid,
-                Amount      = paidPortion,
-                CurrencyId  = currencyId,
-                IsDebt      = false,
-                IsCashback  = false
-            });
-
-        if (debtPortion > 0)
-            transactions.Add(new CreateTransactionRequest
-            {
-                CashboxUuid = cashboxUuid,
-                Amount      = debtPortion,
-                CurrencyId  = currencyId,
-                IsDebt      = true,
-                IsCashback  = false
-            });
+        var hasCustomer = !string.IsNullOrEmpty(sale.CustomerRemoteUuid);
+        var transactions = BuildSaleTransactions(sale, apiTotal, hasCustomer, cashboxUuid, currencyId);
 
         var order = new CreateOrderRequest
         {
@@ -291,10 +320,102 @@ public class ApiClient
             Transactions = transactions
         };
 
-        var response = await PostWithRefreshAsync("api/orders", order);
+        // Idempotency-Key uses the stable client-generated LocalId (GUID set at checkout).
+        // Backend ignores it today; when it opts in, retried POSTs after a dropped response
+        // will de-duplicate instead of creating ghost orders.
+        var response = await PostWithRefreshAsync(
+            "api/orders", order,
+            extraHeaders: ("Idempotency-Key", sale.LocalId));
         await EnsureSuccessAsync(response);
         var result = await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions);
         return result?.Uuid ?? "";
+    }
+
+    // Mixed-payment serialization.
+    //
+    // The cashier may split a sale across cash, card, bank and debt. Backend
+    // distinguishes the methods by the routing cashbox (Cashbox.type), not by a
+    // per-transaction enum, so each non-zero row is sent as its own transaction
+    // pointing at the cashbox of the matching type. Card/Bank/Debt are recorded
+    // as exact amounts; cash absorbs the change overpayment so the API invariant
+    // sum(transactions.amount) == apiTotal holds without surprising the backend.
+    //
+    // Legacy sales created before the breakdown columns were added carry zero in
+    // all four rows; in that case we fall back to the original single paid+debt
+    // split using sale.PaidAmount.
+    private List<CreateTransactionRequest> BuildSaleTransactions(
+        Core.Entities.Sale sale, decimal apiTotal, bool hasCustomer,
+        string defaultCashboxUuid, long currencyId)
+    {
+        var totalBreakdown = sale.CashAmount + sale.CardAmount + sale.BankAmount + sale.DebtAmount;
+        var legacy = totalBreakdown <= 0m;
+
+        decimal cashPortion, cardPortion, bankPortion, debtPortion;
+
+        if (legacy)
+        {
+            // Pre-Phase-4 sale: only PaidAmount + customer-debt is known. The
+            // default cashbox is the only legitimate use of fallback routing.
+            var isFullyPaid = sale.PaidAmount >= sale.TotalAmount;
+            cashPortion = isFullyPaid || !hasCustomer
+                ? apiTotal
+                : Math.Clamp(sale.PaidAmount, 0m, apiTotal);
+            cardPortion = 0m;
+            bankPortion = 0m;
+            debtPortion = apiTotal - cashPortion;
+        }
+        else
+        {
+            // Breakdown-aware sale: exact preservation. Card/Bank/Debt may not be
+            // silently clamped — that would mis-attribute money between methods.
+            var nonCashSum = sale.CardAmount + sale.BankAmount + sale.DebtAmount;
+            if (nonCashSum > apiTotal)
+                throw new InvalidOperationException(
+                    "Karta, bank va qarz yig'indisi sotuv summasidan oshib ketdi.");
+
+            cardPortion = sale.CardAmount;
+            bankPortion = sale.BankAmount;
+            debtPortion = sale.DebtAmount;
+            cashPortion = apiTotal - nonCashSum;
+
+            if (sale.CashAmount + 0.0001m < cashPortion)
+                // Cashier tendered less cash than the order actually needs.
+                throw new InvalidOperationException("Naqd to'lov yetmaydi.");
+
+            // Debt without a customer cannot be booked on the server — refuse to
+            // silently fold debt into cash (that would silently lose receivables).
+            if (debtPortion > 0 && !hasCustomer)
+                throw new InvalidOperationException(
+                    "Qarzga savdo qilish uchun mijoz tanlanishi kerak.");
+        }
+
+        // Required cashbox routing. Defaults only allowed for the cash row in
+        // legacy mode; CARD and BANK require their explicit type-mapped UUIDs.
+        var cashUuid = _settings.Get("cashbox_uuid_cash");
+        if (string.IsNullOrEmpty(cashUuid)) cashUuid = defaultCashboxUuid;
+        var cardUuid = _settings.Get("cashbox_uuid_card") ?? "";
+        var bankUuid = _settings.Get("cashbox_uuid_bank") ?? "";
+
+        if (cashPortion > 0 && string.IsNullOrEmpty(cashUuid))
+            throw new InvalidOperationException("Naqd to'lov uchun CASH turidagi kassa sozlanmagan.");
+        if (cardPortion > 0 && string.IsNullOrEmpty(cardUuid))
+            throw new InvalidOperationException("Karta to'lovi uchun CARD turidagi kassa sozlanmagan.");
+        if (bankPortion > 0 && string.IsNullOrEmpty(bankUuid))
+            throw new InvalidOperationException("Bank/transfer to'lovi uchun BANK turidagi kassa sozlanmagan.");
+        if (debtPortion > 0 && string.IsNullOrEmpty(defaultCashboxUuid))
+            throw new InvalidOperationException("Qarz to'lovi uchun kassa sozlanmagan.");
+
+        var txs = new List<CreateTransactionRequest>(4);
+        if (cashPortion > 0)
+            txs.Add(new CreateTransactionRequest { CashboxUuid = cashUuid, Amount = cashPortion, CurrencyId = currencyId, IsDebt = false, IsCashback = false });
+        if (cardPortion > 0)
+            txs.Add(new CreateTransactionRequest { CashboxUuid = cardUuid, Amount = cardPortion, CurrencyId = currencyId, IsDebt = false, IsCashback = false });
+        if (bankPortion > 0)
+            txs.Add(new CreateTransactionRequest { CashboxUuid = bankUuid, Amount = bankPortion, CurrencyId = currencyId, IsDebt = false, IsCashback = false });
+        if (debtPortion > 0)
+            txs.Add(new CreateTransactionRequest { CashboxUuid = defaultCashboxUuid, Amount = debtPortion, CurrencyId = currencyId, IsDebt = true, IsCashback = false });
+
+        return txs;
     }
 
     // ── Token refresh ─────────────────────────────────────────────────────────
@@ -304,7 +425,7 @@ public class ApiClient
         await _refreshSemaphore.WaitAsync();
         try
         {
-            var refreshToken = _settings.Get("refresh_token");
+            var refreshToken = _settings.GetDecrypted("refresh_token");
             if (string.IsNullOrEmpty(refreshToken))
             {
                 WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
@@ -330,8 +451,8 @@ public class ApiClient
             var result = await resp.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions);
             if (result is null) return false;
 
-            _settings.Set("auth_token", result.AccessToken);
-            _settings.Set("refresh_token", result.RefreshToken);
+            _settings.SetEncrypted("auth_token", result.AccessToken);
+            _settings.SetEncrypted("refresh_token", result.RefreshToken);
             ApplyAuthToken();
             return true;
         }
@@ -358,13 +479,14 @@ public class ApiClient
         return resp;
     }
 
-    private async Task<HttpResponseMessage> PostWithRefreshAsync<T>(string url, T body)
+    private async Task<HttpResponseMessage> PostWithRefreshAsync<T>(
+        string url, T body, (string Name, string Value)? extraHeaders = null)
     {
-        var resp = await _http.SendAsync(BuildPost(url, body));
+        var resp = await _http.SendAsync(BuildPost(url, body, extraHeaders));
         if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
         {
             resp.Dispose();
-            resp = await _http.SendAsync(BuildPost(url, body));
+            resp = await _http.SendAsync(BuildPost(url, body, extraHeaders));
         }
         return resp;
     }
@@ -380,8 +502,17 @@ public class ApiClient
         return resp;
     }
 
-    private static HttpRequestMessage BuildPost<T>(string url, T body) =>
-        new(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
+    private static HttpRequestMessage BuildPost<T>(
+        string url, T body, (string Name, string Value)? extraHeaders = null)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body)
+        };
+        if (extraHeaders is { Name: { Length: > 0 } name, Value: { Length: > 0 } value })
+            req.Headers.TryAddWithoutValidation(name, value);
+        return req;
+    }
 
     private static HttpRequestMessage BuildPut<T>(string url, T body) =>
         new(HttpMethod.Put, url) { Content = JsonContent.Create(body) };

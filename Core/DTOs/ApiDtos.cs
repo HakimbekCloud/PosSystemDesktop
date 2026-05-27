@@ -138,6 +138,12 @@ public class CustomerDto
     [JsonPropertyName("totalDebt")]
     public decimal TotalDebt { get; set; }
 
+    // Defaults to true so older backend responses (without this field) keep
+    // local customers active; incremental sync explicitly sends false for
+    // soft-deleted customers so the client mirrors the tombstone.
+    [JsonPropertyName("active")]
+    public bool Active { get; set; } = true;
+
     [JsonPropertyName("updatedAt")]
     public DateTime? UpdatedAt { get; set; }
 }
@@ -199,6 +205,11 @@ public class CashboxDto
 
     [JsonPropertyName("currencyCode")]
     public string CurrencyCode { get; set; } = "";
+
+    // Container classification (CASH / CARD / BANK / ONLINE / SAFE / MOBILE_BANKING / OTHER).
+    // Used to route per-method transactions to the correct cashbox.
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
 }
 
 public class PriceListDto
@@ -281,6 +292,11 @@ public class CreateProductRequest
 
     [JsonPropertyName("stock")]
     public decimal? Stock { get; set; }
+
+    // Backend rule: required when Stock > 0 (ProductServiceImpl.validateOpeningStockPayload).
+    // Ignored server-side when Stock is null or zero, so we only set it when needed.
+    [JsonPropertyName("openingWarehouseUuid")]
+    public string? OpeningWarehouseUuid { get; set; }
 
     [JsonPropertyName("barcode")]
     public string? Barcode { get; set; }
@@ -373,6 +389,154 @@ public class OrderResponse
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = "";
+}
+
+// ── POS Shift (Phase G.1) ─────────────────────────────────────────────────────
+//
+// Mirrors Ham-Pos `PosShiftResponse` / `OpenShiftRequest` / `CloseShiftRequest`
+// / `PosShiftReportResponse`. UUIDs travel as strings; backend `BigDecimal`
+// maps to C# `decimal`; backend `PosShiftStatus` enum is serialized as its
+// name (`OPEN` / `CLOSED` / `CANCELLED`).
+
+public class PosShiftResponse
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("branchUuid")]
+    public string? BranchUuid { get; set; }
+
+    [JsonPropertyName("cashboxUuid")]
+    public string? CashboxUuid { get; set; }
+
+    [JsonPropertyName("openedByUserUuid")]
+    public string? OpenedByUserUuid { get; set; }
+
+    [JsonPropertyName("closedByUserUuid")]
+    public string? ClosedByUserUuid { get; set; }
+
+    [JsonPropertyName("currencyCode")]
+    public string? CurrencyCode { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("openedAt")]
+    public DateTime? OpenedAt { get; set; }
+
+    [JsonPropertyName("closedAt")]
+    public DateTime? ClosedAt { get; set; }
+
+    [JsonPropertyName("openingCashAmount")]
+    public decimal? OpeningCashAmount { get; set; }
+
+    [JsonPropertyName("expectedCashAmount")]
+    public decimal? ExpectedCashAmount { get; set; }
+
+    [JsonPropertyName("countedCashAmount")]
+    public decimal? CountedCashAmount { get; set; }
+
+    [JsonPropertyName("differenceAmount")]
+    public decimal? DifferenceAmount { get; set; }
+
+    [JsonPropertyName("openComment")]
+    public string? OpenComment { get; set; }
+
+    [JsonPropertyName("closeComment")]
+    public string? CloseComment { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime? CreatedAt { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public class OpenShiftRequest
+{
+    [JsonPropertyName("cashboxUuid")]
+    public string CashboxUuid { get; set; } = "";
+
+    [JsonPropertyName("openingCashAmount")]
+    public decimal OpeningCashAmount { get; set; }
+
+    [JsonPropertyName("comment")]
+    public string? Comment { get; set; }
+}
+
+public class CloseShiftRequest
+{
+    [JsonPropertyName("countedCashAmount")]
+    public decimal CountedCashAmount { get; set; }
+
+    [JsonPropertyName("comment")]
+    public string? Comment { get; set; }
+}
+
+public class PosShiftReportResponse
+{
+    [JsonPropertyName("shiftUuid")]
+    public string ShiftUuid { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("cashboxUuid")]
+    public string? CashboxUuid { get; set; }
+
+    [JsonPropertyName("currencyCode")]
+    public string? CurrencyCode { get; set; }
+
+    [JsonPropertyName("openedAt")]
+    public DateTime? OpenedAt { get; set; }
+
+    [JsonPropertyName("closedAt")]
+    public DateTime? ClosedAt { get; set; }
+
+    [JsonPropertyName("openingCashAmount")]
+    public decimal? OpeningCashAmount { get; set; }
+
+    [JsonPropertyName("computedExpectedCashAmount")]
+    public decimal? ComputedExpectedCashAmount { get; set; }
+
+    [JsonPropertyName("countedCashAmount")]
+    public decimal? CountedCashAmount { get; set; }
+
+    [JsonPropertyName("computedDifferenceAmount")]
+    public decimal? ComputedDifferenceAmount { get; set; }
+
+    [JsonPropertyName("cashSalesAmount")]
+    public decimal? CashSalesAmount { get; set; }
+
+    [JsonPropertyName("refundAmount")]
+    public decimal? RefundAmount { get; set; }
+
+    [JsonPropertyName("debtPaymentAmount")]
+    public decimal? DebtPaymentAmount { get; set; }
+
+    [JsonPropertyName("cashInAmount")]
+    public decimal? CashInAmount { get; set; }
+
+    [JsonPropertyName("cashOutAmount")]
+    public decimal? CashOutAmount { get; set; }
+
+    [JsonPropertyName("netCashMovementAmount")]
+    public decimal? NetCashMovementAmount { get; set; }
+
+    [JsonPropertyName("transactionCount")]
+    public long TransactionCount { get; set; }
+
+    [JsonPropertyName("hasDifference")]
+    public bool HasDifference { get; set; }
+
+    [JsonPropertyName("hasTransactionsOutsideShift")]
+    public bool HasTransactionsOutsideShift { get; set; }
+
+    [JsonPropertyName("outsideShiftTransactionCount")]
+    public long OutsideShiftTransactionCount { get; set; }
+
+    [JsonPropertyName("outsideShiftNetAmount")]
+    public decimal? OutsideShiftNetAmount { get; set; }
 }
 
 // ── Debt payment ──────────────────────────────────────────────────────────────

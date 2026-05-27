@@ -32,6 +32,59 @@ public partial class PosView : UserControl
         PreviewKeyDown   += OnScannerKeyDown;
         PreviewKeyDown   += OnPaymentHotkeys;
         PreviewKeyDown   += OnAddProductHotkeys;
+        PreviewKeyDown   += OnShiftHotkeys;
+    }
+
+    // ── Shift modals: keyboard + backdrop handlers (Phase G.1) ─────────────────
+    //  Esc        — close whichever shift modal is active.
+    //  Ctrl+Enter — fire the submit command for the active modal.
+    private void OnShiftHotkeys(object sender, KeyEventArgs e)
+    {
+        if (!_vm.IsOpenShiftOpen && !_vm.IsCloseShiftOpen) return;
+
+        if (e.Key == Key.Escape)
+        {
+            if (_vm.IsOpenShiftOpen)  _vm.ToggleOpenShiftCommand.Execute(null);
+            if (_vm.IsCloseShiftOpen) _vm.ToggleCloseShiftCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (_vm.IsOpenShiftOpen  && _vm.SubmitOpenShiftCommand.CanExecute(null))
+                _vm.SubmitOpenShiftCommand.Execute(null);
+            else if (_vm.IsCloseShiftOpen && _vm.SubmitCloseShiftCommand.CanExecute(null))
+                _vm.SubmitCloseShiftCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnOpenShiftBackdropClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm.IsOpenShiftOpen)
+            _vm.ToggleOpenShiftCommand.Execute(null);
+    }
+
+    private void OnOpenShiftCardClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
+    private void OnCloseShiftBackdropClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm.IsCloseShiftOpen)
+            _vm.ToggleCloseShiftCommand.Execute(null);
+    }
+
+    private void OnCloseShiftCardClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
+    // Status pill in the header: routes to the right modal based on current
+    // backend-confirmed state. The toggle commands handle the refresh + state
+    // resolution; no need to duplicate that logic here.
+    private void OnShiftStatusClick(object sender, RoutedEventArgs e)
+    {
+        if (_vm.ShiftVm.IsShiftOpen)
+            _vm.ToggleCloseShiftCommand.Execute(null);
+        else
+            _vm.ToggleOpenShiftCommand.Execute(null);
     }
 
     // ── Add Product modal: keyboard + backdrop handlers ────────────────────────
@@ -79,6 +132,7 @@ public partial class PosView : UserControl
     private void OnPaymentHotkeys(object sender, KeyEventArgs e)
     {
         if (_vm.IsAddProductOpen || _vm.IsCustomerPopupOpen) return;
+        if (_vm.IsOpenShiftOpen  || _vm.IsCloseShiftOpen)    return;
 
         switch (e.Key)
         {
