@@ -17,7 +17,11 @@ public class SyncService
     private readonly PriceListRepository   _priceLists;
     private readonly ProductTypeRepository _productTypes;
     private readonly System.Timers.Timer   _timer;
-    private bool _isSyncing;
+
+    // Bug C3: a single gate around SyncAllAsync itself serialises every entry
+    // point (timer, manual, initial, post-product-save). WaitAsync(0) means an
+    // overlapping caller returns immediately instead of queueing a duplicate run.
+    private readonly SemaphoreSlim _syncLock = new(1, 1);
 
     public SyncStatus    Status           { get; private set; } = SyncStatus.Idle;
     public DateTime?     LastSyncAt       { get; private set; }
@@ -47,45 +51,66 @@ public class SyncService
         _productTypes = productTypes;
 
         _timer = new System.Timers.Timer(300_000); // every 5 min
-        _timer.Elapsed += async (_, _) => await TrySyncAsync();
+        // Bug H4: the timer fires on a pool thread, so any escaping exception is
+        // unobserved and crashes the WPF process mid-sale. The whole handler body
+        // must be wrapped — never let anything propagate out of an async void.
+        _timer.Elapsed += async (_, _) =>
+        {
+            try { await TrySyncAsync(); }
+            catch (Exception ex)
+            {
+                LastError = ex.Message;
+                SetStatus(SyncStatus.Error);
+            }
+        };
         _timer.AutoReset = true;
     }
 
     public void StartBackgroundSync() => _timer.Start();
     public void StopBackgroundSync()  => _timer.Stop();
 
+    // Manual + initial syncs force a retry of every pending sale (bypass backoff).
     public async Task InitialSyncAsync()
     {
         if (!_connectivity.IsOnline) return;
-        await SyncAllAsync();
+        await SyncAllAsync(force: true);
     }
 
+    // Background/timer-driven attempt: honours the per-sale backoff window.
     public async Task TrySyncAsync()
     {
-        if (_isSyncing || !_connectivity.IsOnline) return;
-        await SyncAllAsync();
+        if (!_connectivity.IsOnline) return;
+        await SyncAllAsync(force: false);
     }
 
-    public async Task SyncAllAsync()
+    // force == true  → manual/initial sync: retry every pending sale immediately.
+    // force == false → timer-driven sync: permanently-rejected sales obey backoff.
+    public async Task SyncAllAsync(bool force = true)
     {
         if (!_connectivity.IsOnline) { SetStatus(SyncStatus.Idle); return; }
 
-        _isSyncing  = true;
-        LastError   = "";
-        LastErrors  = [];
-        SetStatus(SyncStatus.Syncing);
+        // Bug C3: only one sync may run at a time. An overlapping caller returns
+        // immediately rather than queueing a duplicate run that could double-submit.
+        if (!await _syncLock.WaitAsync(0)) return;
 
-        var errors = new List<string>();
-
+        // Everything below is inside try/finally so the semaphore is always
+        // released and (Bug H4) no exception escapes — even from the epilogue
+        // statements (settings write, pending-count read) outside the inner trys.
         try
         {
+            LastError   = "";
+            LastErrors  = [];
+            SetStatus(SyncStatus.Syncing);
+
+            var errors = new List<string>();
+
             try { await SyncReferenceDataAsync(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             { errors.Add("Sessiya muddati tugagan"); }
             catch (Exception ex) { errors.Add($"Ma'lumotnoma: {ex.Message}"); }
 
             // Sales first so the backend stock is already decremented when we fetch products
-            try { await SyncPendingSalesAsync(); }
+            try { await SyncPendingSalesAsync(force, errors); }
             catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
 
             try { await SyncProductsAsync(); }
@@ -98,9 +123,13 @@ public class SyncService
             { errors.Add("Sessiya muddati tugagan"); }
             catch (Exception ex) { errors.Add($"Mijozlar: {ex.Message}"); }
 
-            LastSyncAt = DateTime.Now;
-            _settings.Set("last_sync_at", LastSyncAt.Value.ToString("O"));
-            PendingSalesCount = _sales.GetPendingCount();
+            try
+            {
+                LastSyncAt = DateTime.Now;
+                _settings.Set("last_sync_at", LastSyncAt.Value.ToString("O"));
+                PendingSalesCount = _sales.GetPendingCount();
+            }
+            catch (Exception ex) { errors.Add($"Holat: {ex.Message}"); }
 
             LastErrors = errors;
             if (errors.Count > 0)
@@ -113,9 +142,15 @@ public class SyncService
                 SetStatus(SyncStatus.Success);
             }
         }
+        catch (Exception ex)
+        {
+            // Last-resort guard: nothing may escape into a timer/pool context.
+            LastError = ex.Message;
+            SetStatus(SyncStatus.Error);
+        }
         finally
         {
-            _isSyncing = false;
+            _syncLock.Release();
         }
     }
 
@@ -251,7 +286,12 @@ public class SyncService
 
     // ── Pending sales ─────────────────────────────────────────────────────────
 
-    private async Task SyncPendingSalesAsync()
+    // force == true  → manual/initial sync: ignore backoff, retry every sale.
+    // force == false → timer sync: previously-failed sales honour the backoff
+    //                  window so a stuck sale doesn't hit the server every cycle.
+    // Per-sale failures are recorded on the Sale row (attempts/error/timestamp);
+    // a summary of permanently-failing sales is appended to `errors` for the UI.
+    private async Task SyncPendingSalesAsync(bool force, List<string> errors)
     {
         var branchUuid  = _settings.Get("default_branch_uuid");
         var cashboxUuid = _settings.Get("default_cashbox_uuid");
@@ -271,14 +311,28 @@ public class SyncService
         var priceListId = activePriceList.Id;
         var currencyId  = activePriceList.CurrencyId;
 
-        var saleErrors = new List<string>();
+        var failedSales = new List<string>();   // per-sale context for the UI
+        var permanentFailures = 0;               // count of server-rejected sales
 
         foreach (var sale in _sales.GetPendingSync())
         {
-            // Skip sales that contain only local seed-data products (no server UUID).
+            // Sales that contain only local seed-data products (no server UUID) can
+            // never reach the backend — record a clear reason and leave them pending.
             if (!sale.Items.Any(i => !string.IsNullOrEmpty(i.ProductRemoteUuid)))
             {
-                _sales.MarkSynced(sale.LocalId, "LOCAL_ONLY");
+                // Record the reason once; don't inflate SyncAttempts every cycle.
+                if (string.IsNullOrEmpty(sale.LastSyncError))
+                    _sales.RecordSyncFailure(sale.LocalId,
+                        "Mahsulot serverda mavjud emas (lokal savdo)");
+                continue;
+            }
+
+            // Backoff BEFORE sending (timer syncs only): a sale that already failed
+            // waits out its window so it isn't re-POSTed to the server every cycle.
+            if (!force && sale.SyncAttempts > 0 && IsWithinBackoff(sale))
+            {
+                if (!string.IsNullOrEmpty(sale.LastSyncError))
+                    failedSales.Add(SaleErrorLine(sale.LocalId, sale.LastSyncError));
                 continue;
             }
 
@@ -290,15 +344,52 @@ public class SyncService
             }
             catch (Exception ex)
             {
-                saleErrors.Add(ex.Message);
+                // NEVER mark synced, NEVER delete — record the attempt and move on.
+                _sales.RecordSyncFailure(sale.LocalId, ex.Message);
+                failedSales.Add(SaleErrorLine(sale.LocalId, ex.Message));
+                if (IsPermanentFailure(ex)) permanentFailures++;
             }
         }
 
         PendingSalesCount = _sales.GetPendingCount();
 
-        if (saleErrors.Count > 0)
-            throw new InvalidOperationException(
-                $"{saleErrors.Count} ta zakaz yuborilmadi: {string.Join("; ", saleErrors.Take(2))}");
+        if (failedSales.Count > 0)
+        {
+            // Surface actionable per-sale context plus a permanent-failure count.
+            if (permanentFailures > 0)
+                errors.Add($"{permanentFailures} ta savdo sinxronlanmadi");
+            errors.AddRange(failedSales.Take(5));
+        }
+    }
+
+    // PERMANENT: server rejected the payload (4xx) — except auth/throttle/timeout
+    // codes which are transient. TRANSIENT (return false): network errors, 5xx,
+    // timeouts, 401, 408, 429, and any HttpRequestException without a StatusCode.
+    private static bool IsPermanentFailure(Exception ex)
+    {
+        if (ex is HttpRequestException http && http.StatusCode is { } code)
+        {
+            var n = (int)code;
+            if (n is 401 or 408 or 429) return false;   // transient
+            return n is >= 400 and < 500;                // other 4xx = permanent
+        }
+        return false;   // network/timeout/unknown → transient, always retry
+    }
+
+    // Skip a previously-failed sale on timer syncs while it is still inside its
+    // backoff window: min(SyncAttempts * 5 min, 60 min) since the last attempt.
+    // Manual syncs (force) bypass this entirely, so no sale is ever stranded.
+    private static bool IsWithinBackoff(Sale sale)
+    {
+        if (sale.LastSyncAttemptAt is not { } last) return false;
+        var window = TimeSpan.FromMinutes(Math.Min(sale.SyncAttempts * 5, 60));
+        return DateTime.UtcNow - last.ToUniversalTime() < window;
+    }
+
+    private static string SaleErrorLine(string localId, string message)
+    {
+        var shortId = localId.Length >= 8 ? localId[..8] : localId;
+        return $"#{shortId}: {message}";
     }
 
     private void SetStatus(SyncStatus status)

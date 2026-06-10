@@ -18,5 +18,11 @@ public class Sale
     public DateTime  CreatedAt          { get; set; }
     public DateTime? SyncedAt           { get; set; }
 
+    // Sync retry tracking (Bug C4): permanent server rejections must not be
+    // retried every cycle; transient failures stay eligible forever.
+    public int       SyncAttempts       { get; set; }
+    public string    LastSyncError      { get; set; } = "";
+    public DateTime? LastSyncAttemptAt  { get; set; }
+
     public ICollection<SaleItem> Items  { get; set; } = [];
 }

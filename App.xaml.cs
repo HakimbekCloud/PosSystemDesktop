@@ -117,6 +117,9 @@ public partial class App : Application
             "ALTER TABLE Sales     ADD COLUMN ServerUuid         TEXT",
             "ALTER TABLE Sales     ADD COLUMN CustomerRemoteUuid TEXT NOT NULL DEFAULT ''",
             "ALTER TABLE SaleItems ADD COLUMN ProductRemoteUuid  TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE Sales     ADD COLUMN SyncAttempts       INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE Sales     ADD COLUMN LastSyncError      TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE Sales     ADD COLUMN LastSyncAttemptAt  TEXT NULL",
         };
 
         foreach (var sql in columns)

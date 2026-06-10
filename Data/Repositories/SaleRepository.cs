@@ -32,9 +32,24 @@ public class SaleRepository(IDbContextFactory<AppDbContext> factory)
         using var db = factory.CreateDbContext();
         var sale = db.Sales.FirstOrDefault(s => s.LocalId == localId);
         if (sale is null) return;
-        sale.Synced     = true;
-        sale.ServerUuid = serverUuid;
-        sale.SyncedAt   = DateTime.UtcNow;
+        sale.Synced            = true;
+        sale.ServerUuid        = serverUuid;
+        sale.SyncedAt          = DateTime.UtcNow;
+        sale.LastSyncError     = "";
+        sale.LastSyncAttemptAt = DateTime.UtcNow;
+        db.SaveChanges();
+    }
+
+    // Records a failed sync attempt: increments the counter and stores the error
+    // text + timestamp. NEVER marks the sale as synced — the row stays pending.
+    public void RecordSyncFailure(string localId, string error)
+    {
+        using var db = factory.CreateDbContext();
+        var sale = db.Sales.FirstOrDefault(s => s.LocalId == localId);
+        if (sale is null) return;
+        sale.SyncAttempts++;
+        sale.LastSyncError     = error.Length > 500 ? error[..500] : error;
+        sale.LastSyncAttemptAt = DateTime.UtcNow;
         db.SaveChanges();
     }
 
