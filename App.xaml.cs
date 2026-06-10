@@ -142,6 +142,17 @@ public partial class App : Application
             "'+998901234567','+998907654321','+998991112233'," +
             "'+998993334455','+998946677889')"); }
         catch { }
+
+        // Retire legacy LOCAL_ONLY sales (demo-seed era: no item ever had a server
+        // UUID, so they can never be sent). Mark them with the terminal LOCAL_ONLY
+        // state so the pending counter doesn't stay inflated forever and the sale
+        // history shows them as local-only. New such sales can't occur — products
+        // without a server UUID are no longer sellable.
+        try { db.Database.ExecuteSqlRaw(
+            "UPDATE Sales SET Synced = 1, ServerUuid = 'LOCAL_ONLY' " +
+            "WHERE Synced = 0 AND LocalId NOT IN (" +
+            "SELECT DISTINCT SaleLocalId FROM SaleItems WHERE ProductRemoteUuid <> '')"); }
+        catch { }
     }
 
     protected override void OnExit(ExitEventArgs e)

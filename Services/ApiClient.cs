@@ -276,7 +276,7 @@ public class ApiClient
         // line items' discountPrice fields so it actually reaches the server, and
         // so the API's exact-sum invariant holds:
         //   sum(price*qty - discountPrice) == sale.TotalAmount
-        DistributeCartDiscount(validItems, Math.Max(0, sale.Discount), sale.TotalAmount);
+        DistributeCartDiscount(validItems, Math.Max(0, sale.Discount));
 
         // apiTotal is computed ONCE from the final per-line figures (decimal only).
         var apiTotal = validItems.Sum(i => i.Price * i.Quantity - i.DiscountPrice);
@@ -364,13 +364,13 @@ public class ApiClient
 
     // Bug H2: distribute the cart-wide discount proportionally across the items'
     // discountPrice fields (on top of any existing per-line discount), using the
-    // largest-remainder method so that EXACTLY:
-    //     sum(price*qty - discountPrice) == targetTotal
+    // largest-remainder method so that the full cartDiscount lands on the lines
+    // EXACTLY: sum(price*qty - discountPrice) drops by cartDiscount (clamped).
     // Decimal arithmetic only. Guards: never let a line's discountPrice exceed its
     // line total; clamp the residual when the cart discount exceeds what the lines
     // can absorb; handles single-line, zero, and free (total == 0) sales.
     private static void DistributeCartDiscount(
-        List<CreateOrderItemRequest> items, decimal cartDiscount, decimal targetTotal)
+        List<CreateOrderItemRequest> items, decimal cartDiscount)
     {
         // Line totals after the existing per-line discount (the distributable base).
         var lineNet = items
