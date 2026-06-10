@@ -1,3 +1,4 @@
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -39,6 +40,20 @@ public partial class LoginViewModel : BaseViewModel
     [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
     {
+        // Bug C2: logging into a DIFFERENT tenant wipes the local data. If the
+        // previous tenant still has unsynced sales, those would be lost — make the
+        // cashier explicitly confirm before we proceed (No aborts the login).
+        var unsynced = _auth.GetUnsyncedSalesCountForOtherTenant(TenantSubdomain);
+        if (unsynced > 0)
+        {
+            var answer = MessageBox.Show(
+                $"Diqqat: avvalgi tashkilotning {unsynced} ta sinxronlanmagan savdosi o'chiriladi. Davom etasizmi?",
+                "Tashkilot almashtirish",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (answer != MessageBoxResult.Yes)
+                return;
+        }
+
         IsBusy = true;
         ErrorMessage = "";
         try

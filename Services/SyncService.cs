@@ -87,6 +87,11 @@ public class SyncService
     // force == false → timer-driven sync: permanently-rejected sales obey backoff.
     public async Task SyncAllAsync(bool force = true)
     {
+        // Bug C2: after logout the timer keeps ticking. With no auth token every
+        // call would 401-spam the server (and trigger SessionExpired loops). Bail
+        // out immediately when logged out — no lock, no API calls.
+        if (string.IsNullOrEmpty(_settings.Get("auth_token"))) { SetStatus(SyncStatus.Idle); return; }
+
         if (!_connectivity.IsOnline) { SetStatus(SyncStatus.Idle); return; }
 
         // Bug C3: only one sync may run at a time. An overlapping caller returns
@@ -111,6 +116,11 @@ public class SyncService
 
             // Sales first so the backend stock is already decremented when we fetch products
             try { await SyncPendingSalesAsync(force, errors); }
+            // Bug M3: special-case 401 like the other sections so it surfaces the
+            // session-expiry message instead of a raw "Zakazlar: ..." line. Per-sale
+            // 401s are still caught inside the method and recorded as transient.
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            { errors.Add("Sessiya muddati tugagan"); }
             catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
 
             try { await SyncProductsAsync(); }

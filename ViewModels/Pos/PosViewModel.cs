@@ -756,8 +756,27 @@ public partial class PosViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Logout()
+    private async Task Logout()
     {
+        // Bug C2: try one last forced sync of pending sales before logging out, then
+        // warn (Yes/No) if any remain. Logout NEVER deletes data now, so pending
+        // sales survive and sync after the next login — but the cashier should know.
+        if (_sales.GetPendingCount() > 0 && _connectivity.IsOnline)
+        {
+            try { await _sync.SyncAllAsync(force: true); } catch { }
+        }
+
+        var pending = _sales.GetPendingCount();
+        if (pending > 0)
+        {
+            var answer = System.Windows.MessageBox.Show(
+                $"{pending} ta savdo hali serverga yuborilmagan. Ular saqlanib qoladi va keyingi kirishdan so'ng yuboriladi. Chiqishni xohlaysizmi?",
+                "Chiqish",
+                System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
+            if (answer != System.Windows.MessageBoxResult.Yes)
+                return;
+        }
+
         _clockTimer?.Stop();
         _sync.StopBackgroundSync();
         _auth.Logout();

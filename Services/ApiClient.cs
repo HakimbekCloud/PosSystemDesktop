@@ -17,6 +17,11 @@ public class ApiClient
 
     private readonly SemaphoreSlim _refreshSemaphore = new(1, 1);
 
+    // Bug M3: debounce SessionExpiredMessage — send it at most once per expiry
+    // episode so concurrent failing calls can't spam logout/navigation. Reset on
+    // any successful refresh or login (ResetSessionExpiry).
+    private int _sessionExpiredSent;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -27,8 +32,6 @@ public class ApiClient
         _http = http;
         _settings = settings;
         ApplyBaseUrl();
-        ApplyTenantHeader();
-        ApplyAuthToken();
     }
 
     public void ApplyBaseUrl()
@@ -42,27 +45,50 @@ public class ApiClient
         _http.BaseAddress = uri;
     }
 
-    public void ApplyTenantHeader()
+    // Bug M3: re-arm the session-expiry debounce after a successful login/refresh
+    // so a later genuine expiry can notify again. Call this from AuthService on a
+    // successful login.
+    public void ResetSessionExpiry() => Interlocked.Exchange(ref _sessionExpiredSent, 0);
+
+    // Bug M3: send SessionExpiredMessage only once until ResetSessionExpiry().
+    private void NotifySessionExpired()
     {
-        _http.DefaultRequestHeaders.Remove("X-Tenant-ID");
-        var tenant = _settings.Get("tenant_subdomain");
-        if (!string.IsNullOrEmpty(tenant))
-            _http.DefaultRequestHeaders.Add("X-Tenant-ID", tenant);
+        if (Interlocked.Exchange(ref _sessionExpiredSent, 1) == 0)
+            WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
     }
 
-    public void ApplyAuthToken()
+    // Bug H1: build a request that stamps Authorization + X-Tenant-ID from the
+    // CURRENT settings at send time. Never mutate HttpClient.DefaultRequestHeaders,
+    // which would tear concurrent in-flight requests. `withAuth` is false for the
+    // login endpoint (no stale Bearer token wanted).
+    private HttpRequestMessage BuildRequest(
+        HttpMethod method, string url, HttpContent? content = null, bool withAuth = true)
     {
-        var token = _settings.Get("auth_token");
-        _http.DefaultRequestHeaders.Authorization = token is not null
-            ? new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token)
-            : null;
+        var req = new HttpRequestMessage(method, url) { Content = content };
+
+        var tenant = _settings.Get("tenant_subdomain");
+        if (!string.IsNullOrEmpty(tenant))
+            req.Headers.Add("X-Tenant-ID", tenant);
+
+        if (withAuth)
+        {
+            var token = _settings.Get("auth_token");
+            if (!string.IsNullOrEmpty(token))
+                req.Headers.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        return req;
     }
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
     public async Task<LoginResponse> LoginAsync(string username, string password)
     {
-        var response = await _http.PostAsJsonAsync("api/v1/auth/login", new { username, password });
+        // Login carries the X-Tenant-ID header (from settings) but no Bearer token.
+        var req = BuildRequest(HttpMethod.Post, "api/v1/auth/login",
+            JsonContent.Create(new { username, password }), withAuth: false);
+        var response = await _http.SendAsync(req);
         await EnsureSuccessAsync(response);
         return await response.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions)
                ?? throw new InvalidOperationException("Server javobi noto'g'ri");
@@ -404,11 +430,13 @@ public class ApiClient
             var refreshToken = _settings.Get("refresh_token");
             if (string.IsNullOrEmpty(refreshToken))
             {
-                WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+                NotifySessionExpired();
                 return false;
             }
 
-            var req = new HttpRequestMessage(HttpMethod.Post, "api/v1/auth/refresh");
+            // Refresh sends the refresh token as the Bearer (NOT the expired access
+            // token) plus the tenant header — per-request, no shared-header mutation.
+            var req = BuildRequest(HttpMethod.Post, "api/v1/auth/refresh", withAuth: false);
             req.Headers.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", refreshToken);
 
@@ -417,7 +445,7 @@ public class ApiClient
             if (resp.StatusCode == HttpStatusCode.Unauthorized)
             {
                 // Refresh token itself is expired or revoked — force re-login.
-                WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+                NotifySessionExpired();
                 return false;
             }
 
@@ -429,7 +457,8 @@ public class ApiClient
 
             _settings.Set("auth_token", result.AccessToken);
             _settings.Set("refresh_token", result.RefreshToken);
-            ApplyAuthToken();
+            // A successful refresh re-arms the debounce so a future expiry notifies.
+            ResetSessionExpiry();
             return true;
         }
         catch
@@ -444,44 +473,42 @@ public class ApiClient
 
     // ── Private HTTP helpers ──────────────────────────────────────────────────
 
+    // All three helpers build a FRESH HttpRequestMessage for the initial call and,
+    // after a successful refresh, for the retry — an HttpRequestMessage cannot be
+    // reused, and the rebuilt request automatically picks up the NEW token from
+    // settings via BuildRequest (Bug H1 + Bug C1 retry safety).
     private async Task<HttpResponseMessage> GetWithRefreshAsync(string url)
     {
-        var resp = await _http.GetAsync(url);
+        var resp = await _http.SendAsync(BuildRequest(HttpMethod.Get, url));
         if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
         {
             resp.Dispose();
-            resp = await _http.GetAsync(url);
+            resp = await _http.SendAsync(BuildRequest(HttpMethod.Get, url));
         }
         return resp;
     }
 
     private async Task<HttpResponseMessage> PostWithRefreshAsync<T>(string url, T body)
     {
-        var resp = await _http.SendAsync(BuildPost(url, body));
+        var resp = await _http.SendAsync(BuildRequest(HttpMethod.Post, url, JsonContent.Create(body)));
         if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
         {
             resp.Dispose();
-            resp = await _http.SendAsync(BuildPost(url, body));
+            resp = await _http.SendAsync(BuildRequest(HttpMethod.Post, url, JsonContent.Create(body)));
         }
         return resp;
     }
 
     private async Task<HttpResponseMessage> PutWithRefreshAsync<T>(string url, T body)
     {
-        var resp = await _http.SendAsync(BuildPut(url, body));
+        var resp = await _http.SendAsync(BuildRequest(HttpMethod.Put, url, JsonContent.Create(body)));
         if (resp.StatusCode == HttpStatusCode.Unauthorized && await TryRefreshTokenAsync())
         {
             resp.Dispose();
-            resp = await _http.SendAsync(BuildPut(url, body));
+            resp = await _http.SendAsync(BuildRequest(HttpMethod.Put, url, JsonContent.Create(body)));
         }
         return resp;
     }
-
-    private static HttpRequestMessage BuildPost<T>(string url, T body) =>
-        new(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
-
-    private static HttpRequestMessage BuildPut<T>(string url, T body) =>
-        new(HttpMethod.Put, url) { Content = JsonContent.Create(body) };
 
     // ── Error handling ────────────────────────────────────────────────────────
 
