@@ -215,6 +215,12 @@ public class PriceListDto
     [JsonPropertyName("currency")]
     public string Currency { get; set; } = "";
 
+    // Bug H3: real backend currency id, if the backend supplies one. When present
+    // it is the single source of truth for the order's currencyId; when absent we
+    // fall back to the UZS=1 / USD=2 code-based guess.
+    [JsonPropertyName("currencyId")]
+    public long? CurrencyId { get; set; }
+
     [JsonPropertyName("active")]
     public bool Active { get; set; } = true;
 }
@@ -328,6 +334,13 @@ public class CreateOrderRequest
 
     [JsonPropertyName("transactions")]
     public List<CreateTransactionRequest> Transactions { get; set; } = [];
+
+    // Bug C1: makes the order POST idempotent. Populated with the sale's stable
+    // LocalId so a retry after a lost response (timeout) or a 401-refresh re-POST
+    // is deduplicated server-side instead of creating a duplicate order.
+    // Field name/serialization mirrors DebtPaymentRequest.IdempotencyKey exactly.
+    [JsonPropertyName("idempotencyKey")]
+    public string? IdempotencyKey { get; set; }
 }
 
 public class CreateOrderItemRequest

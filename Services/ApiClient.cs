@@ -205,7 +205,7 @@ public class ApiClient
     public async Task<string> SyncSaleAsync(
         Sale sale, string branchUuid, string cashboxUuid, long priceListId, long currencyId)
     {
-        var paymentType = sale.PaymentType.ToUpperInvariant() switch
+        var mappedType = sale.PaymentType.ToUpperInvariant() switch
         {
             "CARD"               => "CARD",
             "BANK" or "TRANSFER" => "TRANSFER",
@@ -224,35 +224,43 @@ public class ApiClient
                 ProductUuid   = i.ProductRemoteUuid,
                 Quantity      = i.Quantity,
                 Price         = i.Price,
+                // Start from the per-line discount; the cart-wide discount is
+                // distributed on top of this below (Bug H2).
                 DiscountPrice = Math.Max(0, i.Discount)
             }).ToList();
 
         if (validItems.Count == 0)
             throw new InvalidOperationException("Serverga yuborish uchun yaroqli mahsulotlar yo'q");
 
-        // API invariant: sum(transactions.amount) must EXACTLY equal
-        //                sum(item.price * item.quantity - item.discountPrice)
+        // Bug H2: distribute the cart-wide discount (sale.Discount) across the
+        // line items' discountPrice fields so it actually reaches the server, and
+        // so the API's exact-sum invariant holds:
+        //   sum(price*qty - discountPrice) == sale.TotalAmount
+        DistributeCartDiscount(validItems, Math.Max(0, sale.Discount), sale.TotalAmount);
+
+        // apiTotal is computed ONCE from the final per-line figures (decimal only).
         var apiTotal = validItems.Sum(i => i.Price * i.Quantity - i.DiscountPrice);
         if (apiTotal <= 0)
             throw new InvalidOperationException("Zakaz summasi noldan katta bo'lishi kerak");
 
         // Build transactions that sum precisely to apiTotal.
         //
-        // sale.PaidAmount   = what the customer physically paid (may include change overpayment)
-        // sale.TotalAmount  = discounted cart total  (= subtotal - cart discount)
-        // Fully paid        = PaidAmount >= TotalAmount
-        //
-        // If fully paid, send the whole apiTotal as a single non-debt transaction.
-        // If partially paid (with a linked customer), split into a paid + debt pair.
-        // If no customer exists, we cannot register debt → treat as fully paid on the server.
+        // sale.PaidAmount  = what the customer physically paid (may include
+        //                    over-tendered cash; change was given back).
+        // The server must never receive more than apiTotal as paid, so clamp.
+        // If partially paid AND a customer is linked, split into a paid + debt
+        // pair. Without a customer we cannot register debt → treat as fully paid.
 
-        var hasCustomer  = !string.IsNullOrEmpty(sale.CustomerRemoteUuid);
-        var isFullyPaid  = sale.PaidAmount >= sale.TotalAmount;
+        var hasCustomer = !string.IsNullOrEmpty(sale.CustomerRemoteUuid);
 
-        decimal paidPortion = isFullyPaid || !hasCustomer
-            ? apiTotal
-            : Math.Clamp(sale.PaidAmount, 0, apiTotal);
-        decimal debtPortion = apiTotal - paidPortion;
+        decimal clampedPaid = Math.Min(Math.Max(sale.PaidAmount, 0m), apiTotal);
+        decimal paidPortion = hasCustomer ? clampedPaid : apiTotal;
+        decimal debtPortion = hasCustomer ? apiTotal - paidPortion : 0m;
+
+        // Round each transaction to 2dp, then fix the last one by the remainder so
+        // sum(transactions) == apiTotal exactly.
+        paidPortion = Math.Round(paidPortion, 2, MidpointRounding.AwayFromZero);
+        debtPortion = Math.Round(debtPortion, 2, MidpointRounding.AwayFromZero);
 
         var transactions = new List<CreateTransactionRequest>();
 
@@ -276,25 +284,114 @@ public class ApiClient
                 IsCashback  = false
             });
 
+        // Adjust the last transaction by any rounding remainder so the sum is exact.
+        if (transactions.Count > 0)
+        {
+            var txSum = transactions.Sum(t => t.Amount);
+            var diff  = apiTotal - txSum;
+            if (diff != 0) transactions[^1].Amount += diff;
+        }
+
+        // Bug M4: when both a paid and a debt transaction are emitted the order is
+        // genuinely mixed, regardless of the single type the UI selected. Otherwise
+        // keep the mapped single type (paid-only → mapped type, debt-only → mapped).
+        var hasPaidTx = transactions.Any(t => !t.IsDebt);
+        var hasDebtTx = transactions.Any(t => t.IsDebt);
+        var paymentType = (hasPaidTx && hasDebtTx) ? "MIXED" : mappedType;
+
         var order = new CreateOrderRequest
         {
-            BranchUuid   = branchUuid,
-            CustomerUuid = hasCustomer ? sale.CustomerRemoteUuid : null,
-            CurrencyId   = currencyId,
-            PaymentType  = paymentType,
-            IsPos        = true,
-            DealType     = 0,
-            DeliveryType = "SELF",
-            PriceListId  = priceListId,
-            Comment      = string.IsNullOrEmpty(sale.Note) ? null : sale.Note,
-            Items        = validItems,
-            Transactions = transactions
+            BranchUuid     = branchUuid,
+            CustomerUuid   = hasCustomer ? sale.CustomerRemoteUuid : null,
+            CurrencyId     = currencyId,
+            PaymentType    = paymentType,
+            IsPos          = true,
+            DealType       = 0,
+            DeliveryType   = "SELF",
+            PriceListId    = priceListId,
+            Comment        = string.IsNullOrEmpty(sale.Note) ? null : sale.Note,
+            Items          = validItems,
+            Transactions   = transactions,
+            // Bug C1: stable idempotency key so retries don't create duplicates.
+            IdempotencyKey = sale.LocalId
         };
 
         var response = await PostWithRefreshAsync("api/orders", order);
         await EnsureSuccessAsync(response);
         var result = await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions);
         return result?.Uuid ?? "";
+    }
+
+    // Bug H2: distribute the cart-wide discount proportionally across the items'
+    // discountPrice fields (on top of any existing per-line discount), using the
+    // largest-remainder method so that EXACTLY:
+    //     sum(price*qty - discountPrice) == targetTotal
+    // Decimal arithmetic only. Guards: never let a line's discountPrice exceed its
+    // line total; clamp the residual when the cart discount exceeds what the lines
+    // can absorb; handles single-line, zero, and free (total == 0) sales.
+    private static void DistributeCartDiscount(
+        List<CreateOrderItemRequest> items, decimal cartDiscount, decimal targetTotal)
+    {
+        // Line totals after the existing per-line discount (the distributable base).
+        var lineNet = items
+            .Select(i => i.Price * i.Quantity - i.DiscountPrice)
+            .ToArray();
+
+        var netSum = lineNet.Sum();
+        if (netSum <= 0) return; // nothing to distribute against
+
+        // The cart discount can absorb at most the whole net sum (free order).
+        var residual = Math.Min(cartDiscount, netSum);
+        if (residual <= 0) return;
+
+        // Proportional share per line, rounded to 2dp, clamped to its line net.
+        var extra = new decimal[items.Count];
+        for (int k = 0; k < items.Count; k++)
+        {
+            var share = Math.Round(residual * lineNet[k] / netSum, 2, MidpointRounding.AwayFromZero);
+            extra[k]  = Math.Clamp(share, 0m, lineNet[k]);
+        }
+
+        // Largest-remainder correction: nudge by ±0.01 on the lines with the most
+        // remaining capacity until the distributed total equals the residual exactly.
+        var distributed = extra.Sum();
+        var leftover     = residual - distributed;
+        var step         = leftover > 0 ? 0.01m : -0.01m;
+        int guard        = 0;
+        int maxSteps     = items.Count * 200 + 100; // safety bound, never infinite
+
+        while (Math.Abs(leftover) >= 0.01m && guard++ < maxSteps)
+        {
+            // Pick the line that can still absorb the step and has the largest
+            // remaining capacity (largest-remainder), so big lines soak up leftovers.
+            int best = -1;
+            decimal bestCapacity = -1m;
+            for (int k = 0; k < items.Count; k++)
+            {
+                var capacity = step > 0
+                    ? lineNet[k] - extra[k]   // room to add more discount
+                    : extra[k];               // room to remove discount
+                if (capacity >= 0.01m && capacity > bestCapacity)
+                {
+                    bestCapacity = capacity;
+                    best = k;
+                }
+            }
+            if (best < 0) break; // no line can absorb the step → clamp residual
+
+            extra[best] += step;
+            leftover    -= step;
+        }
+
+        // Apply the distributed cart discount on top of the per-line discount.
+        for (int k = 0; k < items.Count; k++)
+        {
+            items[k].DiscountPrice += extra[k];
+            // Final guard: never exceed the line total (price*qty).
+            var lineTotal = items[k].Price * items[k].Quantity;
+            if (items[k].DiscountPrice > lineTotal)
+                items[k].DiscountPrice = lineTotal;
+        }
     }
 
     // ── Token refresh ─────────────────────────────────────────────────────────

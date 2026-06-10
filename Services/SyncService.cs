@@ -165,28 +165,19 @@ public class SyncService
                 _settings.Set("default_branch_uuid", branches[0].Uuid);
         }
 
-        // Fetch cashboxes if UUID or currency ID is still unknown.
-        if (string.IsNullOrEmpty(_settings.Get("default_cashbox_uuid")) ||
-            string.IsNullOrEmpty(_settings.Get("default_currency_id")))
+        // Fetch cashboxes if the cashbox UUID is still unknown.
+        if (string.IsNullOrEmpty(_settings.Get("default_cashbox_uuid")))
         {
             var cashboxes = await _api.GetCashboxesAsync();
             if (cashboxes.Count > 0)
-            {
-                if (string.IsNullOrEmpty(_settings.Get("default_cashbox_uuid")))
-                    _settings.Set("default_cashbox_uuid", cashboxes[0].Uuid);
-
-                // Derive currency ID from cashbox currency code.
-                // Backend mapping: UZS=1, USD=2 (from OpenAPI investigation).
-                if (string.IsNullOrEmpty(_settings.Get("default_currency_id")))
-                {
-                    var code = cashboxes[0].CurrencyCode?.ToUpperInvariant();
-                    var id   = code == "USD" ? "2" : "1";   // default UZS=1
-                    _settings.Set("default_currency_id", id);
-                }
-            }
+                _settings.Set("default_cashbox_uuid", cashboxes[0].Uuid);
         }
 
         // Always fetch and cache price lists so the Add Product form can work offline.
+        // Bug H3: the price list is the SINGLE source of truth for both
+        // default_price_list_id and default_currency_id. The currency id comes
+        // from the backend's PriceListDto.CurrencyId when present; only when the
+        // backend genuinely omits it do we fall back to the UZS=1 / USD=2 code guess.
         var lists = await _api.GetPriceListsAsync();
         if (lists.Count > 0)
         {
@@ -195,14 +186,18 @@ public class SyncService
                 Id         = l.Id,
                 Name       = l.Name,
                 Currency   = l.Currency ?? "",
-                CurrencyId = l.Currency?.ToUpperInvariant() == "USD" ? 2L : 1L,
+                CurrencyId = ResolveCurrencyId(l),
                 Active     = l.Active
             }));
 
-            // Always keep default_price_list_id in sync with the first active price list.
+            // Always keep default_price_list_id + default_currency_id in sync with
+            // the first active price list — these drive every order POST.
             var firstActive = lists.FirstOrDefault(l => l.Active) ?? lists.FirstOrDefault();
             if (firstActive is not null)
+            {
                 _settings.Set("default_price_list_id", firstActive.Id.ToString());
+                _settings.Set("default_currency_id",   ResolveCurrencyId(firstActive).ToString());
+            }
         }
 
         // Always fetch and cache product types so the Add Product form can work offline.
@@ -216,6 +211,15 @@ public class SyncService
             }));
     }
 
+    // Bug H3: a price list's currency id comes from the backend (CurrencyId) when
+    // present; otherwise fall back to the UZS=1 / USD=2 code-based guess as a last
+    // resort. Backend mapping: UZS=1, USD=2 (from OpenAPI investigation).
+    private static long ResolveCurrencyId(Core.DTOs.PriceListDto list)
+    {
+        if (list.CurrencyId is { } id && id > 0) return id;
+        return list.Currency?.ToUpperInvariant() == "USD" ? 2L : 1L;
+    }
+
     // ── Products ──────────────────────────────────────────────────────────────
 
     private async Task SyncProductsAsync()
@@ -223,13 +227,17 @@ public class SyncService
         var dtos = await _api.GetProductsAsync();
         if (dtos.Count == 0) return;
 
-        // Always update priceListId + currencyId from product prices — these are the
-        // definitive values that must be sent with every order.
+        // Bug H3: the price list is the single source of truth for the order's
+        // price list / currency ids (set in SyncReferenceDataAsync). The product
+        // prices are only a first-sync fallback, so they may NEVER override values
+        // that are already set — write set-only-if-absent.
         var firstPrice = dtos.SelectMany(p => p.Prices).FirstOrDefault();
         if (firstPrice is not null)
         {
-            _settings.Set("default_price_list_id", firstPrice.PriceListId.ToString());
-            _settings.Set("default_currency_id",   firstPrice.CashCurrency.ToString());
+            if (string.IsNullOrEmpty(_settings.Get("default_price_list_id")))
+                _settings.Set("default_price_list_id", firstPrice.PriceListId.ToString());
+            if (string.IsNullOrEmpty(_settings.Get("default_currency_id")))
+                _settings.Set("default_currency_id",   firstPrice.CashCurrency.ToString());
         }
 
         // Resolve the active price list so we pick the right CashPrice per product.
