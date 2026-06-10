@@ -85,11 +85,9 @@ public partial class App : Application
         db.Database.EnsureCreated();
         ApplySchemaMigrations(db);
 
-        // Seed demo data only when there is no authenticated session.
-        // Once the user logs in and syncs, real backend data replaces the demo rows.
-        var auth = _services.GetRequiredService<AuthService>();
-        if (!auth.HasValidSession())
-            SeedDemoData(db);
+        // No demo seed: the POS catalog stays empty until the first successful
+        // login + sync, which is correct. Demo rows could otherwise be sold
+        // before sync, producing LOCAL_ONLY sales that can never reach the server.
     }
 
     // Adds new columns to existing SQLite databases without full migration.
@@ -128,50 +126,22 @@ public partial class App : Application
             catch { /* column already exists — safe to ignore */ }
         }
 
-        // One-time cleanup: remove seed/demo rows left over from previous runs.
-        // After login the real backend data will be synced in their place.
+        // One-time TARGETED cleanup: remove ONLY the known demo seed rows that older
+        // builds inserted (RemoteUuid = '' AND a code/phone from the exact seed set).
+        // The previous blanket "DELETE ... WHERE RemoteUuid = ''" was a latent trap:
+        // it would silently destroy any future locally-created row whose server UUID
+        // failed to persist. Any OTHER empty-RemoteUuid row must now SURVIVE startup.
         try { db.Database.ExecuteSqlRaw(
-            "DELETE FROM Products  WHERE RemoteUuid = '' OR RemoteUuid IS NULL"); }
+            "DELETE FROM Products WHERE RemoteUuid = '' AND Code IN (" +
+            "'CC001','SP001','PP001','AQ001','BR001','CK001','ML001','YG001'," +
+            "'EG001','RC001','FL001','SG001','OL001','PS001','TM001','PT001'," +
+            "'ON001','AP001')"); }
         catch { }
         try { db.Database.ExecuteSqlRaw(
-            "DELETE FROM Customers WHERE RemoteUuid = '' OR RemoteUuid IS NULL"); }
+            "DELETE FROM Customers WHERE RemoteUuid = '' AND Phone IN (" +
+            "'+998901234567','+998907654321','+998991112233'," +
+            "'+998993334455','+998946677889')"); }
         catch { }
-    }
-
-    private static void SeedDemoData(AppDbContext db)
-    {
-        if (db.Products.Any()) return;
-
-        db.Products.AddRange(
-            new Core.Entities.Product { Id = 1,  Name = "Coca-Cola 0.5L",    Code = "CC001", Barcode = "4870204999999", Price = 8_000,  Unit = "dona",  Stock = 120, CategoryId = 1, CategoryName = "Ichimliklar" },
-            new Core.Entities.Product { Id = 2,  Name = "Sprite 0.5L",       Code = "SP001", Barcode = "4870204888888", Price = 7_500,  Unit = "dona",  Stock = 85,  CategoryId = 1, CategoryName = "Ichimliklar" },
-            new Core.Entities.Product { Id = 3,  Name = "Pepsi 0.5L",        Code = "PP001", Barcode = "4870204777777", Price = 7_000,  Unit = "dona",  Stock = 60,  CategoryId = 1, CategoryName = "Ichimliklar" },
-            new Core.Entities.Product { Id = 4,  Name = "Aqua 1.5L",         Code = "AQ001", Barcode = "4870204666666", Price = 5_000,  Unit = "dona",  Stock = 200, CategoryId = 1, CategoryName = "Ichimliklar" },
-            new Core.Entities.Product { Id = 5,  Name = "Non (katta)",       Code = "BR001", Barcode = "4870204555555", Price = 4_000,  Unit = "dona",  Stock = 50,  CategoryId = 2, CategoryName = "Non mahsulotlari" },
-            new Core.Entities.Product { Id = 6,  Name = "Tort \"Medovik\"",  Code = "CK001", Barcode = "4870204444444", Price = 45_000, Unit = "dona",  Stock = 10,  CategoryId = 2, CategoryName = "Non mahsulotlari" },
-            new Core.Entities.Product { Id = 7,  Name = "Sut 1L",            Code = "ML001", Barcode = "4870204333333", Price = 12_000, Unit = "litr",  Stock = 40,  CategoryId = 3, CategoryName = "Sut mahsulotlari" },
-            new Core.Entities.Product { Id = 8,  Name = "Qatiq 500g",        Code = "YG001", Barcode = "4870204222222", Price = 9_000,  Unit = "dona",  Stock = 30,  CategoryId = 3, CategoryName = "Sut mahsulotlari" },
-            new Core.Entities.Product { Id = 9,  Name = "Tuxum (10 dona)",   Code = "EG001", Barcode = "4870204111111", Price = 22_000, Unit = "quti",  Stock = 25,  CategoryId = 4, CategoryName = "Tuxum" },
-            new Core.Entities.Product { Id = 10, Name = "Guruch 1kg",        Code = "RC001", Barcode = "4870204000000", Price = 15_000, Unit = "kg",    Stock = 80,  CategoryId = 5, CategoryName = "Don mahsulotlari" },
-            new Core.Entities.Product { Id = 11, Name = "Un 2kg",            Code = "FL001", Barcode = "4870203999999", Price = 18_000, Unit = "kg",    Stock = 60,  CategoryId = 5, CategoryName = "Don mahsulotlari" },
-            new Core.Entities.Product { Id = 12, Name = "Shakar 1kg",        Code = "SG001", Barcode = "4870203888888", Price = 14_000, Unit = "kg",    Stock = 100, CategoryId = 5, CategoryName = "Don mahsulotlari" },
-            new Core.Entities.Product { Id = 13, Name = "O'simlik yogi 1L",  Code = "OL001", Barcode = "4870203777777", Price = 25_000, Unit = "litr",  Stock = 45,  CategoryId = 6, CategoryName = "Moy" },
-            new Core.Entities.Product { Id = 14, Name = "Makaron 400g",      Code = "PS001", Barcode = "4870203666666", Price = 8_500,  Unit = "dona",  Stock = 70,  CategoryId = 5, CategoryName = "Don mahsulotlari" },
-            new Core.Entities.Product { Id = 15, Name = "Pomidor 1kg",       Code = "TM001", Barcode = "4870203555555", Price = 12_000, Unit = "kg",    Stock = 35,  CategoryId = 7, CategoryName = "Sabzavotlar" },
-            new Core.Entities.Product { Id = 16, Name = "Kartoshka 1kg",     Code = "PT001", Barcode = "4870203444444", Price = 6_000,  Unit = "kg",    Stock = 150, CategoryId = 7, CategoryName = "Sabzavotlar" },
-            new Core.Entities.Product { Id = 17, Name = "Piyoz 1kg",         Code = "ON001", Barcode = "4870203333333", Price = 4_500,  Unit = "kg",    Stock = 90,  CategoryId = 7, CategoryName = "Sabzavotlar" },
-            new Core.Entities.Product { Id = 18, Name = "Olma 1kg",          Code = "AP001", Barcode = "4870203222222", Price = 18_000, Unit = "kg",    Stock = 40,  CategoryId = 8, CategoryName = "Mevalar" }
-        );
-
-        db.Customers.AddRange(
-            new Core.Entities.Customer { Id = 1, Name = "Alisher Karimov",   Phone = "+998901234567" },
-            new Core.Entities.Customer { Id = 2, Name = "Malika Yusupova",   Phone = "+998907654321" },
-            new Core.Entities.Customer { Id = 3, Name = "Bobur Toshmatov",   Phone = "+998991112233" },
-            new Core.Entities.Customer { Id = 4, Name = "Dilnoza Ergasheva", Phone = "+998993334455" },
-            new Core.Entities.Customer { Id = 5, Name = "Sardor Holiqov",    Phone = "+998946677889" }
-        );
-
-        db.SaveChanges();
     }
 
     protected override void OnExit(ExitEventArgs e)

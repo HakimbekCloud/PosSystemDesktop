@@ -461,6 +461,15 @@ public partial class PosViewModel : ObservableObject
     [RelayCommand]
     private void AddToCart(Product product)
     {
+        // Bug M8 guard: a product without a server UUID can never reach the backend.
+        // Selling it would create a LOCAL_ONLY sale that is stuck pending forever, so
+        // refuse it at the source instead of adding it to the cart.
+        if (string.IsNullOrEmpty(product.RemoteUuid))
+        {
+            SyncStatusText = "Bu mahsulot hali serverga ulanmagan — sotib bo'lmaydi";
+            return;
+        }
+
         var existing = CartItems.FirstOrDefault(i => i.ProductId == product.Id);
         if (existing is not null)
         {
@@ -542,16 +551,28 @@ public partial class PosViewModel : ObservableObject
         ClearCart();
         ApplySoldStockInMemory(sale.Items);
 
+        // Optimistic LOCAL stock decrement only — purely for immediate display.
+        // The server remains authoritative: the next successful products pull
+        // (SyncProductsAsync → UpsertRange) overwrites Stock with the backend value.
+        foreach (var item in sale.Items)
+            _products.DecrementStock(item.ProductRemoteUuid, item.Quantity);
+
+        // Push the sale in the background — checkout must NOT block the cashier on
+        // network latency (AsyncRelayCommand refuses the next checkout until this
+        // command completes). Sync-level errors are recorded per-sale and surfaced
+        // via SyncService.StatusChanged; a true infrastructure throw is shown too,
+        // never swallowed, and the sale retries on the next background cycle.
         _ = Task.Run(async () =>
         {
             try
             {
-                foreach (var item in sale.Items)
-                    _products.DecrementStock(item.ProductRemoteUuid ?? "", item.Quantity);
-
                 await _sync.TrySyncAsync();
             }
-            catch { /* retry on next background cycle */ }
+            catch (Exception ex)
+            {
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                    SyncStatusText = $"Sinxronlash xatosi: {ex.Message}");
+            }
         });
 
         await Task.CompletedTask;
