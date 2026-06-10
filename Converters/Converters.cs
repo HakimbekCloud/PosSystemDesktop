@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -111,21 +111,25 @@ public class UrlToBitmapImageConverter : IValueConverter
 [ValueConversion(typeof(string), typeof(SolidColorBrush))]
 public class HexToBrushConverter : IValueConverter
 {
-    private static readonly Dictionary<string, SolidColorBrush> Cache = new();
+    // Bug L6: the static cache can be hit concurrently during XAML load, so use a
+    // thread-safe ConcurrentDictionary with GetOrAdd instead of a plain Dictionary
+    // mutated without locking. Behaviour is unchanged (cache + freeze brushes).
+    private static readonly ConcurrentDictionary<string, SolidColorBrush> Cache = new();
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not string hex || string.IsNullOrEmpty(hex)) return Brushes.Transparent;
-        if (Cache.TryGetValue(hex, out var cached)) return cached;
-        try
+        return Cache.GetOrAdd(hex, static key =>
         {
-            var color = (Color)ColorConverter.ConvertFromString(hex);
-            var brush = new SolidColorBrush(color);
-            brush.Freeze();
-            Cache[hex] = brush;
-            return brush;
-        }
-        catch { return Brushes.Transparent; }
+            try
+            {
+                var color = (Color)ColorConverter.ConvertFromString(key);
+                var brush = new SolidColorBrush(color);
+                brush.Freeze();
+                return brush;
+            }
+            catch { return (SolidColorBrush)Brushes.Transparent; }
+        });
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>

@@ -279,7 +279,9 @@ public partial class PosViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         UserName = _auth.GetCurrentUserName() ?? "";
-        IsOnline = _connectivity.IsOnline;
+        // Bug M2: the status pill reflects the TRUTHFUL signal (network + last real
+        // API outcome), not just whether a network adapter exists.
+        IsOnline = _connectivity.IsEffectivelyOnline;
         PendingSyncCount = _sales.GetPendingCount();
 
         LoadLocalData();
@@ -376,10 +378,24 @@ public partial class PosViewModel : ObservableObject
         PaidAmount = Total;
     }
 
+    // Bug M1: UZS has no sub-units, so the keypad enters WHOLE so'm only. The raw
+    // edit string is derived invariantly. If the current PaidAmount carries a
+    // fractional part (e.g. a card-payment exact amount), digit entry starts fresh
+    // rather than truncating/corrupting that value. The cap is raised to 999_999_999_999
+    // (~1 trillion so'm) and applied via decimal.TryParse to guard overflow.
+    private const decimal MaxPaidAmount = 999_999_999_999m;
+
     [RelayCommand]
     private void KeypadInput(string key)
     {
-        var raw = PaidAmount > 0 ? ((long)PaidAmount).ToString() : "";
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+
+        // Only treat the current value as editable digits when it's a whole number;
+        // a fractional value can't be represented on a whole-so'm keypad, so we
+        // start fresh on the next digit instead of corrupting it.
+        var raw = PaidAmount > 0 && PaidAmount == Math.Truncate(PaidAmount)
+            ? ((long)PaidAmount).ToString(inv)
+            : "";
 
         switch (key)
         {
@@ -388,11 +404,14 @@ public partial class PosViewModel : ObservableObject
                 break;
             case "⌫":
                 var trimmed = raw.Length > 1 ? raw[..^1] : "";
-                PaidAmount = string.IsNullOrEmpty(trimmed) ? 0 : decimal.Parse(trimmed);
+                PaidAmount = string.IsNullOrEmpty(trimmed)
+                    ? 0
+                    : decimal.Parse(trimmed, inv);
                 break;
             default:
                 var next = string.IsNullOrEmpty(raw) ? key : raw + key;
-                if (decimal.TryParse(next, out var r) && r <= 999_999_999)
+                if (decimal.TryParse(next, System.Globalization.NumberStyles.None, inv, out var r)
+                    && r <= MaxPaidAmount)
                     PaidAmount = r;
                 break;
         }
@@ -470,7 +489,10 @@ public partial class PosViewModel : ObservableObject
             return;
         }
 
-        var existing = CartItems.FirstOrDefault(i => i.ProductId == product.Id);
+        // Bug M6: match the existing line on the server identity (RemoteUuid), not
+        // the local int Id — the local Id can collide/shift across re-syncs while
+        // the RemoteUuid is the stable backend identity that flows into the order.
+        var existing = CartItems.FirstOrDefault(i => i.ProductRemoteUuid == product.RemoteUuid);
         if (existing is not null)
         {
             existing.Quantity++;
@@ -840,7 +862,9 @@ public partial class PosViewModel : ObservableObject
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
             SyncStatusText   = text;
-            IsOnline         = _connectivity.IsOnline;
+            // Bug M2: after each sync the connectivity service knows the real API
+            // outcome, so the pill now reflects whether the server was reachable.
+            IsOnline         = _connectivity.IsEffectivelyOnline;
             PendingSyncCount = _sales.GetPendingCount();
 
             if (_sync.Status == SyncStatus.Error)

@@ -40,6 +40,20 @@ public partial class LoginViewModel : BaseViewModel
     [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
     {
+        // Bug L4: a malformed server URL would otherwise be silently ignored by
+        // ApplyBaseUrl (TryCreate fails → keeps the old BaseAddress) and login would
+        // fail opaquely. Validate at input time and abort with a clear message.
+        if (!string.IsNullOrWhiteSpace(ServerUrl))
+        {
+            var candidate = ServerUrl.Trim();
+            if (!Uri.TryCreate(candidate, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                ErrorMessage = "Server manzili noto'g'ri";
+                return;
+            }
+        }
+
         // Bug C2: logging into a DIFFERENT tenant wipes the local data. If the
         // previous tenant still has unsynced sales, those would be lost — make the
         // cashier explicitly confirm before we proceed (No aborts the login).

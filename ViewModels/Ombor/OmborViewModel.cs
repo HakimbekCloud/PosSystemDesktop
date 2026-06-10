@@ -47,10 +47,13 @@ public partial class OmborViewModel : ObservableObject
     public OmborViewModel(ProductRepository products) => _products = products;
 
     // ── Page state ─────────────────────────────────────────────────────────
+    // Bug L1: these used to ship hardcoded fake daily totals. There is no local
+    // warehouse-movement feed yet, so the honest state is zero / empty rather than
+    // fabricated figures.
     [ObservableProperty] private string  _activeTab      = "movements";
     [ObservableProperty] private decimal _totalValue;
-    [ObservableProperty] private decimal _todayIncoming  = 6_900_000;
-    [ObservableProperty] private decimal _todayOutgoing  = 284_000;
+    [ObservableProperty] private decimal _todayIncoming;
+    [ObservableProperty] private decimal _todayOutgoing;
     [ObservableProperty] private int     _alertCount;
 
     // ── Movements pagination ───────────────────────────────────────────────
@@ -87,44 +90,10 @@ public partial class OmborViewModel : ObservableObject
     // ── Movements data ─────────────────────────────────────────────────────
     private void BuildMovements()
     {
+        // Bug L1: there is no local warehouse-movement source yet. Ship an empty
+        // list instead of fabricated documents; the paged view shows nothing until
+        // a real movements feed exists.
         _allMovements.Clear();
-
-        var rows = new[]
-        {
-            ("KIR-00248", "kirim",     "Coca-Cola Uzbekistan",   14, 4_820_000m, "D. Tursunov",  "13 May, 14:22", "done"),
-            ("SOT-04812", "chiqim",    "Sotuv",                  8,  284_000m,   "M. Rashidova", "13 May, 13:58", "done"),
-            ("TRF-00042", "transfer",  "Markaziy → Chilonzor",   22, 1_280_000m, "D. Tursunov",  "13 May, 11:10", "progress"),
-            ("KIR-00247", "kirim",     "Toshkent Non Kombinati", 6,  840_000m,   "D. Tursunov",  "13 May, 09:30", "done"),
-            ("AKT-00011", "writeoff",  "Yaroqsizlik akti",       3,  42_000m,    "A. Karimov",   "12 May, 18:42", "done"),
-            ("KIR-00246", "kirim",     "Sof Sut MChJ",           9,  1_240_000m, "D. Tursunov",  "12 May, 16:10", "done"),
-            ("INV-00008", "inventory", "Inventarizatsiya",       128, 0m,         "A. Karimov",   "12 May, 09:00", "done"),
-        };
-
-        foreach (var (doc, type, supplier, items, sum, by, date, status) in rows)
-        {
-            var (typeLabel, typeColor, typeBg) = type switch
-            {
-                "kirim"     => ("Kirim",       "#15803D", "#DCFCE7"),
-                "chiqim"    => ("Chiqim",      "#0369A1", "#E0F2FE"),
-                "transfer"  => ("Transfer",    "#6D28D9", "#EDE9FE"),
-                "writeoff"  => ("Yaroqsizlik", "#DC2626", "#FEE2E2"),
-                "inventory" => ("Inventar",    "#B45309", "#FEF3C7"),
-                _           => ("Boshqa",      "#374151", "#F3F4F6"),
-            };
-
-            var (statusLabel, statusColor, statusBg) = status switch
-            {
-                "done"     => ("Tasdiqlangan", "#15803D", "#DCFCE7"),
-                "progress" => ("Jarayonda",    "#0369A1", "#E0F2FE"),
-                _          => ("Kutilmoqda",   "#B45309", "#FEF3C7"),
-            };
-
-            _allMovements.Add(new MovementRow(
-                doc, typeLabel, typeColor, typeBg,
-                supplier, items, sum, by, date,
-                statusLabel, statusColor, statusBg
-            ));
-        }
 
         MovTotalCount = _allMovements.Count;
         OnPropertyChanged(nameof(MovementsCount));

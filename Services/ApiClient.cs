@@ -27,6 +27,14 @@ public class ApiClient
         PropertyNameCaseInsensitive = true
     };
 
+    // Bug M5: list pulls are bounded at MaxPullPages * 200 records. If the backend
+    // reports more pages than that, the catalog/customer list was truncated — set
+    // this flag so the caller (SyncService) can surface an Uzbek warning. Reset per
+    // sync run via ResetPullTruncated so the warning never sticks.
+    private const int MaxPullPages = 100; // 100 * 200 = 20,000 records
+    public bool LastPullTruncated { get; private set; }
+    public void ResetPullTruncated() => LastPullTruncated = false;
+
     public ApiClient(HttpClient http, SettingsRepository settings)
     {
         _http = http;
@@ -110,7 +118,7 @@ public class ApiClient
     {
         var all = new List<ProductDto>();
         int page = 0;
-        int totalPages;
+        int totalPages = 0;
 
         do
         {
@@ -122,7 +130,10 @@ public class ApiClient
             totalPages = result.TotalPages;
             page++;
         }
-        while (page < totalPages && page < 10);
+        while (page < totalPages && page < MaxPullPages);
+
+        // Bug M5: the backend has more pages than we are willing to pull.
+        if (totalPages > MaxPullPages) LastPullTruncated = true;
 
         return all;
     }
@@ -141,7 +152,7 @@ public class ApiClient
     {
         var all = new List<CustomerDto>();
         int page = 0;
-        int totalPages;
+        int totalPages = 0;
 
         do
         {
@@ -153,7 +164,10 @@ public class ApiClient
             totalPages = result.TotalPages;
             page++;
         }
-        while (page < totalPages && page < 10);
+        while (page < totalPages && page < MaxPullPages);
+
+        // Bug M5: the backend has more pages than we are willing to pull.
+        if (totalPages > MaxPullPages) LastPullTruncated = true;
 
         return all;
     }
@@ -517,7 +531,10 @@ public class ApiClient
         if (response.IsSuccessStatusCode) return;
 
         string body = "";
-        try { body = await response.Content.ReadAsStringAsync(); } catch { }
+        // Bug L5: don't swallow the read failure silently — note it so the produced
+        // message isn't completely blind about why the body is missing.
+        try { body = await response.Content.ReadAsStringAsync(); }
+        catch (Exception ex) { body = $"(javob o'qilmadi: {ex.Message})"; }
 
         var message = ParseErrorMessage(body, response.StatusCode);
         throw new HttpRequestException(message, null, response.StatusCode);
@@ -525,6 +542,11 @@ public class ApiClient
 
     private static string ParseErrorMessage(string body, HttpStatusCode status)
     {
+        // Bug L5: if we can't extract a structured message, fall back to a generic
+        // status message but ATTACH a snippet of the raw body so the failure isn't
+        // diagnostically blind. snippet stays null when the body is empty/JSON-parsed.
+        string? snippet = null;
+
         if (!string.IsNullOrWhiteSpace(body))
         {
             try
@@ -539,10 +561,15 @@ public class ApiClient
                         return val;
                 }
             }
-            catch { }
+            catch
+            {
+                // Not JSON (or malformed) — keep a trimmed snippet for diagnostics.
+                var trimmed = body.Trim();
+                snippet = trimmed.Length > 200 ? trimmed[..200] + "…" : trimmed;
+            }
         }
 
-        return status switch
+        var generic = status switch
         {
             HttpStatusCode.Unauthorized        => "Sessiya muddati tugagan, qayta kiring",
             HttpStatusCode.Forbidden           => "Bu amalni bajarish uchun ruxsat yo'q",
@@ -555,5 +582,7 @@ public class ApiClient
             HttpStatusCode.RequestTimeout      => "Server javob bermadi (timeout)",
             _ => $"So'rov xatosi ({(int)status})"
         };
+
+        return snippet is null ? generic : $"{generic}: {snippet}";
     }
 }

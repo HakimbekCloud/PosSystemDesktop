@@ -105,14 +105,17 @@ public class SyncService
         {
             LastError   = "";
             LastErrors  = [];
+            // Bug M5: reset the truncation flag each run so a stale warning from a
+            // previous oversized pull never sticks.
+            _api.ResetPullTruncated();
             SetStatus(SyncStatus.Syncing);
 
             var errors = new List<string>();
 
-            try { await SyncReferenceDataAsync(); }
+            try { await SyncReferenceDataAsync(); ReportReachable(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            { errors.Add("Sessiya muddati tugagan"); }
-            catch (Exception ex) { errors.Add($"Ma'lumotnoma: {ex.Message}"); }
+            { ReportApiOutcome(ex); errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { ReportApiOutcome(ex); errors.Add($"Ma'lumotnoma: {ex.Message}"); }
 
             // Sales first so the backend stock is already decremented when we fetch products
             try { await SyncPendingSalesAsync(force, errors); }
@@ -120,18 +123,22 @@ public class SyncService
             // session-expiry message instead of a raw "Zakazlar: ..." line. Per-sale
             // 401s are still caught inside the method and recorded as transient.
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            { errors.Add("Sessiya muddati tugagan"); }
-            catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
+            { ReportApiOutcome(ex); errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { ReportApiOutcome(ex); errors.Add($"Zakazlar: {ex.Message}"); }
 
-            try { await SyncProductsAsync(); }
+            try { await SyncProductsAsync(); ReportReachable(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            { errors.Add("Sessiya muddati tugagan"); }
-            catch (Exception ex) { errors.Add($"Mahsulotlar: {ex.Message}"); }
+            { ReportApiOutcome(ex); errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { ReportApiOutcome(ex); errors.Add($"Mahsulotlar: {ex.Message}"); }
 
-            try { await SyncCustomersAsync(); }
+            try { await SyncCustomersAsync(); ReportReachable(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            { errors.Add("Sessiya muddati tugagan"); }
-            catch (Exception ex) { errors.Add($"Mijozlar: {ex.Message}"); }
+            { ReportApiOutcome(ex); errors.Add("Sessiya muddati tugagan"); }
+            catch (Exception ex) { ReportApiOutcome(ex); errors.Add($"Mijozlar: {ex.Message}"); }
+
+            // Bug M5: a catalog larger than the page bound was truncated — surface it.
+            if (_api.LastPullTruncated)
+                errors.Add("Katalog juda katta: faqat birinchi 20000 ta yozuv yuklandi");
 
             try
             {
@@ -408,6 +415,23 @@ public class SyncService
     {
         var shortId = localId.Length >= 8 ? localId[..8] : localId;
         return $"#{shortId}: {message}";
+    }
+
+    // Bug M2: report a successful API round-trip to the connectivity service.
+    private void ReportReachable() => _connectivity.ReportApiReachable(true);
+
+    // Bug M2: classify a section failure for the truthful connectivity signal.
+    // Only a PURE network-level failure means the API is unreachable:
+    //   - HttpRequestException with NO StatusCode (DNS/socket/TLS failure)
+    //   - TaskCanceledException / OperationCanceledException (request timeout)
+    // Anything that carries an HTTP status code (401, 4xx, 5xx) proves we reached
+    // the server, so it counts as reachable.
+    private void ReportApiOutcome(Exception ex)
+    {
+        bool unreachable =
+            (ex is HttpRequestException http && http.StatusCode is null) ||
+            ex is TaskCanceledException or OperationCanceledException;
+        _connectivity.ReportApiReachable(!unreachable);
     }
 
     private void SetStatus(SyncStatus status)
