@@ -1,0 +1,327 @@
+<Window x:Class="PosSystem.Views.Pos.ReturnOrderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Qaytarish / Refund" Width="740" Height="600"
+        MinWidth="580" MinHeight="460"
+        Background="#F0F4F8" WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══ HEADER ═══ -->
+        <Border Grid.Row="0" Background="#B71C1C">
+            <DockPanel Margin="16,0" LastChildFill="False">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="↩" FontSize="22" Margin="0,0,10,0"
+                               VerticalAlignment="Center" Foreground="White"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Qaytarish / Refund" Foreground="White"
+                                   FontSize="16" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding OrderLabel}" Foreground="#FFCDD2"
+                                   FontSize="12"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding OrderDateText}" Foreground="#FFCDD2"
+                               FontSize="12" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="{Binding OrderTotalText}" Foreground="White"
+                               FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ═══ CONFIG STRIP ═══ -->
+        <Border Grid.Row="1" Background="White" Padding="16,10"
+                BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Warehouse picker -->
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Ombor *" FontSize="11" Foreground="#78909C" Margin="0,0,0,4"/>
+                    <ComboBox ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding SelectedWarehouse, Mode=TwoWay}"
+                              DisplayMemberPath="Name"
+                              FontSize="13" Height="32"/>
+                </StackPanel>
+
+                <!-- Cashbox picker -->
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Kassa *" FontSize="11" Foreground="#78909C" Margin="0,0,0,4"/>
+                    <ComboBox ItemsSource="{Binding Cashboxes}"
+                              SelectedItem="{Binding SelectedCashbox, Mode=TwoWay}"
+                              DisplayMemberPath="Name"
+                              FontSize="13" Height="32"/>
+                </StackPanel>
+
+                <!-- Reason -->
+                <StackPanel Grid.Column="4">
+                    <TextBlock Text="Sabab (ixtiyoriy)" FontSize="11" Foreground="#78909C" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}"
+                             FontSize="13" Height="32" Padding="6,4"
+                             Style="{StaticResource FlatTextBoxStyle}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═══ CONTENT ═══ -->
+        <Grid Grid.Row="2">
+
+            <!-- Loading overlay (shown while data is being fetched) -->
+            <Border Background="#F0F4F8"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Panel.ZIndex="10">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="⏳" FontSize="36" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Yuklanmoqda…" FontSize="15" Foreground="#78909C"
+                               HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- When no item details are available -->
+            <StackPanel Visibility="{Binding NoItems, Converter={StaticResource BoolToVisibilityConverter}}"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="⚠" FontSize="36" HorizontalAlignment="Center" Foreground="#F57F17"/>
+                <TextBlock Text="Mahsulotlar serverdan yuklanmadi"
+                           FontSize="15" Foreground="#78909C"
+                           HorizontalAlignment="Center" Margin="0,10,0,4"/>
+                <TextBlock Text="Zakaz ro'yxatida mahsulot tafsilotlari mavjud emas."
+                           FontSize="12" Foreground="#BDBDBD"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Items DataGrid -->
+            <DataGrid Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibilityConverter}}"
+                      ItemsSource="{Binding Lines}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserReorderColumns="False"
+                      CanUserSortColumns="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#E8ECF0"
+                      Background="White"
+                      RowBackground="White"
+                      AlternatingRowBackground="#FAFBFC"
+                      BorderThickness="0"
+                      Margin="0"
+                      RowHeight="40"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow">
+
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#F5F7FA"/>
+                        <Setter Property="Foreground" Value="#607D8B"/>
+                        <Setter Property="FontSize" Value="11"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Padding" Value="10,6"/>
+                        <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="Padding" Value="10,0"/>
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
+                </DataGrid.CellStyle>
+
+                <DataGrid.Columns>
+                    <!-- Product name -->
+                    <DataGridTemplateColumn Header="Mahsulot" Width="*" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ProductName}" FontSize="13"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" Margin="10,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Sold qty -->
+                    <DataGridTemplateColumn Header="Sotilgan" Width="80" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SoldQty, StringFormat='{}{0:N3}'}"
+                                           FontSize="12" Foreground="#546E7A"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Max returnable -->
+                    <DataGridTemplateColumn Header="Qaytarish max" Width="90" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding MaxQty, StringFormat='{}{0:N3}'}"
+                                           FontSize="12" Foreground="#2E7D32"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Return qty — editable -->
+                    <DataGridTemplateColumn Header="Qaytarish miqdori" Width="110">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ReturnQty, StringFormat='{}{0:N3}'}"
+                                           FontSize="13" FontWeight="SemiBold"
+                                           Foreground="#B71C1C"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding ReturnQty, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="13" BorderThickness="0"
+                                         Background="White" Padding="4,2"
+                                         VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Unit price -->
+                    <DataGridTemplateColumn Header="Narx" Width="90" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding UnitPrice, StringFormat='{}{0:N0}'}"
+                                           FontSize="12" Foreground="#546E7A"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Line total -->
+                    <DataGridTemplateColumn Header="Jami" Width="100" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding LineTotal, StringFormat='{}{0:N0}'}"
+                                           FontSize="13" FontWeight="SemiBold"
+                                           Foreground="#0D47A1"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- ═══ FOOTER ═══ -->
+        <Border Grid.Row="3" Background="White" Padding="16,12"
+                BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: total + error -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <!-- Error message -->
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Foreground="#C62828" FontSize="13"
+                               TextWrapping="Wrap" MaxWidth="400"
+                               Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"
+                               Margin="0,0,0,6"/>
+
+                    <!-- Total -->
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="Jami qaytarish:" FontSize="13" Foreground="#546E7A"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding TotalReturnAmount, StringFormat='{}{0:N0} so\'m'}"
+                                   FontSize="18" FontWeight="Bold" Foreground="#B71C1C"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Right: buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <!-- Cancel -->
+                    <Button x:Name="CancelBtn" Content="Bekor qilish"
+                            Command="{Binding CancelCommand}"
+                            Padding="16,8" Margin="0,0,10,0" FontSize="13" Cursor="Hand"
+                            Foreground="#546E7A" BorderThickness="1" BorderBrush="#CFD8DC">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="White"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F5F5F5"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Submit -->
+                    <Button Content="Qaytarishni tasdiqlash"
+                            Command="{Binding SubmitReturnCommand}"
+                            Padding="16,8" FontSize="13" Cursor="Hand"
+                            Foreground="White" BorderThickness="0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#C62828"/>
+                                <Setter Property="IsEnabled" Value="True"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="SubmitBorder"
+                                                    Background="{TemplateBinding Background}"
+                                                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#BDBDBD"/>
+                                                    <Setter TargetName="SubmitBorder" Property="Opacity" Value="0.65"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#B71C1C"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -39,6 +39,12 @@ public partial class ShiftViewModel : ObservableObject
     [ObservableProperty] private string                  _closeCommentInput      = "";
     [ObservableProperty] private PosShiftReportResponse? _currentReport;
 
+    // ── Cash-in / cash-out modal inputs (Phase 11.3) ──────────────────────────
+
+    [ObservableProperty] private string _cashMovementAmountInput = "";
+    [ObservableProperty] private string _cashMovementReasonInput = "";
+    [ObservableProperty] private string _cashMovementSuccessMessage = "";
+
     public bool HasReport => CurrentReport is not null;
 
     partial void OnCurrentReportChanged(PosShiftReportResponse? value) =>
@@ -242,6 +248,113 @@ public partial class ShiftViewModel : ObservableObject
 
         OnPropertyChanged(nameof(CurrentShiftUuid));
         ShiftStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // POST /api/pos/shifts/{uuid}/cash-in. Returns true on success so the
+    // caller (PosViewModel) can dismiss the modal and show a confirmation toast.
+    // Validation mirrors the backend contract: amount > 0, reason @NotBlank.
+    public async Task<bool> RecordCashInAsync()
+    {
+        ShiftErrorMessage      = "";
+        CashMovementSuccessMessage = "";
+
+        if (!IsShiftOpen || string.IsNullOrEmpty(CurrentShiftUuid))
+        {
+            ShiftErrorMessage = "Kirim qayd etish uchun smena ochiq bo'lishi kerak.";
+            return false;
+        }
+
+        if (!decimal.TryParse(CashMovementAmountInput, out var amount) || amount < 0.01m)
+        {
+            ShiftErrorMessage = "Kirim summasi 0.01 dan katta bo'lishi kerak.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(CashMovementReasonInput))
+        {
+            ShiftErrorMessage = "Sabab (reason) maydoni to'ldirilishi shart.";
+            return false;
+        }
+
+        try
+        {
+            IsShiftLoading = true;
+            var req = new ShiftCashMovementRequest
+            {
+                Amount = amount,
+                Reason = CashMovementReasonInput.Trim()
+            };
+            var result = await _api.CashInAsync(CurrentShiftUuid!, req, Guid.NewGuid().ToString());
+            CashMovementSuccessMessage =
+                $"Kirim qayd etildi: {result.Amount:N0} so'm · Balans: {result.CashboxBalanceAfter:N0} so'm";
+            ClearCashMovementInputs();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShiftErrorMessage = $"Kirimni qayd etib bo'lmadi: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsShiftLoading = false;
+        }
+    }
+
+    // POST /api/pos/shifts/{uuid}/cash-out. Amount is positive — the backend
+    // negates it. Validation is the same as cash-in.
+    public async Task<bool> RecordCashOutAsync()
+    {
+        ShiftErrorMessage      = "";
+        CashMovementSuccessMessage = "";
+
+        if (!IsShiftOpen || string.IsNullOrEmpty(CurrentShiftUuid))
+        {
+            ShiftErrorMessage = "Chiqim qayd etish uchun smena ochiq bo'lishi kerak.";
+            return false;
+        }
+
+        if (!decimal.TryParse(CashMovementAmountInput, out var amount) || amount < 0.01m)
+        {
+            ShiftErrorMessage = "Chiqim summasi 0.01 dan katta bo'lishi kerak.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(CashMovementReasonInput))
+        {
+            ShiftErrorMessage = "Sabab (reason) maydoni to'ldirilishi shart.";
+            return false;
+        }
+
+        try
+        {
+            IsShiftLoading = true;
+            var req = new ShiftCashMovementRequest
+            {
+                Amount = amount,
+                Reason = CashMovementReasonInput.Trim()
+            };
+            var result = await _api.CashOutAsync(CurrentShiftUuid!, req, Guid.NewGuid().ToString());
+            CashMovementSuccessMessage =
+                $"Chiqim qayd etildi: {Math.Abs(result.Amount):N0} so'm · Balans: {result.CashboxBalanceAfter:N0} so'm";
+            ClearCashMovementInputs();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShiftErrorMessage = $"Chiqimni qayd etib bo'lmadi: {ex.Message}";
+            return false;
+        }
+        finally
+        {
+            IsShiftLoading = false;
+        }
+    }
+
+    private void ClearCashMovementInputs()
+    {
+        CashMovementAmountInput = "";
+        CashMovementReasonInput = "";
     }
 
     [RelayCommand]

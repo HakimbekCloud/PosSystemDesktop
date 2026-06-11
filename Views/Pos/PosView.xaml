@@ -280,6 +280,96 @@
                         </StackPanel>
                     </Button>
 
+                    <!-- Cash-in button (Phase 11.3) — visible only when shift is OPEN -->
+                    <Button Command="{Binding ToggleCashInCommand}"
+                            Margin="0,0,6,0" Cursor="Hand"
+                            FocusVisualStyle="{x:Null}"
+                            ToolTip="Naqd kirim (cash-in)"
+                            Visibility="{Binding ShiftVm.IsShiftOpen,
+                                         Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border CornerRadius="18" Padding="11,6"
+                                        Background="#1565C0" BorderBrush="#1565C0" BorderThickness="1">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#0D47A1"/>
+                                        <Setter Property="BorderBrush" Value="#0D47A1"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x2B06;" FontFamily="Segoe UI Emoji"
+                                       FontSize="11" Margin="0,0,5,0"
+                                       Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="Kirim" Foreground="White"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Cash-out button (Phase 11.3) — visible only when shift is OPEN -->
+                    <Button Command="{Binding ToggleCashOutCommand}"
+                            Margin="0,0,10,0" Cursor="Hand"
+                            FocusVisualStyle="{x:Null}"
+                            ToolTip="Naqd chiqim (cash-out)"
+                            Visibility="{Binding ShiftVm.IsShiftOpen,
+                                         Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border CornerRadius="18" Padding="11,6"
+                                        Background="#6A1B9A" BorderBrush="#6A1B9A" BorderThickness="1">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#4A148C"/>
+                                        <Setter Property="BorderBrush" Value="#4A148C"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x2B07;" FontFamily="Segoe UI Emoji"
+                                       FontSize="11" Margin="0,0,5,0"
+                                       Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="Chiqim" Foreground="White"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Z-Report button — visible whenever a shift UUID is available (open or just closed) -->
+                    <Button Command="{Binding OpenShiftReportCommand}"
+                            Margin="0,0,10,0" Cursor="Hand"
+                            FocusVisualStyle="{x:Null}"
+                            ToolTip="Smena Z-hisoboti">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border CornerRadius="18" Padding="11,6"
+                                        Background="#37474F" BorderBrush="#546E7A" BorderThickness="1">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#263238"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.4"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x1F4CA;" FontFamily="Segoe UI Emoji"
+                                       FontSize="11" Margin="0,0,5,0"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Z-Hisobot" Foreground="White"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
                     <!-- Pending sales badge -->
                     <Border CornerRadius="15" Padding="10,5" Margin="0,0,10,0"
                             Background="#FF8F00"
@@ -2351,7 +2441,8 @@
                                     </StackPanel>
                                 </Button>
                                 <!-- Yangi kirim -->
-                                <Button Padding="18,8" Style="{StaticResource PrimaryButtonStyle}" FontSize="13">
+                                <Button Padding="18,8" Style="{StaticResource PrimaryButtonStyle}" FontSize="13"
+                                        Command="{Binding ToggleIncomingCommand}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="+" FontWeight="Bold" FontSize="16" Margin="0,0,6,0"/>
                                         <TextBlock Text="Yangi kirim" VerticalAlignment="Center"/>
@@ -5185,6 +5276,505 @@
                                 Visibility="{Binding ShiftVm.IsShiftLoading,
                                              Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Yuklanmoqda…"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="14" FontWeight="SemiBold" Foreground="#0B5BD3"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Border>
+
+            <!-- ════════════════════════════════════════════════════════
+                 Phase 11.3 — Cash-in modal.
+                 POST /api/pos/shifts/{uuid}/cash-in
+                 ════════════════════════════════════════════════════════ -->
+            <Border x:Name="CashInBackdrop"
+                    Grid.Column="0" Grid.ColumnSpan="4" Panel.ZIndex="102"
+                    Background="#6B0F172A"
+                    Visibility="{Binding IsCashInOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                    MouseDown="OnCashInBackdropClick">
+                <Border Width="440"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Background="White"
+                        BorderBrush="#D8E1EE" BorderThickness="1"
+                        CornerRadius="10"
+                        MouseDown="OnCashInCardClick">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.18" Color="#0F172A"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Header -->
+                        <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="32" Height="32" Background="#DBEAFE" CornerRadius="6"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="&#x2B06;" FontFamily="Segoe UI Emoji"
+                                               FontSize="14" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Foreground="#1565C0"/>
+                                </Border>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Naqd kirim" FontSize="16" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <TextBlock Text="{Binding ShiftVm.CashboxName}" FontSize="12"
+                                               Foreground="#94A3B8" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Body -->
+                        <Border Padding="20,16">
+                            <StackPanel>
+                            <!-- Error message -->
+                            <Border Background="#FFEBEE" CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                                    Visibility="{Binding ShiftVm.ShiftErrorMessage,
+                                                 Converter={StaticResource StringToVisibilityConverter}}">
+                                <TextBlock Text="{Binding ShiftVm.ShiftErrorMessage}"
+                                           Foreground="#C62828" FontSize="13" TextWrapping="Wrap"/>
+                            </Border>
+
+                            <!-- Amount input -->
+                            <TextBlock Text="SUMMA (so'm) *" FontSize="11" FontWeight="Bold"
+                                       Foreground="#94A3B8" Margin="0,0,0,6"/>
+                            <Border BorderBrush="#D8E1EE" BorderThickness="1" CornerRadius="6"
+                                    Background="White" Height="44" Margin="0,0,0,14">
+                                <TextBox Text="{Binding ShiftVm.CashMovementAmountInput, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="14,0" FontSize="15"
+                                         VerticalContentAlignment="Center"
+                                         BorderThickness="0" Background="Transparent"
+                                         helpers:NumericTextBox.IsNumeric="True"/>
+                            </Border>
+
+                            <!-- Reason input -->
+                            <TextBlock Text="SABAB *" FontSize="11" FontWeight="Bold"
+                                       Foreground="#94A3B8" Margin="0,0,0,6"/>
+                            <Border BorderBrush="#D8E1EE" BorderThickness="1" CornerRadius="6"
+                                    Background="White" Height="44" Margin="0,0,0,16">
+                                <TextBox Text="{Binding ShiftVm.CashMovementReasonInput, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="14,0" FontSize="14"
+                                         VerticalContentAlignment="Center"
+                                         BorderThickness="0" Background="Transparent"
+                                         MaxLength="255"/>
+                            </Border>
+
+                            <!-- Action row -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Command="{Binding ToggleCashInCommand}"
+                                        Content="Bekor qilish"
+                                        Height="40"
+                                        Background="White" Foreground="#475569"
+                                        BorderBrush="#D8E1EE" BorderThickness="1"
+                                        FontSize="14" FontWeight="SemiBold"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}"/>
+                                <Button Grid.Column="2"
+                                        Command="{Binding SubmitCashInCommand}"
+                                        IsEnabled="{Binding IsCashMovementBusy, Converter={StaticResource InverseBoolConverter}}"
+                                        Height="40"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        FontSize="14">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x2B06;" FontFamily="Segoe UI Emoji"
+                                                   FontSize="13" Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="Kirimni saqlash" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Busy overlay -->
+                        <Border Background="#80FFFFFF"
+                                Visibility="{Binding ShiftVm.IsShiftLoading,
+                                             Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Saqlanmoqda…"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="14" FontWeight="SemiBold" Foreground="#0B5BD3"
+                                       Margin="0,20"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- ════════════════════════════════════════════════════════
+                 Phase 11.3 — Cash-out modal.
+                 POST /api/pos/shifts/{uuid}/cash-out
+                 ════════════════════════════════════════════════════════ -->
+            <Border x:Name="CashOutBackdrop"
+                    Grid.Column="0" Grid.ColumnSpan="4" Panel.ZIndex="102"
+                    Background="#6B0F172A"
+                    Visibility="{Binding IsCashOutOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                    MouseDown="OnCashOutBackdropClick">
+                <Border Width="440"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Background="White"
+                        BorderBrush="#D8E1EE" BorderThickness="1"
+                        CornerRadius="10"
+                        MouseDown="OnCashOutCardClick">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.18" Color="#0F172A"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <!-- Header -->
+                        <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="20,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="32" Height="32" Background="#EDE7F6" CornerRadius="6"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="&#x2B07;" FontFamily="Segoe UI Emoji"
+                                               FontSize="14" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Foreground="#6A1B9A"/>
+                                </Border>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Naqd chiqim" FontSize="16" FontWeight="Bold" Foreground="#0F172A"/>
+                                    <TextBlock Text="{Binding ShiftVm.CashboxName}" FontSize="12"
+                                               Foreground="#94A3B8" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Body -->
+                        <Border Padding="20,16">
+                            <StackPanel>
+                            <!-- Error message -->
+                            <Border Background="#FFEBEE" CornerRadius="6" Padding="12,8" Margin="0,0,0,12"
+                                    Visibility="{Binding ShiftVm.ShiftErrorMessage,
+                                                 Converter={StaticResource StringToVisibilityConverter}}">
+                                <TextBlock Text="{Binding ShiftVm.ShiftErrorMessage}"
+                                           Foreground="#C62828" FontSize="13" TextWrapping="Wrap"/>
+                            </Border>
+
+                            <!-- Amount input -->
+                            <TextBlock Text="SUMMA (so'm) *" FontSize="11" FontWeight="Bold"
+                                       Foreground="#94A3B8" Margin="0,0,0,6"/>
+                            <Border BorderBrush="#D8E1EE" BorderThickness="1" CornerRadius="6"
+                                    Background="White" Height="44" Margin="0,0,0,14">
+                                <TextBox Text="{Binding ShiftVm.CashMovementAmountInput, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="14,0" FontSize="15"
+                                         VerticalContentAlignment="Center"
+                                         BorderThickness="0" Background="Transparent"
+                                         helpers:NumericTextBox.IsNumeric="True"/>
+                            </Border>
+
+                            <!-- Reason input -->
+                            <TextBlock Text="SABAB *" FontSize="11" FontWeight="Bold"
+                                       Foreground="#94A3B8" Margin="0,0,0,6"/>
+                            <Border BorderBrush="#D8E1EE" BorderThickness="1" CornerRadius="6"
+                                    Background="White" Height="44" Margin="0,0,0,16">
+                                <TextBox Text="{Binding ShiftVm.CashMovementReasonInput, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="14,0" FontSize="14"
+                                         VerticalContentAlignment="Center"
+                                         BorderThickness="0" Background="Transparent"
+                                         MaxLength="255"/>
+                            </Border>
+
+                            <!-- Action row -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Command="{Binding ToggleCashOutCommand}"
+                                        Content="Bekor qilish"
+                                        Height="40"
+                                        Background="White" Foreground="#475569"
+                                        BorderBrush="#D8E1EE" BorderThickness="1"
+                                        FontSize="14" FontWeight="SemiBold"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}"/>
+                                <Button Grid.Column="2"
+                                        Command="{Binding SubmitCashOutCommand}"
+                                        IsEnabled="{Binding IsCashMovementBusy, Converter={StaticResource InverseBoolConverter}}"
+                                        Height="40"
+                                        Background="#6A1B9A" Foreground="White"
+                                        BorderThickness="0"
+                                        FontSize="14" FontWeight="SemiBold"
+                                        Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x2B07;" FontFamily="Segoe UI Emoji"
+                                                   FontSize="13" Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="Chiqimni saqlash" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Busy overlay -->
+                        <Border Background="#80FFFFFF"
+                                Visibility="{Binding ShiftVm.IsShiftLoading,
+                                             Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Saqlanmoqda…"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="14" FontWeight="SemiBold" Foreground="#0B5BD3"
+                                       Margin="0,20"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <!-- ════════════════════════════════════════════════════════
+                 Phase I.1 — Yangi kirim (Inventory IN adjustment) modal.
+                 ZIndex 102 (above shift + add-product). Product picker +
+                 warehouse + quantity + reason; submits to backend
+                 /api/inventory/adjustments and refreshes local stock.
+                 ════════════════════════════════════════════════════════ -->
+            <Border x:Name="IncomingBackdrop"
+                    Grid.Column="0" Grid.ColumnSpan="4" Panel.ZIndex="102"
+                    Background="#6B0F172A"
+                    Visibility="{Binding IsIncomingOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                    MouseDown="OnIncomingBackdropClick">
+                <Border Width="560" MaxHeight="680"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Background="White"
+                        BorderBrush="#D8E1EE" BorderThickness="1"
+                        CornerRadius="10"
+                        MouseDown="OnIncomingCardClick">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.18" Color="#0F172A"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Border Grid.Row="0"
+                                BorderBrush="#E2E8F0" BorderThickness="0,0,0,1"
+                                Padding="20,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="32" Height="32"
+                                        Background="#DCFCE7" CornerRadius="6"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="&#x1F4E6;"
+                                               FontFamily="Segoe UI Emoji"
+                                               FontSize="14"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Yangi kirim"
+                                               FontSize="16" FontWeight="Bold"
+                                               Foreground="#0F172A"/>
+                                    <TextBlock Text="Omborga mahsulot qo'shish (IN)"
+                                               FontSize="12" Foreground="#94A3B8"
+                                               Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Body -->
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Padding="20,16">
+                            <StackPanel>
+                                <!-- Product picker -->
+                                <TextBlock Text="MAHSULOT *"
+                                           FontSize="11" FontWeight="Bold"
+                                           Foreground="#94A3B8" Margin="0,0,0,6"/>
+
+                                <!-- Selected display (clickable to clear) -->
+                                <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                        CornerRadius="6" Background="#F8FAFC"
+                                        Padding="14,10" Margin="0,0,0,6"
+                                        Visibility="{Binding IncomingVm.SelectedProduct,
+                                                     Converter={StaticResource StringToVisibilityConverter},
+                                                     FallbackValue=Collapsed}">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right"
+                                                Command="{Binding IncomingVm.ClearProductCommand}"
+                                                Content="&#x2715;" Width="22" Height="22"
+                                                FontSize="11" Foreground="#94A3B8"
+                                                Background="Transparent" BorderThickness="0"
+                                                Cursor="Hand" FocusVisualStyle="{x:Null}"/>
+                                        <TextBlock Text="{Binding IncomingVm.SelectedProductDisplay}"
+                                                   FontSize="14" Foreground="#0F172A"
+                                                   VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </Border>
+
+                                <!-- Search input -->
+                                <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                        CornerRadius="6" Background="White" Height="42">
+                                    <TextBox Text="{Binding IncomingVm.ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="14,0" FontSize="14"
+                                             VerticalContentAlignment="Center"
+                                             BorderThickness="0" Background="Transparent"
+                                             Tag="Mahsulot nomi yoki barkod..."/>
+                                </Border>
+                                <!-- Suggestions -->
+                                <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                        CornerRadius="6" Background="White"
+                                        Margin="0,4,0,16" MaxHeight="180"
+                                        Visibility="{Binding IncomingVm.IsProductPopupOpen,
+                                                     Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ListBox ItemsSource="{Binding IncomingVm.ProductSuggestions}"
+                                             BorderThickness="0" Background="Transparent">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="10,6" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftClick"
+                                                                      Command="{Binding DataContext.IncomingVm.SelectProductCommand,
+                                                                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="qoldiq: " FontSize="11" Foreground="#94A3B8"/>
+                                                            <TextBlock Text="{Binding Stock, StringFormat=N3}" FontSize="11" Foreground="#475569"/>
+                                                            <TextBlock Text=" " FontSize="11"/>
+                                                            <TextBlock Text="{Binding Unit}" FontSize="11" Foreground="#94A3B8"/>
+                                                            <TextBlock Text="  ·  " FontSize="11" Foreground="#94A3B8"/>
+                                                            <TextBlock Text="{Binding Barcode}" FontSize="11" Foreground="#94A3B8"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Border>
+
+                                <!-- Warehouse + quantity (2 cols) -->
+                                <Grid Margin="0,0,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="14"/>
+                                        <ColumnDefinition Width="160"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="OMBOR *" FontSize="11" FontWeight="Bold"
+                                                   Foreground="#94A3B8" Margin="0,0,0,6"/>
+                                        <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                                CornerRadius="6" Background="White" Height="42">
+                                            <ComboBox ItemsSource="{Binding IncomingVm.Warehouses}"
+                                                      SelectedItem="{Binding IncomingVm.SelectedWarehouse}"
+                                                      DisplayMemberPath="Name"
+                                                      Padding="10,0" FontSize="14"
+                                                      VerticalContentAlignment="Center"
+                                                      BorderThickness="0" Background="Transparent"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="MIQDOR *" FontSize="11" FontWeight="Bold"
+                                                   Foreground="#94A3B8" Margin="0,0,0,6"/>
+                                        <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                                CornerRadius="6" Background="White" Height="42">
+                                            <TextBox Text="{Binding IncomingVm.QuantityInput, UpdateSourceTrigger=PropertyChanged}"
+                                                     Padding="14,0" FontSize="14"
+                                                     VerticalContentAlignment="Center"
+                                                     BorderThickness="0" Background="Transparent"
+                                                     helpers:NumericTextBox.IsNumeric="True"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Reason -->
+                                <TextBlock Text="SABAB *"
+                                           FontSize="11" FontWeight="Bold"
+                                           Foreground="#94A3B8" Margin="0,0,0,6"/>
+                                <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                        CornerRadius="6" Background="White" Height="42" Margin="0,0,0,16">
+                                    <TextBox Text="{Binding IncomingVm.ReasonInput, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="14,0" FontSize="14"
+                                             VerticalContentAlignment="Center"
+                                             BorderThickness="0" Background="Transparent"
+                                             MaxLength="255"/>
+                                </Border>
+
+                                <!-- Comment -->
+                                <TextBlock Text="IZOH (ixtiyoriy)"
+                                           FontSize="11" FontWeight="Bold"
+                                           Foreground="#94A3B8" Margin="0,0,0,6"/>
+                                <Border BorderBrush="#D8E1EE" BorderThickness="1"
+                                        CornerRadius="6" Background="White" Height="42" Margin="0,0,0,12">
+                                    <TextBox Text="{Binding IncomingVm.CommentInput, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="14,0" FontSize="14"
+                                             VerticalContentAlignment="Center"
+                                             BorderThickness="0" Background="Transparent"
+                                             MaxLength="255"/>
+                                </Border>
+
+                                <!-- Success banner -->
+                                <Border Background="#DCFCE7"
+                                        BorderBrush="#86EFAC" BorderThickness="1"
+                                        CornerRadius="6" Padding="10,8" Margin="0,0,0,8"
+                                        Visibility="{Binding IncomingVm.SuccessMessage,
+                                                     Converter={StaticResource StringToVisibilityConverter}}">
+                                    <TextBlock Text="{Binding IncomingVm.SuccessMessage}"
+                                               Foreground="#166534" FontSize="12"
+                                               TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- Error banner -->
+                                <Border Background="#FFF1F2"
+                                        BorderBrush="#FECDD3" BorderThickness="1"
+                                        CornerRadius="6" Padding="10,8"
+                                        Visibility="{Binding IncomingVm.ErrorMessage,
+                                                     Converter={StaticResource StringToVisibilityConverter}}">
+                                    <TextBlock Text="{Binding IncomingVm.ErrorMessage}"
+                                               Foreground="#B91C1C" FontSize="12"
+                                               TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- Operator hint: post-success retry pointer -->
+                                <TextBlock Text="Stock qo'shildi. Eski sotuvlarni yuborish uchun sinxronlash xatolari panelidan 'Hammasini qayta urinish' ni bosing."
+                                           FontSize="11" Foreground="#64748B"
+                                           TextWrapping="Wrap" Margin="0,8,0,0"
+                                           Visibility="{Binding IncomingVm.SuccessMessage,
+                                                        Converter={StaticResource StringToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Footer -->
+                        <Border Grid.Row="2"
+                                Background="#FAFBFC"
+                                BorderBrush="#E2E8F0" BorderThickness="0,1,0,0"
+                                Padding="20,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="1"
+                                        Command="{Binding ToggleIncomingCommand}"
+                                        Content="Bekor qilish"
+                                        Height="40" Padding="18,0"
+                                        Background="White" Foreground="#475569"
+                                        BorderBrush="#D8E1EE" BorderThickness="1"
+                                        FontSize="14" FontWeight="SemiBold"
+                                        Cursor="Hand"
+                                        Margin="0,0,8,0"
+                                        FocusVisualStyle="{x:Null}"/>
+                                <Button Grid.Column="2"
+                                        Command="{Binding SubmitIncomingCommand}"
+                                        Height="40" Padding="22,0"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        FontSize="14">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x1F4E5;" FontFamily="Segoe UI Emoji"
+                                                   FontSize="13" Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="Kirim qilish" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Busy overlay -->
+                        <Border Grid.Row="0" Grid.RowSpan="3"
+                                Background="#80FFFFFF"
+                                Visibility="{Binding IncomingVm.IsBusy,
+                                             Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Yuborilmoqda…"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        FontSize="14" FontWeight="SemiBold" Foreground="#0B5BD3"/>
                         </Border>

@@ -27,16 +27,18 @@ public partial class PosViewModel : ObservableObject
     private readonly SettingsRepository _settings;
     private readonly GlobalSettingsRepository _globalSettings;
     private readonly TenantScopeService _tenantScope;
+    private readonly ApiClient _api;
     private List<Product> _allProducts = [];
     private System.Timers.Timer? _clockTimer;
     private const string ReceiptPrinterSettingKey = "receipt_printer";
     private const string LabelPrinterSettingKey = "label_printer";
 
-    public GameViewModel       Game          { get; }
-    public AddProductViewModel AddProductVm  { get; }
-    public ProductsViewModel   ProductsVm    { get; }
-    public OmborViewModel      OmborVm       { get; }
-    public ShiftViewModel      ShiftVm       { get; }
+    public GameViewModel                Game          { get; }
+    public AddProductViewModel          AddProductVm  { get; }
+    public ProductsViewModel            ProductsVm    { get; }
+    public OmborViewModel               OmborVm       { get; }
+    public ShiftViewModel               ShiftVm       { get; }
+    public InventoryAdjustmentViewModel IncomingVm    { get; }
 
     [ObservableProperty]
     private bool _isGameOpen;
@@ -58,6 +60,19 @@ public partial class PosViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isCloseShiftOpen;
+
+    // Phase 11.3 — Cash-in / cash-out modals. Both share the same inputs on
+    // ShiftVm; only one is open at a time. `_isCashInOpen` distinguishes
+    // which direction the "Tasdiqlash" button will call.
+    [ObservableProperty]
+    private bool _isCashInOpen;
+
+    [ObservableProperty]
+    private bool _isCashOutOpen;
+
+    // Phase I.1 — Ombor "Yangi kirim" modal.
+    [ObservableProperty]
+    private bool _isIncomingOpen;
 
     [RelayCommand]
     private void ToggleGame() => IsGameOpen = !IsGameOpen;
@@ -117,11 +132,13 @@ public partial class PosViewModel : ObservableObject
         SettingsRepository settings,
         GlobalSettingsRepository globalSettings,
         TenantScopeService tenantScope,
+        ApiClient api,
         GameViewModel game,
         AddProductViewModel addProduct,
         ProductsViewModel productsVm,
         OmborViewModel omborVm,
-        ShiftViewModel shiftVm)
+        ShiftViewModel shiftVm,
+        InventoryAdjustmentViewModel incomingVm)
     {
         _products = products;
         _customers = customers;
@@ -132,19 +149,25 @@ public partial class PosViewModel : ObservableObject
         _settings = settings;
         _globalSettings = globalSettings;
         _tenantScope = tenantScope;
+        _api         = api;
         Game         = game;
         AddProductVm = addProduct;
         ProductsVm   = productsVm;
         OmborVm      = omborVm;
         ShiftVm      = shiftVm;
+        IncomingVm   = incomingVm;
 
         addProduct.ProductSaved += OnProductSaved;
         CartItems.CollectionChanged += OnCartCollectionChanged;
         _sync.StatusChanged += OnSyncStatusChanged;
         // Phase G.1: when shift state changes we re-evaluate CanCheckout so
         // the SOTISH button flips enabled/disabled without waiting for the
-        // next totals refresh.
-        ShiftVm.ShiftStateChanged += (_, _) => CheckoutCommand.NotifyCanExecuteChanged();
+        // next totals refresh. Also refresh the Z-Report button enabled state.
+        ShiftVm.ShiftStateChanged += (_, _) =>
+        {
+            CheckoutCommand.NotifyCanExecuteChanged();
+            OpenShiftReportCommand.NotifyCanExecuteChanged();
+        };
 
         SyncErrors.CollectionChanged  += (_, _) => RecomputeIssuesCount();
         FailedSales.CollectionChanged += (_, _) => RecomputeIssuesCount();
@@ -879,6 +902,150 @@ public partial class PosViewModel : ObservableObject
     {
         var ok = await ShiftVm.CloseShiftAsync();
         if (ok) IsCloseShiftOpen = false;
+    }
+
+    // ── Cash-in / cash-out modal commands (Phase 11.3) ────────────────────────
+
+    [RelayCommand]
+    private void ToggleCashIn()
+    {
+        if (IsCashInOpen) { IsCashInOpen = false; return; }
+        IsCashOutOpen = false;          // close the other direction if open
+        ShiftVm.CashMovementAmountInput    = "";
+        ShiftVm.CashMovementReasonInput    = "";
+        ShiftVm.ShiftErrorMessage          = "";
+        ShiftVm.CashMovementSuccessMessage = "";
+        IsCashInOpen = true;
+    }
+
+    [RelayCommand]
+    private void ToggleCashOut()
+    {
+        if (IsCashOutOpen) { IsCashOutOpen = false; return; }
+        IsCashInOpen = false;           // close the other direction if open
+        ShiftVm.CashMovementAmountInput    = "";
+        ShiftVm.CashMovementReasonInput    = "";
+        ShiftVm.ShiftErrorMessage          = "";
+        ShiftVm.CashMovementSuccessMessage = "";
+        IsCashOutOpen = true;
+    }
+
+    // True while a cash-in or cash-out HTTP request is in flight.
+    // Guards both submit commands so a double-click cannot fire a second request
+    // before the first response returns.
+    [ObservableProperty]
+    private bool _isCashMovementBusy;
+
+    partial void OnIsCashMovementBusyChanged(bool value)
+    {
+        SubmitCashInCommand.NotifyCanExecuteChanged();
+        SubmitCashOutCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanSubmitCashMovement() => !IsCashMovementBusy;
+
+    [RelayCommand(CanExecute = nameof(CanSubmitCashMovement))]
+    private async Task SubmitCashIn()
+    {
+        IsCashMovementBusy = true;
+        try
+        {
+            var ok = await ShiftVm.RecordCashInAsync();
+            if (ok) IsCashInOpen = false;
+        }
+        finally
+        {
+            IsCashMovementBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSubmitCashMovement))]
+    private async Task SubmitCashOut()
+    {
+        IsCashMovementBusy = true;
+        try
+        {
+            var ok = await ShiftVm.RecordCashOutAsync();
+            if (ok) IsCashOutOpen = false;
+        }
+        finally
+        {
+            IsCashMovementBusy = false;
+        }
+    }
+
+    // ── Z-Report window command ───────────────────────────────────────────────
+
+    // Opens ShiftReportWindow for the current shift (or any non-blank UUID).
+    // Works whether the shift is still OPEN or already CLOSED — the backend
+    // report endpoint accepts both. Disabled when there is no shift UUID yet.
+    [RelayCommand(CanExecute = nameof(CanOpenShiftReport))]
+    private async Task OpenShiftReportAsync()
+    {
+        var uuid = ShiftVm.CurrentShiftUuid;
+        if (string.IsNullOrWhiteSpace(uuid)) return;
+
+        try
+        {
+            // Load data BEFORE creating the window. This keeps ALL fallible
+            // operations inside the try block — including InitializeComponent()
+            // (triggered by the constructor) and ShowDialog(). The previous
+            // pattern (Show + await) left the constructor and Show() outside the
+            // catch, so any exception from XAML parsing or window creation would
+            // escape as an unhandled fault and crash the process.
+            var vm = new ShiftReportViewModel(_api);
+            await vm.LoadAsync(uuid);
+
+            var window = new Views.Pos.ShiftReportWindow(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            // ShowDialog() is modal — the window runs its own message loop on
+            // the UI thread. This is safe because we are already on the UI
+            // thread (RelayCommand continuation) and there is no outer await
+            // after this point that could deadlock.
+            window.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Z-Hisobot ochishda xato:\n{ex.Message}",
+                "Z-Hisobot xatosi",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private bool CanOpenShiftReport() => !string.IsNullOrWhiteSpace(ShiftVm.CurrentShiftUuid);
+
+    // ── Inventory kirim modal commands (Phase I.1) ────────────────────────────
+
+    [RelayCommand]
+    private async Task ToggleIncoming()
+    {
+        if (IsIncomingOpen) { IsIncomingOpen = false; return; }
+        IncomingVm.Reset();
+        IsIncomingOpen = true;
+        await IncomingVm.LoadAsync();
+    }
+
+    [RelayCommand]
+    private async Task SubmitIncoming()
+    {
+        var ok = await IncomingVm.SubmitAsync();
+        if (!ok) return;
+
+        // Refresh the Ombor view's stock list from the now-updated local catalog
+        // so the freshly adjusted product shows the new quantity. Keep the
+        // modal open briefly so the operator sees the success banner, then
+        // dismiss after a short delay.
+        OmborVm.Load();
+        // Also refresh the POS catalog overlay (FilteredProducts) so a sale
+        // attempted immediately after Kirim sees the new stock.
+        LoadLocalData();
+
+        await Task.Delay(1200);
+        IsIncomingOpen = false;
     }
 
     // Maps the row breakdown into the Sale.PaymentType column. Backend

@@ -33,19 +33,49 @@ public partial class PosView : UserControl
         PreviewKeyDown   += OnPaymentHotkeys;
         PreviewKeyDown   += OnAddProductHotkeys;
         PreviewKeyDown   += OnShiftHotkeys;
+        PreviewKeyDown   += OnIncomingHotkeys;
     }
+
+    // ── Yangi kirim modal: keyboard + backdrop handlers (Phase I.1) ───────────
+    private void OnIncomingHotkeys(object sender, KeyEventArgs e)
+    {
+        if (!_vm.IsIncomingOpen) return;
+        if (e.Key == Key.Escape)
+        {
+            _vm.ToggleIncomingCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+        if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (_vm.SubmitIncomingCommand.CanExecute(null))
+                _vm.SubmitIncomingCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnIncomingBackdropClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm.IsIncomingOpen)
+            _vm.ToggleIncomingCommand.Execute(null);
+    }
+
+    private void OnIncomingCardClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
     // ── Shift modals: keyboard + backdrop handlers (Phase G.1) ─────────────────
     //  Esc        — close whichever shift modal is active.
     //  Ctrl+Enter — fire the submit command for the active modal.
     private void OnShiftHotkeys(object sender, KeyEventArgs e)
     {
-        if (!_vm.IsOpenShiftOpen && !_vm.IsCloseShiftOpen) return;
+        if (!_vm.IsOpenShiftOpen && !_vm.IsCloseShiftOpen
+            && !_vm.IsCashInOpen && !_vm.IsCashOutOpen) return;
 
         if (e.Key == Key.Escape)
         {
             if (_vm.IsOpenShiftOpen)  _vm.ToggleOpenShiftCommand.Execute(null);
             if (_vm.IsCloseShiftOpen) _vm.ToggleCloseShiftCommand.Execute(null);
+            if (_vm.IsCashInOpen)     _vm.ToggleCashInCommand.Execute(null);
+            if (_vm.IsCashOutOpen)    _vm.ToggleCashOutCommand.Execute(null);
             e.Handled = true;
             return;
         }
@@ -56,6 +86,10 @@ public partial class PosView : UserControl
                 _vm.SubmitOpenShiftCommand.Execute(null);
             else if (_vm.IsCloseShiftOpen && _vm.SubmitCloseShiftCommand.CanExecute(null))
                 _vm.SubmitCloseShiftCommand.Execute(null);
+            else if (_vm.IsCashInOpen  && _vm.SubmitCashInCommand.CanExecute(null))
+                _vm.SubmitCashInCommand.Execute(null);
+            else if (_vm.IsCashOutOpen && _vm.SubmitCashOutCommand.CanExecute(null))
+                _vm.SubmitCashOutCommand.Execute(null);
             e.Handled = true;
         }
     }
@@ -75,6 +109,24 @@ public partial class PosView : UserControl
     }
 
     private void OnCloseShiftCardClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
+    // ── Cash-in / cash-out modal backdrop handlers (Phase 11.3) ──────────────
+
+    private void OnCashInBackdropClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm.IsCashInOpen)
+            _vm.ToggleCashInCommand.Execute(null);
+    }
+
+    private void OnCashInCardClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
+    private void OnCashOutBackdropClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm.IsCashOutOpen)
+            _vm.ToggleCashOutCommand.Execute(null);
+    }
+
+    private void OnCashOutCardClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
     // Status pill in the header: routes to the right modal based on current
     // backend-confirmed state. The toggle commands handle the refresh + state
@@ -133,6 +185,8 @@ public partial class PosView : UserControl
     {
         if (_vm.IsAddProductOpen || _vm.IsCustomerPopupOpen) return;
         if (_vm.IsOpenShiftOpen  || _vm.IsCloseShiftOpen)    return;
+        if (_vm.IsCashInOpen     || _vm.IsCashOutOpen)        return;
+        if (_vm.IsIncomingOpen)                              return;
 
         switch (e.Key)
         {
@@ -172,8 +226,11 @@ public partial class PosView : UserControl
     {
         if (_historyWin is null || !_historyWin.IsLoaded)
         {
-            var sales = ((App)Application.Current).GetService<SaleRepository>();
-            _historyWin = new SaleHistoryWindow(sales)
+            var sales     = ((App)Application.Current).GetService<SaleRepository>();
+            var api       = ((App)Application.Current).GetService<PosSystem.Services.ApiClient>();
+            var settings  = ((App)Application.Current).GetService<PosSystem.Data.Repositories.SettingsRepository>();
+            var dbFactory = ((App)Application.Current).GetService<Microsoft.EntityFrameworkCore.IDbContextFactory<PosSystem.Data.AppDbContext>>();
+            _historyWin = new SaleHistoryWindow(sales, api, settings, dbFactory)
             {
                 Owner = Window.GetWindow(this)
             };

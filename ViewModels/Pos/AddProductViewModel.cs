@@ -32,22 +32,14 @@ public partial class AddProductViewModel : ObservableObject
     // new design. They are *additive*: the existing SaveAsync flow keeps working
     // unchanged. Backend integration for min-stock / warehouse / active flag
     // can wire into the CreateProductRequest later without touching the modal.
-    [ObservableProperty] private string _minStockInput     = "";
-    [ObservableProperty] private string _selectedWarehouse = "Asosiy ombor";
-    [ObservableProperty] private bool   _isActive          = true;
+    [ObservableProperty] private string         _minStockInput     = "";
+    [ObservableProperty] private WarehouseDto?  _selectedWarehouse;
+    [ObservableProperty] private bool           _isActive          = true;
 
     public ObservableCollection<MeasurementDto> Measurements  { get; } = [];
     public ObservableCollection<PriceList>      PriceLists    { get; } = [];
     public ObservableCollection<ProductType>    ProductTypes  { get; } = [];
-
-    // Placeholder warehouse list — real list arrives via API once integrated.
-    public ObservableCollection<string> Warehouses { get; } =
-    [
-        "Asosiy ombor",
-        "Chilonzor filiali",
-        "Mirobod filiali",
-        "Tranzit",
-    ];
+    public ObservableCollection<WarehouseDto>   Warehouses    { get; } = [];
 
     // ── Derived: profit + margin shown in the dialog's strip ──────────────────
     // Recomputed via partial-method hooks when Cost or Price input changes.
@@ -126,6 +118,15 @@ public partial class AddProductViewModel : ObservableObject
 
             if (SelectedMeasurement is null || !Measurements.Contains(SelectedMeasurement))
                 SelectedMeasurement = Measurements.FirstOrDefault();
+
+            // Warehouses fetched live — required by backend whenever opening stock > 0.
+            var warehouses = await _api.GetWarehousesAsync();
+            Warehouses.Clear();
+            foreach (var w in warehouses.Where(w => w.Active))
+                Warehouses.Add(w);
+
+            if (SelectedWarehouse is null || !Warehouses.Contains(SelectedWarehouse))
+                SelectedWarehouse = Warehouses.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -146,7 +147,7 @@ public partial class AddProductViewModel : ObservableObject
         SelectedMeasurement = Measurements.FirstOrDefault();
         SelectedPriceList   = PriceLists.FirstOrDefault();
         SelectedProductType = ProductTypes.FirstOrDefault();
-        SelectedWarehouse   = Warehouses.FirstOrDefault() ?? "Asosiy ombor";
+        SelectedWarehouse   = Warehouses.FirstOrDefault();
     }
 
     // ── Partial-method hooks: keep derived margin properties live ─────────────
@@ -191,16 +192,25 @@ public partial class AddProductViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(BarcodeInput))
         { ErrorText = "Barkod kiritilishi shart"; return; }
 
+        // Backend requires at least one price (ProductCreateDTO.isPricePayloadValid).
+        decimal? price = decimal.TryParse(PriceInput, out var p) && p > 0 ? p : null;
+        if (!price.HasValue)
+        { ErrorText = "Sotuv narxi kiritilishi shart"; return; }
+
+        decimal? cost  = decimal.TryParse(CostInput,  out var c) && c > 0 ? c : null;
+        decimal? stock = decimal.TryParse(StockInput, out var s) && s > 0 ? s : null;
+
+        // Backend requires openingWarehouseUuid when stock > 0
+        // (ProductServiceImpl.validateOpeningStockPayload).
+        if (stock.HasValue && SelectedWarehouse is null)
+        { ErrorText = "Boshlang'ich stok kiritilgan — omborni tanlang"; return; }
+
         ErrorText = "";
         IsBusy    = true;
         try
         {
-            decimal? price = decimal.TryParse(PriceInput, out var p) && p > 0 ? p : null;
-            decimal? cost  = decimal.TryParse(CostInput,  out var c) && c > 0 ? c : null;
-            decimal? stock = decimal.TryParse(StockInput, out var s) && s > 0 ? s : null;
-
             List<CreateProductPriceRequest>? prices = null;
-            if (SelectedPriceList is not null && price.HasValue)
+            if (SelectedPriceList is not null)
             {
                 prices =
                 [
@@ -215,15 +225,16 @@ public partial class AddProductViewModel : ObservableObject
 
             var request = new CreateProductRequest
             {
-                Name            = NameInput.Trim(),
-                MeasurementUuid = SelectedMeasurement.Uuid,
-                Type            = SelectedProductType?.Id ?? 0,
-                Price           = prices is null ? price : null,
-                Cost            = cost,
-                Stock           = stock,
-                Barcode         = BarcodeInput.Trim(),
-                IsPos           = true,
-                Prices          = prices
+                Name                 = NameInput.Trim(),
+                MeasurementUuid      = SelectedMeasurement.Uuid,
+                Type                 = SelectedProductType?.Id ?? 0,
+                Price                = prices is null ? price : null,
+                Cost                 = cost,
+                Stock                = stock,
+                OpeningWarehouseUuid = stock.HasValue ? SelectedWarehouse?.Uuid : null,
+                Barcode              = BarcodeInput.Trim(),
+                IsPos                = true,
+                Prices               = prices
             };
 
             await _api.CreateProductAsync(request);

@@ -124,6 +124,56 @@ public partial class App : Application
         sc.AddSingleton<TenantDatabaseInventoryService>();
         sc.AddSingleton<TenantDatabaseRetentionPreviewService>();
         sc.AddSingleton<TenantDatabaseInventoryExportService>();
+        sc.AddSingleton<RealMigrationExecutionGateService>();
+        sc.AddSingleton<GuardedRealMigrationExecutorService>();
+        sc.AddSingleton<GuardedRuntimeCutoverExecutorService>();
+        sc.AddSingleton<GuardedRollbackExecutorService>();
+        sc.AddSingleton<GuardedRetentionCleanupExecutorService>();
+        sc.AddSingleton<ProductionPilotReadinessReportService>();
+        sc.AddSingleton<ProductionPilotEvidenceBundleService>();
+        sc.AddSingleton<OperatorPermissionApiClient>();
+        sc.AddSingleton<OperatorAuditEvidenceApiClient>();
+        sc.AddSingleton<OperatorAuditReviewApiClient>();
+        sc.AddSingleton<OperatorPermissionAdminApiClient>();
+        sc.AddSingleton<OperatorPermissionAdminMutationApiClient>();
+
+        // Phase 10.22E — desktop-side evidence bundle local export
+        // pipeline. NONE of these services call any backend endpoint.
+        // The export pipeline is gated by the local
+        // `operator_evidence_bundle_export_ui_enabled` flag (default OFF).
+        sc.AddSingleton<Services.EvidenceBundleExport.EvidenceBundleRedactionScanner>();
+        sc.AddSingleton<Services.EvidenceBundleExport.EvidenceBundleManifestGenerator>();
+        sc.AddSingleton<Services.EvidenceBundleExport.EvidenceBundleZipWriter>();
+        sc.AddSingleton<Services.EvidenceBundleExport.EvidenceBundleExportService>();
+
+        // Phase 10.22F — desktop-side backend upload + finalize pipeline.
+        // Gated by the local `operator_evidence_bundle_upload_ui_enabled`
+        // flag (default OFF). Calls the Phase 10.22C/D backend endpoints
+        // only when the flag is ON.
+        sc.AddSingleton<OperatorEvidenceBundleApiClient>();
+        sc.AddSingleton<Services.EvidenceBundleUpload.EvidenceBundleUploadService>();
+
+        // Phase 10.22G — desktop-side reviewer + download pipeline.
+        // Gated by the local `operator_evidence_bundle_review_ui_enabled`
+        // flag (default OFF). Consumes the Phase 10.22G backend review
+        // + download endpoints.
+        sc.AddSingleton<Services.EvidenceBundleReview.EvidenceBundleReviewService>();
+
+        // Phase 10.22H — desktop-side retention + legal hold UI surface.
+        // Gated by the local `operator_evidence_bundle_retention_ui_enabled`
+        // flag (default OFF). Consumes the Phase 10.22H backend retention /
+        // legal-hold / archive / expire / retention-candidates endpoints.
+        // The card has NO upload / finalize / delete / hard-delete /
+        // dangerous-execute / confirmation-phrase / storage-path control.
+        sc.AddSingleton<Services.EvidenceBundleRetention.EvidenceBundleRetentionService>();
+
+        // Phase 10.22P — desktop-side read-only lifecycle scheduler status UI.
+        // Gated by `operator_evidence_bundle_lifecycle_scheduler_status_ui_enabled`
+        // (default OFF). Consumes Phase 10.22N retention-sweeper and Phase 10.22O
+        // expiration-sweeper run-history endpoints. NO hard-delete, NO storage
+        // object deletion, NO dangerous operation.
+        sc.AddSingleton<Services.EvidenceBundleLifecycleScheduler.EvidenceBundleLifecycleSchedulerStatusService>();
+        sc.AddSingleton<BackendOperatorPermissionSnapshotService>();
         sc.AddSingleton<OperatorDiagnosticsService>();
         sc.AddSingleton<OperatorDiagnosticsExportService>();
         sc.AddSingleton<OperatorAccessService>();
@@ -138,6 +188,7 @@ public partial class App : Application
             sp.GetRequiredService<PriceListRepository>(),
             sp.GetRequiredService<ProductTypeRepository>()));
         sc.AddTransient<ShiftViewModel>();
+        sc.AddTransient<ViewModels.Ombor.InventoryAdjustmentViewModel>();
         sc.AddTransient<PosViewModel>();
 
         // ── Views ─────────────────────────────────────────────────────────────

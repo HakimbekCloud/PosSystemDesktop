@@ -8,5 +8,6 @@ public class Customer
     public string  Phone       { get; set; } = "";
     public string  Address     { get; set; } = "";
     public decimal Balance     { get; set; }
+    public bool    IsActive    { get; set; } = true;
     public DateTime UpdatedAt  { get; set; }
 }

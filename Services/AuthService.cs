@@ -126,6 +126,17 @@ public class AuthService(
 
     public void Logout()
     {
+        // Best-effort server-side revocation. Must run before ClearUserData
+        // so the tokens are still readable when we build the logout request.
+        // Fire-and-forget on the thread-pool; the caller (PosViewModel) does
+        // not need to await the result because the cashier's next action
+        // (navigating to the login screen) is not blocked by a network call.
+        _ = Task.Run(async () =>
+        {
+            try { await api.LogoutAsync(); }
+            catch { /* network failure is non-fatal; tokens expire naturally */ }
+        });
+
         ClearUserData();
 
         // Re-apply auth headers so the HttpClient no longer carries the old token.
