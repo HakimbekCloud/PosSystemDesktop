@@ -6,6 +6,13 @@ namespace PosSystem.Data;
 
 public class AppDbContext : DbContext
 {
+    // Parameterless ctor is used by `dotnet ef` design-time tooling (which
+    // instantiates the context via reflection and lets OnConfiguring set the
+    // path). The options-accepting ctor is what the runtime
+    // TenantAwareDbContextFactory uses to inject a dynamic connection string.
+    public AppDbContext() { }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
     public DbSet<Product>    Products   => Set<Product>();
     public DbSet<Category>   Categories => Set<Category>();
     public DbSet<Customer>   Customers  => Set<Customer>();
@@ -17,6 +24,13 @@ public class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
+        // Runtime path comes from DI via AddDbContextFactory(...) in App.xaml.cs,
+        // which sets UseSqlite from ILocalDatabasePathProvider. This fallback only
+        // fires when DI didn't configure options — primarily `dotnet ef`
+        // design-time tooling, which instantiates the context via the parameterless
+        // constructor.
+        if (options.IsConfigured) return;
+
         var dbDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "PosSystem");

@@ -1,0 +1,234 @@
+<Window x:Class="PosSystem.Views.OperatorDiagnosticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Operator Diagnostics"
+        Height="720" Width="780"
+        WindowStartupLocation="CenterOwner"
+        Background="#F8FAFC">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Operator Diagnostics" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+            <TextBlock Text="Read-only system snapshot. No migration / rollback / DB switch is performed from this screen."
+                       FontSize="11" Foreground="#475569" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Tenant input + actions -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                Padding="12" Margin="0,0,0,12" CornerRadius="6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="Tenant subdomain (optional)" FontSize="11" Foreground="#475569"/>
+                    <TextBox Text="{Binding TenantSubdomainInput, UpdateSourceTrigger=PropertyChanged}"
+                             FontSize="13" Padding="6,4"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Command="{Binding RefreshCommand}"
+                        Content="Refresh"
+                        Padding="14,6" Margin="0,16,8,0"
+                        Background="#1E40AF" Foreground="White" BorderThickness="0"
+                        Cursor="Hand"/>
+
+                <Button Grid.Column="2"
+                        Command="{Binding ExportCommand}"
+                        Content="Export JSON"
+                        Padding="14,6" Margin="0,16,0,0"
+                        Background="#0F766E" Foreground="White" BorderThickness="0"
+                        Cursor="Hand"/>
+            </Grid>
+        </Border>
+
+        <!-- Sections -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Active Database -->
+                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Active Database" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Path" Grid.Row="0" Grid.Column="0" Foreground="#475569"/>
+                            <TextBlock Text="{Binding ActiveDbPath}" Grid.Row="0" Grid.Column="1" TextWrapping="Wrap"/>
+                            <TextBlock Text="Tenant-scoped" Grid.Row="1" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding IsTenantScoped}" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Runtime / Migration -->
+                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Runtime / Migration" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Runtime tenant DB enabled" Grid.Row="0" Grid.Column="0" Foreground="#475569"/>
+                            <TextBlock Text="{Binding RuntimeTenantDbEnabled}" Grid.Row="0" Grid.Column="1"/>
+                            <TextBlock Text="Migration feature enabled"   Grid.Row="1" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding MigrationFeatureEnabled}" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"/>
+                            <TextBlock Text="Shared→tenant migrated"      Grid.Row="2" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding SharedToTenantMigrated}" Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"/>
+                            <TextBlock Text="Migrated at"                 Grid.Row="3" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding SharedToTenantMigratedAt}" Grid.Row="3" Grid.Column="1" Margin="0,4,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Readiness -->
+                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Readiness" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Cutover status"  Grid.Row="0" Grid.Column="0" Foreground="#475569"/>
+                            <TextBlock Text="{Binding CutoverStatus}"  Grid.Row="0" Grid.Column="1"/>
+                            <TextBlock Text="Rollback status" Grid.Row="1" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding RollbackStatus}" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Sales -->
+                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Sales" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Pending"           Grid.Row="0" Grid.Column="0" Foreground="#475569"/>
+                            <TextBlock Text="{Binding PendingSalesCount}"          Grid.Row="0" Grid.Column="1"/>
+                            <TextBlock Text="Poison"            Grid.Row="1" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding PoisonSalesCount}"           Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"/>
+                            <TextBlock Text="Retryable failed"  Grid.Row="2" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding FailedRetryableSalesCount}" Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Cache -->
+                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Cache" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Products"            Grid.Row="0" Grid.Column="0" Foreground="#475569"/>
+                            <TextBlock Text="{Binding ProductsCount}"          Grid.Row="0" Grid.Column="1"/>
+                            <TextBlock Text="Customers"           Grid.Row="1" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding CustomersCount}"         Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"/>
+                            <TextBlock Text="Bootstrap completed" Grid.Row="2" Grid.Column="0" Foreground="#475569" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding BootstrapCompleted}"     Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Warnings -->
+                <Border Background="#FFFBEB" BorderBrush="#FBBF24" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Warnings" FontSize="13" FontWeight="SemiBold" Foreground="#92400E"/>
+                        <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Foreground="#92400E" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Errors -->
+                <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Errors" FontSize="13" FontWeight="SemiBold" Foreground="#991B1B"/>
+                        <ItemsControl ItemsSource="{Binding Errors}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Foreground="#991B1B" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Last export -->
+                <Border Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                        Padding="12" Margin="0,0,0,10" CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock Text="Last export path" FontSize="13" FontWeight="SemiBold" Foreground="#0F172A"/>
+                        <TextBlock Text="{Binding LastExportPath}" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="#475569"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status bar -->
+        <Border Grid.Row="3" Background="White" BorderBrush="#E2E8F0" BorderThickness="1"
+                Padding="10" Margin="0,10,0,0" CornerRadius="6">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right"
+                           Foreground="#475569" FontSize="11"
+                           Text="{Binding LastUpdatedAt, StringFormat='Last updated: {0:HH:mm:ss}'}"/>
+                <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#0F172A"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
