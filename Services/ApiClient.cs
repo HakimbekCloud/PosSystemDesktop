@@ -110,14 +110,19 @@ public class ApiClient
     //
     // Failures are swallowed — a network error during logout must never block
     // the cashier from reaching the login screen.
-    public async Task LogoutAsync(string accessToken, string refreshToken)
+    public async Task LogoutAsync(string accessToken, string refreshToken, string tenant)
     {
         if (string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(refreshToken))
             return;
 
         try
         {
+            // Fully self-contained request: tenant + auth are stamped here from
+            // values captured BEFORE ClearUserData wiped settings, so the handler
+            // never needs to read the (already-cleared) settings store.
             var req = new HttpRequestMessage(HttpMethod.Post, "api/v1/auth/logout");
+            if (!string.IsNullOrEmpty(tenant))
+                req.Headers.TryAddWithoutValidation("X-Tenant-ID", tenant);
             if (!string.IsNullOrEmpty(accessToken))
                 req.Headers.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -642,7 +647,10 @@ public class ApiClient
 
             cashPortion = apiTotal - nonCashSum;
 
-            if (sale.CashAmount + 0.0001m < cashPortion)
+            // Tolerance matches the 0.01 overshoot epsilon above: the trim can
+            // grow cashPortion by up to 0.01 beyond what the cashier tendered —
+            // that sub-tiyin drift must not poison an otherwise-valid sale.
+            if (sale.CashAmount + 0.01m < cashPortion)
                 // Cashier tendered less cash than the order actually needs.
                 throw new InvalidOperationException("Naqd to'lov yetmaydi.");
 

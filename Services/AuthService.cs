@@ -145,9 +145,12 @@ public class AuthService(
     {
         if (revokeOnServer)
         {
-            // Capture both tokens NOW, while settings still hold them.
+            // Capture the tokens AND the tenant NOW, while settings still hold
+            // them — ClearUserData below removes tenant_subdomain too, and a
+            // tenant-strict backend rejects a revocation without X-Tenant-ID.
             var accessToken  = settings.GetDecrypted("auth_token")    ?? "";
             var refreshToken = settings.GetDecrypted("refresh_token") ?? "";
+            var tenant       = settings.Get("tenant_subdomain")       ?? "";
 
             // Best-effort server-side revocation with the captured values.
             // Fire-and-forget on the thread-pool; the caller (PosViewModel) does
@@ -157,7 +160,7 @@ public class AuthService(
             // LogoutAsync returns immediately without sending a request.
             _ = Task.Run(async () =>
             {
-                try { await api.LogoutAsync(accessToken, refreshToken); }
+                try { await api.LogoutAsync(accessToken, refreshToken, tenant); }
                 catch { /* network failure is non-fatal; tokens expire naturally */ }
             });
         }

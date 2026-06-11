@@ -14,8 +14,9 @@ namespace PosSystem.Services;
 // Now: every outgoing request is stamped here, reading the live values from
 // the settings store on each send, so there is no shared mutable header state:
 //
-//   • X-Tenant-ID  — always replaced with the current tenant_subdomain
-//                    (removed entirely when no tenant is set, e.g. logged out).
+//   • X-Tenant-ID  — stamped from the current tenant_subdomain UNLESS the
+//                    request already set one on purpose (the logout revocation
+//                    stamps the tenant captured BEFORE the local clear).
 //   • Authorization — Bearer auth_token (DPAPI-decrypted) is added ONLY when the
 //                    request does not already carry an Authorization header.
 //                    This preserves requests that set their own token on purpose:
@@ -30,25 +31,33 @@ public sealed class TenantAuthHeaderHandler(SettingsRepository settings)
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken ct)
     {
+        var hasExplicitTenant = request.Headers.Contains("X-Tenant-ID");
+        var hasExplicitAuth   = request.Headers.Authorization is not null;
+
         // L3: a tenant-DB switch is in progress. The path provider may be
         // half-flipped and the settings store is being re-pointed, so any request
-        // that reads tenant/auth here could pick up an inconsistent identity and
-        // race the switch. Background sync is already drained + gated by
-        // TenantScopeService; this fails the *non-sync* requests (shift probe,
-        // operator clients) fast and clearly instead of letting them fly. The
-        // window is sub-second and serialized by the sync gate.
-        if (TenantScopeService.IsSwitchInProgress)
+        // that READS tenant/auth here could pick up an inconsistent identity and
+        // race the switch. A fully self-contained request (explicit tenant AND
+        // auth already stamped by the caller — e.g. the logout revocation) reads
+        // nothing from settings and may proceed. Background sync is already
+        // drained + gated by TenantScopeService; this fails the remaining
+        // settings-dependent requests (shift probe, operator clients) fast and
+        // clearly instead of letting them fly. The window is sub-second.
+        if (TenantScopeService.IsSwitchInProgress &&
+            !(hasExplicitTenant && hasExplicitAuth))
             throw new InvalidOperationException(
                 "Tenant almashtirilmoqda — so'rov bekor qilindi. Birozdan so'ng qayta urinib ko'ring.");
 
-        // Tenant header: stamp fresh from settings every time.
-        request.Headers.Remove("X-Tenant-ID");
-        var tenant = settings.Get("tenant_subdomain");
-        if (!string.IsNullOrEmpty(tenant))
-            request.Headers.TryAddWithoutValidation("X-Tenant-ID", tenant);
+        // Tenant header: stamp fresh from settings unless the caller set it.
+        if (!hasExplicitTenant)
+        {
+            var tenant = settings.Get("tenant_subdomain");
+            if (!string.IsNullOrEmpty(tenant))
+                request.Headers.TryAddWithoutValidation("X-Tenant-ID", tenant);
+        }
 
         // Auth header: only add if the request did not already set one.
-        if (request.Headers.Authorization is null)
+        if (!hasExplicitAuth)
         {
             var token = settings.GetDecrypted("auth_token");
             if (!string.IsNullOrEmpty(token))
