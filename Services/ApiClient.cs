@@ -19,6 +19,12 @@ public class ApiClient
 
     private readonly SemaphoreSlim _refreshSemaphore = new(1, 1);
 
+    // M3 (restored after the origin/master merge dropped it): debounce
+    // SessionExpiredMessage so concurrent failing calls can't spam logout /
+    // navigation. Sent at most once per expiry episode; re-armed on any
+    // successful refresh or login via ResetSessionExpiry().
+    private int _sessionExpiredSent;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -61,6 +67,24 @@ public class ApiClient
     // ApplyTenantHeader()/ApplyAuthToken() no-op stubs (L2) and their call sites
     // have been removed — the handler reflects any settings change on the next
     // request, so there is nothing to "apply".
+
+    // M3: re-arm the session-expiry debounce after a successful login/refresh so
+    // a later genuine expiry can notify again. Called from AuthService on login.
+    public void ResetSessionExpiry() => Interlocked.Exchange(ref _sessionExpiredSent, 0);
+
+    // M3 + H2: broadcast SessionExpiredMessage at most once until
+    // ResetSessionExpiry(). IMPORTANT: this can run on the background sync thread
+    // WHILE that thread holds SyncService._syncGate (TryRefreshTokenAsync is
+    // reached from inside a sync run). WeakReferenceMessenger.Default.Send is
+    // synchronous, so the MainWindow handler MUST NOT block this thread — it posts
+    // via Dispatcher.BeginInvoke and returns immediately (see MainWindow.OnSession
+    // Expired). If a handler ever blocked here (e.g. Dispatcher.Invoke + a gate
+    // wait), it would deadlock the sync thread against the gate it still holds.
+    private void NotifySessionExpired()
+    {
+        if (Interlocked.Exchange(ref _sessionExpiredSent, 1) == 0)
+            WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+    }
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -571,14 +595,51 @@ public class ApiClient
         {
             // Breakdown-aware sale: exact preservation. Card/Bank/Debt may not be
             // silently clamped — that would mis-attribute money between methods.
-            var nonCashSum = sale.CardAmount + sale.BankAmount + sale.DebtAmount;
-            if (nonCashSum > apiTotal)
-                throw new InvalidOperationException(
-                    "Karta, bank va qarz yig'indisi sotuv summasidan oshib ketdi.");
-
             cardPortion = sale.CardAmount;
             bankPortion = sale.BankAmount;
             debtPortion = sale.DebtAmount;
+            var nonCashSum = cardPortion + bankPortion + debtPortion;
+
+            // M2: the UI Total and apiTotal are computed by independent code paths,
+            // so a 1-tiyin (0.01) rounding drift on a card+debt-only sale can make
+            // nonCashSum exceed apiTotal by a hair. An exact `>` compare would
+            // permanently poison such a sale. Tolerate an epsilon: when the
+            // overshoot is ≤ 0.01, clamp the LARGEST non-cash portion down by the
+            // difference (the existing remainder-correction pattern) so the final
+            // transaction sum still equals apiTotal exactly. Anything beyond the
+            // epsilon is a real mismatch and still throws.
+            var overshoot = nonCashSum - apiTotal;
+            if (overshoot > 0.01m)
+                throw new InvalidOperationException(
+                    "Karta, bank va qarz yig'indisi sotuv summasidan oshib ketdi.");
+
+            if (overshoot > 0m)
+            {
+                // Absorb the drift into the non-cash portions, largest first, so the
+                // recomputed nonCashSum equals apiTotal EXACTLY and no portion goes
+                // negative. Looping over the portions (rather than only the single
+                // largest) keeps the invariant sum(txs)==apiTotal even in the
+                // degenerate edge where the largest portion is itself smaller than
+                // the drift; in any real card+debt sale the first (largest) portion
+                // alone absorbs the whole ≤0.01 drift.
+                var remaining = overshoot;
+                // At most three passes (one per non-cash portion). Each pass trims
+                // the current largest portion by as much of the remaining drift as
+                // it can absorb without going negative.
+                for (int pass = 0; pass < 3 && remaining > 0m; pass++)
+                {
+                    var max = Math.Max(cardPortion, Math.Max(bankPortion, debtPortion));
+                    if (max <= 0m) break;
+                    var cut = Math.Min(remaining, max);
+                    if (cardPortion == max) cardPortion -= cut;
+                    else if (bankPortion == max) bankPortion -= cut;
+                    else debtPortion -= cut;
+                    remaining -= cut;
+                }
+
+                nonCashSum = cardPortion + bankPortion + debtPortion;
+            }
+
             cashPortion = apiTotal - nonCashSum;
 
             if (sale.CashAmount + 0.0001m < cashPortion)
@@ -699,7 +760,7 @@ public class ApiClient
             var refreshToken = _settings.GetDecrypted("refresh_token");
             if (string.IsNullOrEmpty(refreshToken))
             {
-                WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+                NotifySessionExpired();
                 return false;
             }
 
@@ -712,7 +773,7 @@ public class ApiClient
             if (resp.StatusCode == HttpStatusCode.Unauthorized)
             {
                 // Refresh token itself is expired or revoked — force re-login.
-                WeakReferenceMessenger.Default.Send(new SessionExpiredMessage());
+                NotifySessionExpired();
                 return false;
             }
 
@@ -724,6 +785,9 @@ public class ApiClient
 
             _settings.SetEncrypted("auth_token", result.AccessToken);
             _settings.SetEncrypted("refresh_token", result.RefreshToken);
+            // M3: refresh succeeded — re-arm the debounce so a future genuine
+            // expiry can notify again.
+            ResetSessionExpiry();
             // The refreshed token is picked up per-request by
             // TenantAuthHeaderHandler from settings — no header to "apply" (L2).
             return true;

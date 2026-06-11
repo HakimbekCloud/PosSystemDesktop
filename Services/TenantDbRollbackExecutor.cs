@@ -98,9 +98,20 @@ public sealed class TenantDbRollbackExecutor
         _sync         = sync;
     }
 
-    public async System.Threading.Tasks.Task<TenantDbRollbackResult> ExecuteAsync(
+    // L5 (CS1998): the rollback is entirely synchronous file/settings I/O with no
+    // awaitable calls, so the method is not genuinely async. The async signature is
+    // kept for the callers that await it (Guarded/DryRun wrappers), but the body
+    // runs synchronously and the result is wrapped in a completed Task — no spurious
+    // state machine, no compiler warning. This executor only runs while the app is
+    // NOT actively using a tenant DB (guarded above), so synchronous I/O is fine.
+    public System.Threading.Tasks.Task<TenantDbRollbackResult> ExecuteAsync(
         TenantDbRollbackOptions options,
         System.Threading.CancellationToken ct = default)
+        => System.Threading.Tasks.Task.FromResult(Execute(options, ct));
+
+    private TenantDbRollbackResult Execute(
+        TenantDbRollbackOptions options,
+        System.Threading.CancellationToken ct)
     {
         if (options is null) throw new System.ArgumentNullException(nameof(options));
 

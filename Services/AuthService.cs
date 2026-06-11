@@ -96,6 +96,11 @@ public class AuthService(
         {
             var response = await api.LoginAsync(username, password);
 
+            // M3: a new session is now established — re-arm the session-expiry
+            // debounce so a future genuine expiry can notify again (the flag may
+            // have latched during the previous expired session).
+            api.ResetSessionExpiry();
+
             settings.SetEncrypted("auth_token",    response.AccessToken);
             settings.SetEncrypted("refresh_token", response.RefreshToken);
             settings.Set("user_name",     response.User.Username);

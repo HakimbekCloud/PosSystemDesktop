@@ -14,6 +14,19 @@ namespace PosSystem.Services;
 // nothing invokes SwitchToTenantAsync. Phase 10.5 / 10.4 will wire it in.
 public sealed class TenantScopeService
 {
+    // L3: set for the duration of a path-provider switch. PauseAsync drains the
+    // background sync and holds _syncGate, but UI-triggered HTTP requests (shift
+    // probe, operator clients) are NOT routed through the gate and could still
+    // fly mid-switch — hitting the wrong DB-backed settings / a half-flipped
+    // provider. TenantAuthHeaderHandler checks this flag and fails such requests
+    // fast with a clear exception instead of letting them race the switch. Static
+    // because the handler is constructed by the HttpClient pipeline, not by DI of
+    // this service; volatile for cross-thread visibility (the switch runs on a
+    // different thread from the UI request). Switches are short and serialized by
+    // _syncGate, so the window is tiny.
+    private static volatile bool _switchInProgress;
+    internal static bool IsSwitchInProgress => _switchInProgress;
+
     private readonly ILocalDatabasePathProvider     _pathProvider;
     private readonly SyncService                    _sync;
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
@@ -46,6 +59,7 @@ public sealed class TenantScopeService
     {
         bool resumeBackground = _sync.IsBackgroundRunning;
         await _sync.PauseAsync();
+        _switchInProgress = true; // L3: fail-fast any non-sync request mid-switch
         try
         {
             switchAction();
@@ -65,6 +79,7 @@ public sealed class TenantScopeService
         }
         finally
         {
+            _switchInProgress = false;
             _sync.Resume(resumeBackground);
         }
     }

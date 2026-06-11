@@ -159,7 +159,8 @@ public sealed class TenantCutoverReadinessGate
                         .UseSqlite($"Data Source={targetPath};Mode=ReadOnly")
                         .Options;
                     using var db = new AppDbContext(opts);
-                    var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
+                    var pending = (await db.Database.GetPendingMigrationsAsync(ct)
+                        .ConfigureAwait(false)).ToList();
                     schemaUpToDate = pending.Count == 0;
                     if (!schemaUpToDate)
                         errors.Add("Tenant DB has pending EF migrations: " + string.Join(", ", pending));
@@ -184,7 +185,7 @@ public sealed class TenantCutoverReadinessGate
         TenantDbVerificationResult? verifierEntry = null;
         try
         {
-            var verification = await _verifier.VerifyAsync(ct);
+            var verification = await _verifier.VerifyAsync(ct).ConfigureAwait(false);
 
             if (!verification.SourceDbExists)
                 errors.Add("Verifier reports source pos.db missing.");

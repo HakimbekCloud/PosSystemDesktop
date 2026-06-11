@@ -45,10 +45,19 @@ public partial class App : Application
         if (string.IsNullOrWhiteSpace(lastTenant)) return;
 
         var gate = _services.GetRequiredService<TenantCutoverReadinessGate>();
-        // Block-on-async: the gate is the precondition for opening any
-        // business DbContext; the rest of startup cannot proceed until we
-        // know which DB to open. Acceptable cost — runs once per launch.
-        var report = gate.CheckAsync(lastTenant).GetAwaiter().GetResult();
+        // M5: the gate is the precondition for opening any business DbContext;
+        // the rest of startup cannot proceed until we know which DB to open, so
+        // we must block on it (runs once per launch). Running the async chain
+        // directly via GetAwaiter().GetResult() on the WPF UI thread is fragile
+        // sync-over-async: CheckAsync awaits EF/IO that, without ConfigureAwait,
+        // would try to resume on the captured WPF SynchronizationContext that is
+        // currently blocked here → deadlock risk. Task.Run hops the whole chain
+        // onto a thread-pool thread with no captured UI context, so the
+        // continuations never contend for this thread. (ConfigureAwait(false) is
+        // also applied inside the gate as defense in depth.)
+        var report = System.Threading.Tasks.Task
+            .Run(() => gate.CheckAsync(lastTenant))
+            .GetAwaiter().GetResult();
 
         if (!report.CanCutOver)
         {

@@ -30,6 +30,17 @@ public sealed class TenantAuthHeaderHandler(SettingsRepository settings)
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken ct)
     {
+        // L3: a tenant-DB switch is in progress. The path provider may be
+        // half-flipped and the settings store is being re-pointed, so any request
+        // that reads tenant/auth here could pick up an inconsistent identity and
+        // race the switch. Background sync is already drained + gated by
+        // TenantScopeService; this fails the *non-sync* requests (shift probe,
+        // operator clients) fast and clearly instead of letting them fly. The
+        // window is sub-second and serialized by the sync gate.
+        if (TenantScopeService.IsSwitchInProgress)
+            throw new InvalidOperationException(
+                "Tenant almashtirilmoqda — so'rov bekor qilindi. Birozdan so'ng qayta urinib ko'ring.");
+
         // Tenant header: stamp fresh from settings every time.
         request.Headers.Remove("X-Tenant-ID");
         var tenant = settings.Get("tenant_subdomain");

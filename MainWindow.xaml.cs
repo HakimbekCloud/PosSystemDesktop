@@ -44,34 +44,24 @@ public partial class MainWindow : Window
 
         PreviewKeyDown += OnPreviewKeyDown;
 
+        // H2: every navigation handler uses BeginInvoke (async post), NOT
+        // Invoke (synchronous block). The messenger Send that raises these can
+        // run on the background SYNC thread while it holds SyncService._syncGate
+        // (e.g. ApiClient force-logs-out on a failed token refresh mid-sync).
+        // A synchronous Dispatcher.Invoke would block that sync thread on the UI
+        // thread; if the UI handler then needs the gate (SwitchToLegacyAsync →
+        // PauseAsync → WaitAsync), it deadlocks against the very thread parked in
+        // Invoke. BeginInvoke returns immediately so the sender (sync thread)
+        // finishes RunSyncAsync and releases the gate; the handler body then runs
+        // later on the UI thread with the gate free.
         WeakReferenceMessenger.Default.Register<LoginSuccessMessage>(this,
-            (_, _) => Dispatcher.Invoke(NavigateToPOS));
+            (_, _) => Dispatcher.BeginInvoke(NavigateToPOS));
 
         WeakReferenceMessenger.Default.Register<LogoutMessage>(this,
-            (_, _) => Dispatcher.Invoke(NavigateToLogin));
+            (_, _) => Dispatcher.BeginInvoke(NavigateToLogin));
 
-        WeakReferenceMessenger.Default.Register<SessionExpiredMessage>(this, (_, _) =>
-            Dispatcher.Invoke(() =>
-            {
-                if (MainContent.Content is LoginView) return; // already on login page
-                // Session-expiry: tokens are already dead (that's what raised
-                // this message), so skip the server revocation call — it would
-                // only produce guaranteed-401 spam. Local clear still runs.
-                _auth.Logout(revokeOnServer: false);
-
-                // Phase 10.5C: under runtime tenant DB mode, switch the path
-                // provider back to legacy so the next LoginViewModel pass can
-                // re-run TenantCutoverReadinessGate cleanly. AuthService.Logout
-                // already cleared the session-only keys from the tenant DB
-                // (Phase 10.5C contract) — tenant catalog/sales remain intact.
-                if (_global.Get("tenant_db_runtime_enabled") == "1")
-                {
-                    try { _tenantScope.SwitchToLegacyAsync().GetAwaiter().GetResult(); }
-                    catch { /* best effort */ }
-                }
-
-                NavigateToLogin();
-            }));
+        WeakReferenceMessenger.Default.Register<SessionExpiredMessage>(this,
+            (_, _) => Dispatcher.BeginInvoke(OnSessionExpired));
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -95,6 +85,49 @@ public partial class MainWindow : Window
             NavigateToPOS();
         else
             NavigateToLogin();
+    }
+
+    // H2: SessionExpired handler body. Posted via Dispatcher.BeginInvoke so the
+    // sending thread (often the background sync thread holding _syncGate) is never
+    // blocked. `async void` is correct here — it's a top-level event-style handler
+    // dispatched by the messenger, and SwitchToLegacyAsync is awaited (not blocked
+    // with GetAwaiter().GetResult()) so PauseAsync's WaitAsync merely waits for the
+    // now-unblocked sync thread to finish and release the gate. The whole body is
+    // wrapped in try/catch so a switch failure — or the Dispatcher having shut down
+    // while a BeginInvoke was still pending at app exit — can never crash the app.
+    private async void OnSessionExpired()
+    {
+        try
+        {
+            if (MainContent.Content is LoginView) return; // already on login page
+
+            // Session-expiry: tokens are already dead (that's what raised this
+            // message), so skip the server revocation call — it would only produce
+            // guaranteed-401 spam. Local clear still runs.
+            _auth.Logout(revokeOnServer: false);
+
+            // Phase 10.5C: under runtime tenant DB mode, switch the path provider
+            // back to legacy so the next LoginViewModel pass can re-run
+            // TenantCutoverReadinessGate cleanly. AuthService.Logout already cleared
+            // the session-only keys from the tenant DB (Phase 10.5C contract) —
+            // tenant catalog/sales remain intact. Awaited (not blocked) so the gate
+            // wait inside PauseAsync can never deadlock the UI thread. A switch
+            // failure must NOT strand the user away from login, so it's caught
+            // locally (best effort) while navigation below still runs.
+            if (_global.Get("tenant_db_runtime_enabled") == "1")
+            {
+                try { await _tenantScope.SwitchToLegacyAsync(); }
+                catch { /* best effort — fall through to login */ }
+            }
+
+            NavigateToLogin();
+        }
+        catch
+        {
+            // Last-resort guard: never let a session-expiry teardown (or a
+            // Dispatcher shutting down at app exit) bubble out of an async void
+            // handler and crash the process.
+        }
     }
 
     private void NavigateToLogin() =>
