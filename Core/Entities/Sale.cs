@@ -22,6 +22,12 @@ public class Sale
     public decimal BankAmount           { get; set; }
     public decimal DebtAmount           { get; set; }
     public string  PaymentType          { get; set; } = "cash";
+    // Bug H1: the POS shift this sale belongs to. Persisted at checkout from
+    // ShiftViewModel.CurrentShiftUuid so the backend Z-report can attribute the
+    // order to its shift for drawer reconciliation. Nullable: legacy sales made
+    // before this column existed carry null, and the order POST then omits the
+    // shift field (the backend treats it as a soft/optional association).
+    public string? ShiftUuid            { get; set; }
     public string  Note                 { get; set; } = "";
     public bool    Synced               { get; set; }
     // Retry/poison bookkeeping. RetryCount=0 + NextRetryAt=null = "first attempt

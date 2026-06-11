@@ -826,6 +826,14 @@ public partial class PosViewModel : ObservableObject
             BankAmount          = 0,           // no UI row yet; reserved for future
             DebtAmount          = DebtAmount,
             PaymentType         = ResolvePaymentType(),
+            // Bug H1: stamp the open shift onto the sale so the backend Z-report
+            // can reconcile this order against the drawer. The checkout gate above
+            // already guarantees IsShiftOpen, so CurrentShiftUuid is normally set;
+            // the empty-uuid case is theoretically impossible but we store null
+            // rather than "" so the order POST omits the field cleanly.
+            ShiftUuid           = string.IsNullOrEmpty(ShiftVm.CurrentShiftUuid)
+                                      ? null
+                                      : ShiftVm.CurrentShiftUuid,
             Synced              = false,
             CreatedAt           = DateTime.Now,
             Items               = CartItems.Select(i => new SaleItem
@@ -947,6 +955,24 @@ public partial class PosViewModel : ObservableObject
     [RelayCommand]
     private async Task SubmitCloseShift()
     {
+        // Bug H1: warn if there are unsynced sales when closing. The Z-report is
+        // computed server-side from orders the backend has already received, so a
+        // sale that hasn't synced yet won't be counted in the closing reconciliation
+        // even though its ShiftUuid links it to this shift. The link is preserved on
+        // the row, so it still syncs later under the original shift — but the cashier
+        // should know the counted-cash difference may be off. Non-blocking: warn and
+        // let the operator proceed (or cancel to sync first).
+        var pending = _sales.GetPendingCountForTenant(_auth.GetLastTenantSubdomain());
+        if (pending > 0)
+        {
+            var answer = System.Windows.MessageBox.Show(
+                $"{pending} ta savdo hali serverga yuborilmagan. Smenani hozir yopsangiz, Z-hisobotda ular hisobga olinmasligi mumkin (keyinchalik ushbu smena bo'yicha sinxronlanadi). Smenani baribir yopilsinmi?",
+                "Sinxronlanmagan savdolar",
+                System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
+            if (answer != System.Windows.MessageBoxResult.Yes)
+                return;
+        }
+
         var ok = await ShiftVm.CloseShiftAsync();
         if (ok) IsCloseShiftOpen = false;
     }

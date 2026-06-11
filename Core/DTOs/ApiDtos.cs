@@ -360,6 +360,17 @@ public class CreateOrderRequest
     // Field name/serialization mirrors DebtPaymentRequest.IdempotencyKey exactly.
     [JsonPropertyName("idempotencyKey")]
     public string? IdempotencyKey { get; set; }
+
+    // Bug H1: associates this order with the POS shift it was rung up in, so the
+    // backend Z-report (/api/pos/shifts/{uuid}/report) can reconcile the drawer.
+    // BACKEND-COORDINATION: the API requirements doc does not yet define a shift
+    // field on CreateOrderRequest, so this camelCase "shiftUuid" name (matching
+    // the rest of the request) must be confirmed/wired on the Ham-Pos side.
+    // Nullable + JsonIgnore-when-null so legacy pending sales (ShiftUuid == null)
+    // serialize without the field instead of sending an empty string.
+    [JsonPropertyName("shiftUuid")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ShiftUuid { get; set; }
 }
 
 public class CreateOrderItemRequest

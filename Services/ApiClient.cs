@@ -495,7 +495,14 @@ public class ApiClient
             PriceListId  = priceListId,
             Comment      = string.IsNullOrEmpty(sale.Note) ? null : sale.Note,
             Items        = validItems,
-            Transactions = transactions
+            Transactions = transactions,
+            // Bug H1: carry the shift recorded on the row (set at checkout), NOT a
+            // value read from the VM at sync time — by the time a pending sale
+            // syncs the shift may already be closed. Legacy pending sales created
+            // before this column existed carry null, and the field is omitted from
+            // the JSON (JsonIgnoreCondition.WhenWritingNull) so the backend accepts
+            // them unchanged.
+            ShiftUuid    = string.IsNullOrEmpty(sale.ShiftUuid) ? null : sale.ShiftUuid
         };
 
         // Idempotency-Key uses the stable client-generated LocalId (GUID set at checkout).
