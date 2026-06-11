@@ -448,12 +448,28 @@ public class ApiClient
             _                    => "CASH"
         };
 
-        // Only include items that have a server UUID, valid price and quantity.
-        // API validation: quantity >= 0.001, price >= 0.01
+        // Bug M1: every line must be sendable (server UUID, price >= 0.01,
+        // quantity >= 0.001). Previously invalid lines were SILENTLY filtered out
+        // and apiTotal computed from the survivors — the server would record less
+        // than the customer paid, or the UI mixed-payment split (set against the
+        // FULL total) would exceed apiTotal and poison the sale with a confusing
+        // error. Instead, if ANY line is structurally bad, throw a clear Uzbek
+        // error naming the issue. The sale becomes poison with an actionable
+        // LastSyncError the cashier can see in the retry UI, rather than a
+        // wrong-total order silently reaching the backend. The checkout-time guard
+        // (PosViewModel.CheckoutAsync) prevents this for new sales; this catches
+        // legacy/partially-written pending sales already on disk.
+        var invalid = sale.Items
+            .FirstOrDefault(i => string.IsNullOrEmpty(i.ProductRemoteUuid)
+                                 || i.Price    < 0.01m
+                                 || i.Quantity < 0.001m);
+        if (invalid is not null)
+            throw new InvalidOperationException(
+                $"«{invalid.ProductName}» qatori serverga yuborib bo'lmaydi " +
+                "(mahsulot serverga bog'lanmagan yoki narx/miqdor noto'g'ri) — " +
+                "savdo yuborilmadi.");
+
         var validItems = sale.Items
-            .Where(i => !string.IsNullOrEmpty(i.ProductRemoteUuid)
-                        && i.Price    >= 0.01m
-                        && i.Quantity >= 0.001m)
             .Select(i => new CreateOrderItemRequest
             {
                 ProductUuid   = i.ProductRemoteUuid,
@@ -462,6 +478,8 @@ public class ApiClient
                 DiscountPrice = Math.Max(0, i.Discount)
             }).ToList();
 
+        // Keep the existing zero-items throw: a sale with no lines at all is
+        // structurally invalid and must poison rather than POST an empty order.
         if (validItems.Count == 0)
             throw new InvalidOperationException("Serverga yuborish uchun yaroqli mahsulotlar yo'q");
 

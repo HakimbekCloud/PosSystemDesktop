@@ -237,8 +237,13 @@ public partial class PosViewModel : ObservableObject
     public bool    IsFullyPaid   => TotalTendered >= Total && Total > 0;
 
     // True while the cashier has typed a Qarz amount but hasn't picked a
-    // customer — checkout stays disabled and a warning shows on the Qarz row.
-    public bool    IsDebtBlocked => DebtAmount > 0 && !_selectedCustomerId.HasValue;
+    // customer that can actually carry debt server-side — checkout stays disabled
+    // and a warning shows on the Qarz row.
+    // Bug M4: gate on a non-empty CustomerRemoteUuid, not just a local Id. A
+    // locally-known customer with an empty RemoteUuid (not yet synced) would pass
+    // the old Id check but make BuildSaleTransactions throw at sync (it requires a
+    // non-empty CustomerRemoteUuid) → permanent poison. Block it up front instead.
+    public bool    IsDebtBlocked => DebtAmount > 0 && string.IsNullOrEmpty(_selectedCustomerRemoteUuid);
 
     // ── Customer ───────────────────────────────────────────────────────────────
 
@@ -761,9 +766,15 @@ public partial class PosViewModel : ObservableObject
         if (CardAmount + DebtAmount > Total)
             return "Karta va qarz yig'indisi sotuv summasidan oshib ketdi.";
 
-        // Debt requires a customer.
+        // Debt requires a customer that is synced to the server.
         if (DebtAmount > 0 && !_selectedCustomerId.HasValue)
             return "Qarzga savdo qilish uchun mijoz tanlanishi kerak.";
+
+        // Bug M4: a selected-but-unsynced customer (empty RemoteUuid) would poison
+        // at sync because BuildSaleTransactions requires CustomerRemoteUuid. Block
+        // it here with a clear reason.
+        if (DebtAmount > 0 && string.IsNullOrEmpty(_selectedCustomerRemoteUuid))
+            return "Qarzga savdo uchun mijoz serverga sinxronlangan bo'lishi kerak.";
 
         // Cashbox routing must exist for every non-zero method.
         if (CashAmount > 0
@@ -792,6 +803,26 @@ public partial class PosViewModel : ObservableObject
             CheckoutErrorMessage = "Sotuv qilish uchun avval smena oching.";
             System.Windows.MessageBox.Show(CheckoutErrorMessage,
                 "Smena ochilmagan",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        // Bug M1: every cart line must be sendable to the backend BEFORE we create
+        // the Sale. AddToCart already refuses empty RemoteUuid; this adds price/qty
+        // and defense in depth so a structurally bad line can never become a poison
+        // sale with a wrong total. Refuse checkout naming the offending product.
+        var badLine = CartItems.FirstOrDefault(i =>
+            string.IsNullOrEmpty(i.ProductRemoteUuid)
+            || i.UnitPrice < 0.01m
+            || i.Quantity  < 0.001m);
+        if (badLine is not null)
+        {
+            CheckoutErrorMessage =
+                $"«{badLine.ProductName}» mahsulotini sotib bo'lmaydi " +
+                "(narx/miqdor/server bog'lanishi noto'g'ri).";
+            System.Windows.MessageBox.Show(CheckoutErrorMessage,
+                "Sotuv xatosi",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Warning);
             return;

@@ -414,8 +414,23 @@ public partial class App : Application
     // A blanket "DELETE ... WHERE RemoteUuid = ''" would be a latent trap: it
     // would silently destroy any future locally-created row whose server UUID
     // failed to persist. Any OTHER empty-RemoteUuid row must SURVIVE startup.
+    // Settings key marking the one-time legacy-seed cleanup as already run on
+    // THIS database file. Settings live per-DB, so in tenant-DB mode each file
+    // gets its own one-time run — the correct behavior.
+    private const string LegacySeedCleanupDoneKey = "legacy_seed_cleanup_done";
+
     private static void CleanupLegacySeedRows(AppDbContext db)
     {
+        // H3 fix: this whole block (demo DELETEs + the LOCAL_ONLY retire UPDATE)
+        // must run exactly once per DB. The UPDATE in particular force-"syncs"
+        // any unsynced sale whose items all lack a ProductRemoteUuid; re-armed on
+        // every boot it could silently retire a future legitimately-unsynced sale
+        // (e.g. a crashed partial write) — irreversible revenue loss. Guard with a
+        // marker in the Settings table: run once, stamp it, skip forever after.
+        // Plain SQL against the same db context, consistent with this method's
+        // style and usable here before DI repositories are wired.
+        if (LegacySeedCleanupAlreadyDone(db)) return;
+
         try { db.Database.ExecuteSqlRaw(
             "DELETE FROM Products WHERE RemoteUuid = '' AND Code IN (" +
             "'CC001','SP001','PP001','AQ001','BR001','CK001','ML001','YG001'," +
@@ -437,6 +452,43 @@ public partial class App : Application
             "UPDATE Sales SET Synced = 1, ServerUuid = 'LOCAL_ONLY' " +
             "WHERE Synced = 0 AND LocalId NOT IN (" +
             "SELECT DISTINCT SaleLocalId FROM SaleItems WHERE ProductRemoteUuid <> '')"); }
+        catch { }
+
+        // Stamp the marker so this destructive cleanup never runs again on this
+        // DB. Done last: if any step above threw it was swallowed (idempotent
+        // style), and an already-clean DB re-running once more is harmless — but
+        // after this point we are guaranteed to skip.
+        MarkLegacySeedCleanupDone(db);
+    }
+
+    private static bool LegacySeedCleanupAlreadyDone(AppDbContext db)
+    {
+        try
+        {
+            using var cmd = db.Database.GetDbConnection().CreateCommand();
+            if (cmd.Connection!.State != System.Data.ConnectionState.Open) cmd.Connection.Open();
+            cmd.CommandText = "SELECT Value FROM Settings WHERE Key = @k";
+            var p = cmd.CreateParameter();
+            p.ParameterName = "@k";
+            p.Value = LegacySeedCleanupDoneKey;
+            cmd.Parameters.Add(p);
+            var result = cmd.ExecuteScalar();
+            return result is string s && s == "1";
+        }
+        catch
+        {
+            // If we can't read the marker (e.g. Settings missing), fall through
+            // to running the cleanup — it's idempotent and self-guards via try/catch.
+            return false;
+        }
+    }
+
+    private static void MarkLegacySeedCleanupDone(AppDbContext db)
+    {
+        try { db.Database.ExecuteSqlRaw(
+            "INSERT INTO Settings (Key, Value) VALUES ({0}, '1') " +
+            "ON CONFLICT(Key) DO UPDATE SET Value = '1'",
+            LegacySeedCleanupDoneKey); }
         catch { }
     }
 
