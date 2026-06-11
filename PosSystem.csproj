@@ -11,6 +11,9 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ApplicationIcon />
     <StartupObject />
+    <!-- net8.0-windows is Windows-only at runtime; silence the analyzer's
+         platform-call warnings (CA1416) for DPAPI/ProtectedData usage. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
 
   <!-- Exclude legacy .NET Framework generated files -->

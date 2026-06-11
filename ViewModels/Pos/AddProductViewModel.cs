@@ -27,9 +27,55 @@ public partial class AddProductViewModel : ObservableObject
     [ObservableProperty] private string       _errorText    = "";
     [ObservableProperty] private bool         _isBusy;
 
+    // ── Dialog UI state (added for the redesigned Add Product modal) ──────────
+    // These properties exist purely to back the modal form fields shown in the
+    // new design. They are *additive*: the existing SaveAsync flow keeps working
+    // unchanged. Backend integration for min-stock / warehouse / active flag
+    // can wire into the CreateProductRequest later without touching the modal.
+    [ObservableProperty] private string         _minStockInput     = "";
+    [ObservableProperty] private WarehouseDto?  _selectedWarehouse;
+    [ObservableProperty] private bool           _isActive          = true;
+
     public ObservableCollection<MeasurementDto> Measurements  { get; } = [];
     public ObservableCollection<PriceList>      PriceLists    { get; } = [];
     public ObservableCollection<ProductType>    ProductTypes  { get; } = [];
+    public ObservableCollection<WarehouseDto>   Warehouses    { get; } = [];
+
+    // ── Derived: profit + margin shown in the dialog's strip ──────────────────
+    // Recomputed via partial-method hooks when Cost or Price input changes.
+    public decimal Profit
+    {
+        get
+        {
+            decimal.TryParse(CostInput,  out var c);
+            decimal.TryParse(PriceInput, out var p);
+            return p - c;
+        }
+    }
+
+    public decimal Margin
+    {
+        get
+        {
+            decimal.TryParse(CostInput,  out var c);
+            decimal.TryParse(PriceInput, out var p);
+            return p > 0 ? Math.Round((p - c) / p * 100m, 1) : 0m;
+        }
+    }
+
+    public string ProfitFormatted => (Profit >= 0 ? "+" : "") + Profit.ToString("N0");
+    public string MarginFormatted => Margin.ToString("0.0") + "%";
+    public bool   IsProfitable    => Profit > 0;
+
+    public bool   HasMarginData
+    {
+        get
+        {
+            decimal.TryParse(CostInput,  out var c);
+            decimal.TryParse(PriceInput, out var p);
+            return c > 0 && p > 0;
+        }
+    }
 
     public AddProductViewModel(
         ApiClient api,
@@ -72,6 +118,15 @@ public partial class AddProductViewModel : ObservableObject
 
             if (SelectedMeasurement is null || !Measurements.Contains(SelectedMeasurement))
                 SelectedMeasurement = Measurements.FirstOrDefault();
+
+            // Warehouses fetched live — required by backend whenever opening stock > 0.
+            var warehouses = await _api.GetWarehousesAsync();
+            Warehouses.Clear();
+            foreach (var w in warehouses.Where(w => w.Active))
+                Warehouses.Add(w);
+
+            if (SelectedWarehouse is null || !Warehouses.Contains(SelectedWarehouse))
+                SelectedWarehouse = Warehouses.FirstOrDefault();
         }
         catch (Exception ex)
         {
@@ -87,9 +142,26 @@ public partial class AddProductViewModel : ObservableObject
         StockInput          = "";
         BarcodeInput        = "";
         ErrorText           = "";
+        MinStockInput       = "";
+        IsActive            = true;
         SelectedMeasurement = Measurements.FirstOrDefault();
         SelectedPriceList   = PriceLists.FirstOrDefault();
         SelectedProductType = ProductTypes.FirstOrDefault();
+        SelectedWarehouse   = Warehouses.FirstOrDefault();
+    }
+
+    // ── Partial-method hooks: keep derived margin properties live ─────────────
+    partial void OnCostInputChanged(string value)  => RefreshMargin();
+    partial void OnPriceInputChanged(string value) => RefreshMargin();
+
+    private void RefreshMargin()
+    {
+        OnPropertyChanged(nameof(Profit));
+        OnPropertyChanged(nameof(Margin));
+        OnPropertyChanged(nameof(ProfitFormatted));
+        OnPropertyChanged(nameof(MarginFormatted));
+        OnPropertyChanged(nameof(IsProfitable));
+        OnPropertyChanged(nameof(HasMarginData));
     }
 
     [RelayCommand]
@@ -120,16 +192,25 @@ public partial class AddProductViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(BarcodeInput))
         { ErrorText = "Barkod kiritilishi shart"; return; }
 
+        // Backend requires at least one price (ProductCreateDTO.isPricePayloadValid).
+        decimal? price = decimal.TryParse(PriceInput, out var p) && p > 0 ? p : null;
+        if (!price.HasValue)
+        { ErrorText = "Sotuv narxi kiritilishi shart"; return; }
+
+        decimal? cost  = decimal.TryParse(CostInput,  out var c) && c > 0 ? c : null;
+        decimal? stock = decimal.TryParse(StockInput, out var s) && s > 0 ? s : null;
+
+        // Backend requires openingWarehouseUuid when stock > 0
+        // (ProductServiceImpl.validateOpeningStockPayload).
+        if (stock.HasValue && SelectedWarehouse is null)
+        { ErrorText = "Boshlang'ich stok kiritilgan — omborni tanlang"; return; }
+
         ErrorText = "";
         IsBusy    = true;
         try
         {
-            decimal? price = decimal.TryParse(PriceInput, out var p) && p > 0 ? p : null;
-            decimal? cost  = decimal.TryParse(CostInput,  out var c) && c > 0 ? c : null;
-            decimal? stock = decimal.TryParse(StockInput, out var s) && s > 0 ? s : null;
-
             List<CreateProductPriceRequest>? prices = null;
-            if (SelectedPriceList is not null && price.HasValue)
+            if (SelectedPriceList is not null)
             {
                 prices =
                 [
@@ -144,15 +225,16 @@ public partial class AddProductViewModel : ObservableObject
 
             var request = new CreateProductRequest
             {
-                Name            = NameInput.Trim(),
-                MeasurementUuid = SelectedMeasurement.Uuid,
-                Type            = SelectedProductType?.Id ?? 0,
-                Price           = prices is null ? price : null,
-                Cost            = cost,
-                Stock           = stock,
-                Barcode         = BarcodeInput.Trim(),
-                IsPos           = true,
-                Prices          = prices
+                Name                 = NameInput.Trim(),
+                MeasurementUuid      = SelectedMeasurement.Uuid,
+                Type                 = SelectedProductType?.Id ?? 0,
+                Price                = prices is null ? price : null,
+                Cost                 = cost,
+                Stock                = stock,
+                OpeningWarehouseUuid = stock.HasValue ? SelectedWarehouse?.Uuid : null,
+                Barcode              = BarcodeInput.Trim(),
+                IsPos                = true,
+                Prices               = prices
             };
 
             await _api.CreateProductAsync(request);

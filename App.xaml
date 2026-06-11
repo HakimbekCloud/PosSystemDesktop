@@ -15,6 +15,7 @@
         <conv:EqualityConverter x:Key="EqualityConverter"/>
         <conv:UrlToBitmapImageConverter x:Key="UrlToBitmapImageConverter"/>
         <conv:HexToBrushConverter x:Key="HexToBrushConverter"/>
+        <conv:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
         <!-- ══ FlatTextBox — removes default WPF rounded highlight ══ -->
         <Style x:Key="FlatTextBoxStyle" TargetType="TextBox">

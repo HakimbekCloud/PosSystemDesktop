@@ -1,52 +1,25 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using PosSystem.Core.Entities;
+using PosSystem.Services;
 
 namespace PosSystem.Data.Repositories;
 
 public class SettingsRepository(IDbContextFactory<AppDbContext> factory)
 {
-    // Bug M7: bearer/refresh tokens used to sit as plaintext rows in the SQLite
-    // Settings table on shared cashier terminals. These keys are now transparently
-    // encrypted at rest with Windows DPAPI (CurrentUser scope) and stored in the
-    // marked format "dpapi:<base64>". Encryption is applied on Set and reversed on
-    // Get for these keys only; every other setting is stored as-is.
-    private static readonly HashSet<string> SensitiveKeys = new(StringComparer.Ordinal)
-    {
-        "auth_token",
-        "refresh_token"
-    };
-
-    private const string DpapiPrefix = "dpapi:";
-
     public string? Get(string key)
     {
         using var db = factory.CreateDbContext();
-        var stored = db.Settings.FirstOrDefault(s => s.Key == key)?.Value;
-        if (stored is null) return null;
-
-        if (!SensitiveKeys.Contains(key)) return stored;
-
-        // Legacy plaintext (written by an older build, or stored on non-Windows):
-        // return as-is — it becomes encrypted on the next Set.
-        if (!stored.StartsWith(DpapiPrefix, StringComparison.Ordinal)) return stored;
-
-        // Decryption failure (corrupt blob, or written by another OS user) → treat
-        // as missing so the app cleanly falls back to the login screen, no crash.
-        return TryDecrypt(stored[DpapiPrefix.Length..]);
+        return db.Settings.FirstOrDefault(s => s.Key == key)?.Value;
     }
 
     public void Set(string key, string value)
     {
-        var toStore = SensitiveKeys.Contains(key) ? Protect(value) : value;
-
         using var db = factory.CreateDbContext();
         var existing = db.Settings.Find(key);
         if (existing is null)
-            db.Settings.Add(new AppSetting { Key = key, Value = toStore });
+            db.Settings.Add(new AppSetting { Key = key, Value = value });
         else
-            existing.Value = toStore;
+            existing.Value = value;
         db.SaveChanges();
     }
 
@@ -59,39 +32,41 @@ public class SettingsRepository(IDbContextFactory<AppDbContext> factory)
         db.SaveChanges();
     }
 
-    // Encrypt with DPAPI (CurrentUser scope) → "dpapi:<base64>". On non-Windows
-    // (only the macOS build machine — production is Windows-only) store plaintext
-    // so nothing crashes. If encryption itself fails, fall back to plaintext rather
-    // than losing the token.
-    private static string Protect(string plaintext)
+    // Sensitive value writer. Always stores DPAPI-protected blob with the
+    // enc:v1: prefix.
+    public void SetEncrypted(string key, string value)
+        => Set(key, TokenProtector.Protect(value));
+
+    // Sensitive value reader. Returns:
+    //   plaintext  → on encrypted-and-decrypted or legacy-plaintext values.
+    //   null       → key missing, or encrypted blob that DPAPI refused to
+    //                unwrap (different Windows user, corruption). In the
+    //                second case we also clear the corrupted row so the next
+    //                login starts from a clean slate.
+    public string? GetDecrypted(string key)
     {
-        if (!OperatingSystem.IsWindows()) return plaintext;
-        try
+        var raw = Get(key);
+        if (string.IsNullOrEmpty(raw)) return null;
+
+        var plain = TokenProtector.TryUnprotect(raw);
+        if (plain is null && TokenProtector.IsEncrypted(raw))
         {
-            var bytes     = Encoding.UTF8.GetBytes(plaintext);
-            var encrypted = ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
-            return DpapiPrefix + System.Convert.ToBase64String(encrypted);
+            // Encrypted blob exists but cannot be decrypted by this Windows
+            // user — discard so subsequent calls don't keep retrying and so
+            // the row doesn't masquerade as a valid session.
+            Remove(key);
         }
-        catch
-        {
-            return plaintext;
-        }
+        return plain;
     }
 
-    // Reverse of Protect. Returns null on any failure so the caller treats the
-    // value as missing (Bug M7 robustness rule).
-    private static string? TryDecrypt(string base64)
+    // One-time upgrade for legacy plaintext tokens written by pre-Phase-9
+    // builds. Safe to call on every startup — no-op when the value is already
+    // encrypted (or absent).
+    public void EncryptIfLegacy(string key)
     {
-        if (!OperatingSystem.IsWindows()) return null;
-        try
-        {
-            var encrypted = System.Convert.FromBase64String(base64);
-            var bytes     = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
-            return Encoding.UTF8.GetString(bytes);
-        }
-        catch
-        {
-            return null;
-        }
+        var raw = Get(key);
+        if (string.IsNullOrEmpty(raw)) return;
+        if (TokenProtector.IsEncrypted(raw)) return;
+        Set(key, TokenProtector.Protect(raw));
     }
 }

@@ -138,6 +138,12 @@ public class CustomerDto
     [JsonPropertyName("totalDebt")]
     public decimal TotalDebt { get; set; }
 
+    // Defaults to true so older backend responses (without this field) keep
+    // local customers active; incremental sync explicitly sends false for
+    // soft-deleted customers so the client mirrors the tombstone.
+    [JsonPropertyName("active")]
+    public bool Active { get; set; } = true;
+
     [JsonPropertyName("updatedAt")]
     public DateTime? UpdatedAt { get; set; }
 }
@@ -199,6 +205,11 @@ public class CashboxDto
 
     [JsonPropertyName("currencyCode")]
     public string CurrencyCode { get; set; } = "";
+
+    // Container classification (CASH / CARD / BANK / ONLINE / SAFE / MOBILE_BANKING / OTHER).
+    // Used to route per-method transactions to the correct cashbox.
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
 }
 
 public class PriceListDto
@@ -227,6 +238,9 @@ public class PriceListDto
 
 public class WarehouseDto
 {
+    [JsonPropertyName("id")]
+    public long Id { get; set; }
+
     [JsonPropertyName("uuid")]
     public string Uuid { get; set; } = "";
 
@@ -287,6 +301,11 @@ public class CreateProductRequest
 
     [JsonPropertyName("stock")]
     public decimal? Stock { get; set; }
+
+    // Backend rule: required when Stock > 0 (ProductServiceImpl.validateOpeningStockPayload).
+    // Ignored server-side when Stock is null or zero, so we only set it when needed.
+    [JsonPropertyName("openingWarehouseUuid")]
+    public string? OpeningWarehouseUuid { get; set; }
 
     [JsonPropertyName("barcode")]
     public string? Barcode { get; set; }
@@ -386,6 +405,498 @@ public class OrderResponse
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = "";
+}
+
+// ── POS Shift (Phase G.1) ─────────────────────────────────────────────────────
+//
+// Mirrors Ham-Pos `PosShiftResponse` / `OpenShiftRequest` / `CloseShiftRequest`
+// / `PosShiftReportResponse`. UUIDs travel as strings; backend `BigDecimal`
+// maps to C# `decimal`; backend `PosShiftStatus` enum is serialized as its
+// name (`OPEN` / `CLOSED` / `CANCELLED`).
+
+public class PosShiftResponse
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("branchUuid")]
+    public string? BranchUuid { get; set; }
+
+    [JsonPropertyName("cashboxUuid")]
+    public string? CashboxUuid { get; set; }
+
+    [JsonPropertyName("openedByUserUuid")]
+    public string? OpenedByUserUuid { get; set; }
+
+    [JsonPropertyName("closedByUserUuid")]
+    public string? ClosedByUserUuid { get; set; }
+
+    [JsonPropertyName("currencyCode")]
+    public string? CurrencyCode { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("openedAt")]
+    public DateTime? OpenedAt { get; set; }
+
+    [JsonPropertyName("closedAt")]
+    public DateTime? ClosedAt { get; set; }
+
+    [JsonPropertyName("openingCashAmount")]
+    public decimal? OpeningCashAmount { get; set; }
+
+    [JsonPropertyName("expectedCashAmount")]
+    public decimal? ExpectedCashAmount { get; set; }
+
+    [JsonPropertyName("countedCashAmount")]
+    public decimal? CountedCashAmount { get; set; }
+
+    [JsonPropertyName("differenceAmount")]
+    public decimal? DifferenceAmount { get; set; }
+
+    [JsonPropertyName("openComment")]
+    public string? OpenComment { get; set; }
+
+    [JsonPropertyName("closeComment")]
+    public string? CloseComment { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime? CreatedAt { get; set; }
+
+    [JsonPropertyName("updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public class OpenShiftRequest
+{
+    [JsonPropertyName("cashboxUuid")]
+    public string CashboxUuid { get; set; } = "";
+
+    [JsonPropertyName("openingCashAmount")]
+    public decimal OpeningCashAmount { get; set; }
+
+    [JsonPropertyName("comment")]
+    public string? Comment { get; set; }
+}
+
+public class CloseShiftRequest
+{
+    [JsonPropertyName("countedCashAmount")]
+    public decimal CountedCashAmount { get; set; }
+
+    [JsonPropertyName("comment")]
+    public string? Comment { get; set; }
+}
+
+public class PosShiftReportResponse
+{
+    [JsonPropertyName("shiftUuid")]
+    public string ShiftUuid { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("branchUuid")]
+    public string? BranchUuid { get; set; }
+
+    [JsonPropertyName("cashboxUuid")]
+    public string? CashboxUuid { get; set; }
+
+    [JsonPropertyName("openedByUserUuid")]
+    public string? OpenedByUserUuid { get; set; }
+
+    [JsonPropertyName("closedByUserUuid")]
+    public string? ClosedByUserUuid { get; set; }
+
+    [JsonPropertyName("currencyCode")]
+    public string? CurrencyCode { get; set; }
+
+    [JsonPropertyName("openedAt")]
+    public DateTime? OpenedAt { get; set; }
+
+    [JsonPropertyName("closedAt")]
+    public DateTime? ClosedAt { get; set; }
+
+    [JsonPropertyName("openingCashAmount")]
+    public decimal? OpeningCashAmount { get; set; }
+
+    // Stored at close time (null for OPEN shifts).
+    [JsonPropertyName("storedExpectedCashAmount")]
+    public decimal? StoredExpectedCashAmount { get; set; }
+
+    [JsonPropertyName("countedCashAmount")]
+    public decimal? CountedCashAmount { get; set; }
+
+    [JsonPropertyName("storedDifferenceAmount")]
+    public decimal? StoredDifferenceAmount { get; set; }
+
+    // Live computed from cashbox ledger.
+    [JsonPropertyName("computedExpectedCashAmount")]
+    public decimal? ComputedExpectedCashAmount { get; set; }
+
+    [JsonPropertyName("computedDifferenceAmount")]
+    public decimal? ComputedDifferenceAmount { get; set; }
+
+    [JsonPropertyName("cashSalesAmount")]
+    public decimal? CashSalesAmount { get; set; }
+
+    [JsonPropertyName("cashbackAmount")]
+    public decimal? CashbackAmount { get; set; }
+
+    [JsonPropertyName("refundAmount")]
+    public decimal? RefundAmount { get; set; }
+
+    [JsonPropertyName("debtPaymentAmount")]
+    public decimal? DebtPaymentAmount { get; set; }
+
+    [JsonPropertyName("cashInAmount")]
+    public decimal? CashInAmount { get; set; }
+
+    [JsonPropertyName("cashOutAmount")]
+    public decimal? CashOutAmount { get; set; }
+
+    [JsonPropertyName("netCashMovementAmount")]
+    public decimal? NetCashMovementAmount { get; set; }
+
+    [JsonPropertyName("transactionCount")]
+    public long TransactionCount { get; set; }
+
+    [JsonPropertyName("orderCount")]
+    public long OrderCount { get; set; }
+
+    [JsonPropertyName("refundCount")]
+    public long RefundCount { get; set; }
+
+    [JsonPropertyName("debtPaymentCount")]
+    public long DebtPaymentCount { get; set; }
+
+    [JsonPropertyName("cashInCount")]
+    public long CashInCount { get; set; }
+
+    [JsonPropertyName("cashOutCount")]
+    public long CashOutCount { get; set; }
+
+    [JsonPropertyName("hasDifference")]
+    public bool HasDifference { get; set; }
+
+    [JsonPropertyName("hasTransactionsOutsideShift")]
+    public bool HasTransactionsOutsideShift { get; set; }
+
+    [JsonPropertyName("outsideShiftTransactionCount")]
+    public long OutsideShiftTransactionCount { get; set; }
+
+    [JsonPropertyName("outsideShiftNetAmount")]
+    public decimal? OutsideShiftNetAmount { get; set; }
+
+    [JsonPropertyName("closed")]
+    public bool Closed { get; set; }
+}
+
+// ── Inventory adjustment (Phase I.1) ──────────────────────────────────────────
+//
+// Mirrors Ham-Pos `InventoryAdjustmentRequest` / `InventoryAdjustmentResponse`.
+// Direction is the AdjustmentDirection enum (IN | OUT) — quantity must always
+// be positive; OUT means decrement stock. Backend enforces:
+//   • quantity >= 0.001
+//   • reason @NotBlank
+//   • warehouseUuid + productUuid + direction @NotNull
+// Permission required on the backend: INVENTORY_MANAGEMENT (held by ADMIN role,
+// not CASHIER) — desktop surfaces a parsed 403 if a non-admin attempts a kirim.
+
+public class CreateInventoryAdjustmentRequest
+{
+    [JsonPropertyName("warehouseUuid")]
+    public string WarehouseUuid { get; set; } = "";
+
+    [JsonPropertyName("productUuid")]
+    public string ProductUuid { get; set; } = "";
+
+    // Backend AdjustmentDirection — must be the string "IN" or "OUT".
+    [JsonPropertyName("direction")]
+    public string Direction { get; set; } = "IN";
+
+    [JsonPropertyName("quantity")]
+    public decimal Quantity { get; set; }
+
+    [JsonPropertyName("reason")]
+    public string Reason { get; set; } = "";
+
+    [JsonPropertyName("comment")]
+    public string? Comment { get; set; }
+
+    [JsonPropertyName("unitCost")]
+    public decimal? UnitCost { get; set; }
+
+    [JsonPropertyName("idempotencyKey")]
+    public string? IdempotencyKey { get; set; }
+}
+
+public class InventoryAdjustmentResponse
+{
+    [JsonPropertyName("movementUuid")]
+    public string MovementUuid { get; set; } = "";
+
+    [JsonPropertyName("movementNo")]
+    public string? MovementNo { get; set; }
+
+    [JsonPropertyName("warehouseUuid")]
+    public string? WarehouseUuid { get; set; }
+
+    [JsonPropertyName("productUuid")]
+    public string? ProductUuid { get; set; }
+
+    [JsonPropertyName("unitUuid")]
+    public string? UnitUuid { get; set; }
+
+    [JsonPropertyName("quantity")]
+    public decimal? Quantity { get; set; }
+
+    [JsonPropertyName("unitCost")]
+    public decimal? UnitCost { get; set; }
+
+    [JsonPropertyName("beforeQuantity")]
+    public decimal? BeforeQuantity { get; set; }
+
+    [JsonPropertyName("afterQuantity")]
+    public decimal? AfterQuantity { get; set; }
+
+    [JsonPropertyName("weightedAverageCostAfter")]
+    public decimal? WeightedAverageCostAfter { get; set; }
+
+    [JsonPropertyName("occurredAt")]
+    public DateTime? OccurredAt { get; set; }
+
+    [JsonPropertyName("reasonCode")]
+    public string? ReasonCode { get; set; }
+}
+
+// ── Order list (Sale History from server) ────────────────────────────────────
+//
+// Mirrors the backend OrderResponse fields that are useful for history display.
+// The list endpoint is GET /api/orders with optional date range and pagination.
+
+public class OrderListDto
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("orderNumber")]
+    public string? OrderNumber { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("totalAmount")]
+    public decimal? TotalAmount { get; set; }
+
+    [JsonPropertyName("paidAmount")]
+    public decimal? PaidAmount { get; set; }
+
+    [JsonPropertyName("debtAmount")]
+    public decimal? DebtAmount { get; set; }
+
+    [JsonPropertyName("discountAmount")]
+    public decimal? DiscountAmount { get; set; }
+
+    [JsonPropertyName("paymentType")]
+    public string? PaymentType { get; set; }
+
+    [JsonPropertyName("customerUuid")]
+    public string? CustomerUuid { get; set; }
+
+    [JsonPropertyName("comment")]
+    public string? Comment { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime? CreatedAt { get; set; }
+
+    [JsonPropertyName("createdDate")]
+    public DateTime? CreatedDate { get; set; }
+
+    [JsonPropertyName("isPos")]
+    public bool? IsPos { get; set; }
+}
+
+// ── Shift cash movement (Phase 11.3) ─────────────────────────────────────────
+//
+// Mirrors Ham-Pos `ShiftCashMovementRequest` / `ShiftCashMovementResponse`.
+// `amount` must be strictly positive (> 0.01). The backend negates it for
+// cash-out so the request body is the same shape for both directions.
+
+public class ShiftCashMovementRequest
+{
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("reason")]
+    public string Reason { get; set; } = "";
+}
+
+public class ShiftCashMovementResponse
+{
+    [JsonPropertyName("shiftUuid")]
+    public string? ShiftUuid { get; set; }
+
+    [JsonPropertyName("cashboxUuid")]
+    public string? CashboxUuid { get; set; }
+
+    [JsonPropertyName("transactionUuid")]
+    public string? TransactionUuid { get; set; }
+
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("cashboxBalanceAfter")]
+    public decimal? CashboxBalanceAfter { get; set; }
+
+    [JsonPropertyName("currencyCode")]
+    public string? CurrencyCode { get; set; }
+
+    [JsonPropertyName("reason")]
+    public string? Reason { get; set; }
+
+    [JsonPropertyName("performedAt")]
+    public DateTime? PerformedAt { get; set; }
+}
+
+// ── Returns / Refund ─────────────────────────────────────────────────────────
+
+public class ReturnOrderRequest
+{
+    [JsonPropertyName("warehouseUuid")]
+    public string WarehouseUuid { get; set; } = "";
+
+    [JsonPropertyName("cashboxUuid")]
+    public string? CashboxUuid { get; set; }
+
+    [JsonPropertyName("reason")]
+    public string? Reason { get; set; }
+
+    [JsonPropertyName("items")]
+    public List<ReturnOrderItemRequest> Items { get; set; } = [];
+
+    [JsonPropertyName("idempotencyKey")]
+    public string IdempotencyKey { get; set; } = "";
+}
+
+public class ReturnOrderItemRequest
+{
+    [JsonPropertyName("productUuid")]
+    public string ProductUuid { get; set; } = "";
+
+    [JsonPropertyName("quantity")]
+    public decimal Quantity { get; set; }
+}
+
+public class ReturnOrderResponse
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("orderUuid")]
+    public string OrderUuid { get; set; } = "";
+
+    [JsonPropertyName("totalReturnAmount")]
+    public decimal TotalReturnAmount { get; set; }
+
+    [JsonPropertyName("cashRefundAmount")]
+    public decimal CashRefundAmount { get; set; }
+
+    [JsonPropertyName("debtReductionAmount")]
+    public decimal DebtReductionAmount { get; set; }
+
+    [JsonPropertyName("returnedAt")]
+    public DateTime? ReturnedAt { get; set; }
+
+    [JsonPropertyName("orderStatus")]
+    public string? OrderStatus { get; set; }
+
+    [JsonPropertyName("items")]
+    public List<ReturnOrderItemResponse> Items { get; set; } = [];
+}
+
+public class ReturnOrderItemResponse
+{
+    [JsonPropertyName("productUuid")]
+    public string ProductUuid { get; set; } = "";
+
+    [JsonPropertyName("quantity")]
+    public decimal Quantity { get; set; }
+
+    [JsonPropertyName("unitPrice")]
+    public decimal UnitPrice { get; set; }
+
+    [JsonPropertyName("refundAmount")]
+    public decimal RefundAmount { get; set; }
+}
+
+// ── Order detail (GET /api/orders/{uuid}) ────────────────────────────────────
+//
+// Mirrors the backend OrderResponse for the single-order detail endpoint.
+// Used by ReturnOrderWindow to load item lines for the return flow.
+// Note: stockId is a Long warehouse PK on the backend; warehouseUuid is
+// resolved by matching it against the warehouses list (WarehouseDto.Id).
+
+public class OrderDetailDto
+{
+    [JsonPropertyName("uuid")]
+    public string Uuid { get; set; } = "";
+
+    [JsonPropertyName("orderNumber")]
+    public string? OrderNumber { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonPropertyName("totalAmount")]
+    public decimal? TotalAmount { get; set; }
+
+    [JsonPropertyName("paidAmount")]
+    public decimal? PaidAmount { get; set; }
+
+    [JsonPropertyName("debtAmount")]
+    public decimal? DebtAmount { get; set; }
+
+    [JsonPropertyName("branchUuid")]
+    public string? BranchUuid { get; set; }
+
+    [JsonPropertyName("customerUuid")]
+    public string? CustomerUuid { get; set; }
+
+    // Warehouse numeric PK — maps to WarehouseDto.Id for UUID resolution.
+    [JsonPropertyName("stockId")]
+    public long? StockId { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime? CreatedAt { get; set; }
+
+    [JsonPropertyName("paymentType")]
+    public string? PaymentType { get; set; }
+
+    [JsonPropertyName("items")]
+    public List<OrderDetailItemDto> Items { get; set; } = [];
+}
+
+public class OrderDetailItemDto
+{
+    [JsonPropertyName("productUuid")]
+    public string ProductUuid { get; set; } = "";
+
+    [JsonPropertyName("quantity")]
+    public decimal Quantity { get; set; }
+
+    [JsonPropertyName("price")]
+    public decimal Price { get; set; }
+
+    [JsonPropertyName("discountPrice")]
+    public decimal DiscountPrice { get; set; }
+
+    [JsonPropertyName("totalAmount")]
+    public decimal TotalAmount { get; set; }
 }
 
 // ── Debt payment ──────────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ public class CustomerRepository(IDbContextFactory<AppDbContext> factory)
     public List<Customer> GetAll()
     {
         using var db = factory.CreateDbContext();
-        return [.. db.Customers.OrderBy(c => c.Name)];
+        return [.. db.Customers.Where(c => c.IsActive).OrderBy(c => c.Name)];
     }
 
     public List<Customer> Search(string query)
@@ -16,7 +16,8 @@ public class CustomerRepository(IDbContextFactory<AppDbContext> factory)
         using var db = factory.CreateDbContext();
         var q = query.ToLower();
         return [.. db.Customers
-            .Where(c => c.Name.ToLower().Contains(q) || c.Phone.Contains(q))
+            .Where(c => c.IsActive
+                        && (c.Name.ToLower().Contains(q) || c.Phone.Contains(q)))
             .OrderBy(c => c.Name)
             .Take(10)];
     }
