@@ -54,7 +54,10 @@ public partial class MainWindow : Window
             Dispatcher.Invoke(() =>
             {
                 if (MainContent.Content is LoginView) return; // already on login page
-                _auth.Logout();
+                // Session-expiry: tokens are already dead (that's what raised
+                // this message), so skip the server revocation call — it would
+                // only produce guaranteed-401 spam. Local clear still runs.
+                _auth.Logout(revokeOnServer: false);
 
                 // Phase 10.5C: under runtime tenant DB mode, switch the path
                 // provider back to legacy so the next LoginViewModel pass can

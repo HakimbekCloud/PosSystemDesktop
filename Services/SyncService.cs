@@ -255,25 +255,61 @@ public class SyncService
 
         var errors = new List<string>();
 
-        try { await SyncReferenceDataAsync(); }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        { errors.Add("Sessiya muddati tugagan"); }
-        catch (Exception ex) { errors.Add($"Ma'lumotnoma: {ex.Message}"); }
+        // M3: a surfaced 401 means the ApiClient's internal refresh already
+        // failed (the refresh path force-logs-out and returns the original 401),
+        // so the access token is dead for THIS run. Continuing to the remaining
+        // sections would just hammer the backend with the same dead token and
+        // produce noisy partial-failure states. Short-circuit instead: record
+        // "Sessiya muddati tugagan" once, flag the run as errored and return.
+        // Pending sales are left untouched — they sync after re-login.
+        if (await TrySyncSectionAsync(SyncReferenceDataAsync, "Ma'lumotnoma", errors))
+        { FinishSyncRun(errors); return; }
 
-        // Sales first so the backend stock is already decremented when we fetch products
+        // Sales first so the backend stock is already decremented when we fetch
+        // products. A non-401 failure here is per-sale and must not abort the
+        // pulls below, so it does not participate in the 401 short-circuit.
         try { await SyncPendingSalesAsync(); }
         catch (Exception ex) { errors.Add($"Zakazlar: {ex.Message}"); }
 
-        try { await SyncProductsAsync(); }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        { errors.Add("Sessiya muddati tugagan"); }
-        catch (Exception ex) { errors.Add($"Mahsulotlar: {ex.Message}"); }
+        if (await TrySyncSectionAsync(SyncProductsAsync, "Mahsulotlar", errors))
+        { FinishSyncRun(errors); return; }
 
-        try { await SyncCustomersAsync(); }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        { errors.Add("Sessiya muddati tugagan"); }
-        catch (Exception ex) { errors.Add($"Mijozlar: {ex.Message}"); }
+        if (await TrySyncSectionAsync(SyncCustomersAsync, "Mijozlar", errors))
+        { FinishSyncRun(errors); return; }
 
+        FinishSyncRun(errors);
+    }
+
+    // Runs one sync section. Returns true when the run must short-circuit
+    // (a 401 surfaced after the ApiClient's own refresh already failed):
+    // records "Sessiya muddati tugagan" once and signals the caller to stop.
+    // Any other exception is recorded under <prefix> and returns false so the
+    // remaining sections still run.
+    private static async Task<bool> TrySyncSectionAsync(
+        Func<Task> section, string prefix, List<string> errors)
+    {
+        try
+        {
+            await section();
+            return false;
+        }
+        catch (HttpRequestException ex)
+            when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            const string sessionExpired = "Sessiya muddati tugagan";
+            if (!errors.Contains(sessionExpired))
+                errors.Add(sessionExpired);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"{prefix}: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void FinishSyncRun(List<string> errors)
+    {
         LastSyncAt = DateTime.Now;
         _settings.Set("last_sync_at", LastSyncAt.Value.ToString("O"));
         PendingSalesCount = _sales.GetPendingCountForTenant(_settings.Get("tenant_subdomain") ?? "");

@@ -56,14 +56,11 @@ public class ApiClient
         _http.BaseAddress = uri;
     }
 
-    // Bug H1: tenant + auth headers are now stamped per-request by
-    // TenantAuthHeaderHandler reading the settings store on each send. These
-    // methods are retained as no-ops so existing call sites (AuthService login/
-    // logout, token refresh) keep compiling; the handler already reflects any
-    // settings change on the next request, so there is nothing to "apply".
-    public void ApplyTenantHeader() { /* per-request via TenantAuthHeaderHandler */ }
-
-    public void ApplyAuthToken() { /* per-request via TenantAuthHeaderHandler */ }
+    // Bug H1: tenant + auth headers are stamped per-request by
+    // TenantAuthHeaderHandler reading the settings store on each send. The old
+    // ApplyTenantHeader()/ApplyAuthToken() no-op stubs (L2) and their call sites
+    // have been removed — the handler reflects any settings change on the next
+    // request, so there is nothing to "apply".
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -76,13 +73,21 @@ public class ApiClient
     }
 
     // Asks the backend to revoke both the access token and the refresh token
-    // for this session. Called by AuthService.Logout before clearing local
-    // storage. Failures are swallowed — a network error during logout must
-    // never block the cashier from reaching the login screen.
-    public async Task LogoutAsync()
+    // for this session. Called by AuthService.Logout, which captures the tokens
+    // SYNCHRONOUSLY before clearing local storage and passes them in — the
+    // tokens are NOT read from settings here, because by the time this runs on
+    // the thread-pool ClearUserData has already wiped them (C1: the old
+    // settings-read lost the token race, so revocation never carried a valid
+    // token and was effectively dead code).
+    //
+    // The explicit Authorization header is honoured end-to-end:
+    // TenantAuthHeaderHandler only stamps a Bearer when the request has none,
+    // so the captured access token survives even though settings are now empty.
+    //
+    // Failures are swallowed — a network error during logout must never block
+    // the cashier from reaching the login screen.
+    public async Task LogoutAsync(string accessToken, string refreshToken)
     {
-        var accessToken  = _settings.GetDecrypted("auth_token");
-        var refreshToken = _settings.GetDecrypted("refresh_token");
         if (string.IsNullOrEmpty(accessToken) && string.IsNullOrEmpty(refreshToken))
             return;
 
@@ -694,7 +699,8 @@ public class ApiClient
 
             _settings.SetEncrypted("auth_token", result.AccessToken);
             _settings.SetEncrypted("refresh_token", result.RefreshToken);
-            ApplyAuthToken();
+            // The refreshed token is picked up per-request by
+            // TenantAuthHeaderHandler from settings — no header to "apply" (L2).
             return true;
         }
         catch

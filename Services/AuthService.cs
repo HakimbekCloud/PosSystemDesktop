@@ -91,7 +91,6 @@ public class AuthService(
 
         settings.Set("tenant_subdomain", tenantSubdomain.Trim());
         api.ApplyBaseUrl();
-        api.ApplyTenantHeader();
 
         try
         {
@@ -110,7 +109,8 @@ public class AuthService(
             // mistyped subdomain doesn't poison the prefill.
             globalSettings.Set("last_tenant_subdomain", tenantSubdomain.Trim());
 
-            api.ApplyAuthToken();
+            // No header to "apply" — TenantAuthHeaderHandler reads auth_token
+            // from settings on the next request (L2).
             return (true, "");
         }
         catch (HttpRequestException ex) when
@@ -124,24 +124,43 @@ public class AuthService(
         }
     }
 
-    public void Logout()
+    // revokeOnServer:
+    //   • true  (default) — MANUAL logout. The session tokens are presumed
+    //     still valid, so we ask the backend to revoke them. C1: the tokens are
+    //     captured SYNCHRONOUSLY here, BEFORE ClearUserData wipes them, and
+    //     handed to LogoutAsync. The old code fired the revocation as a
+    //     fire-and-forget that re-read settings on the thread-pool, where it
+    //     lost the race against ClearUserData and revoked nothing.
+    //   • false — SESSION-EXPIRY auto-logout (MainWindow / LoginViewModel on a
+    //     SessionExpiredMessage). The access token is already dead and the
+    //     refresh token already expired/revoked (that's exactly what triggered
+    //     the expiry), so a revocation call would only spam the backend with
+    //     guaranteed-401s. We skip it; the local clear still runs.
+    public void Logout(bool revokeOnServer = true)
     {
-        // Best-effort server-side revocation. Must run before ClearUserData
-        // so the tokens are still readable when we build the logout request.
-        // Fire-and-forget on the thread-pool; the caller (PosViewModel) does
-        // not need to await the result because the cashier's next action
-        // (navigating to the login screen) is not blocked by a network call.
-        _ = Task.Run(async () =>
+        if (revokeOnServer)
         {
-            try { await api.LogoutAsync(); }
-            catch { /* network failure is non-fatal; tokens expire naturally */ }
-        });
+            // Capture both tokens NOW, while settings still hold them.
+            var accessToken  = settings.GetDecrypted("auth_token")    ?? "";
+            var refreshToken = settings.GetDecrypted("refresh_token") ?? "";
+
+            // Best-effort server-side revocation with the captured values.
+            // Fire-and-forget on the thread-pool; the caller (PosViewModel) does
+            // not await — the cashier's next action (navigating to the login
+            // screen) is never blocked by a network call. Double-logout (rapid
+            // clicks) is safe: the second pass captures empty strings and
+            // LogoutAsync returns immediately without sending a request.
+            _ = Task.Run(async () =>
+            {
+                try { await api.LogoutAsync(accessToken, refreshToken); }
+                catch { /* network failure is non-fatal; tokens expire naturally */ }
+            });
+        }
 
         ClearUserData();
 
-        // Re-apply auth headers so the HttpClient no longer carries the old token.
-        api.ApplyAuthToken();
-        api.ApplyTenantHeader();
+        // No header to re-apply — TenantAuthHeaderHandler reads settings on each
+        // request, and tenant_subdomain/auth_token are now cleared (L2).
     }
 
     // Phase 10.5C: logout cleanup is conditional on runtime tenant DB mode.
